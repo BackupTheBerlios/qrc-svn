@@ -98,7 +98,7 @@ static struct _gaym_msg {
 	{ "mode", "tv:", gaym_msg_mode },	/* MODE for channel		*/
 	{ "nick", ":", gaym_msg_nick },		/* Nick change			*/
 	{ "notice", "t:", gaym_msg_notice },	/* NOTICE recv			*/
-	{ "part", "c:", gaym_msg_part },		/* Parted a channel		*/
+	{ "part", "::", gaym_msg_part },		/* Parted a channel		*/
 	{ "ping", ":", gaym_msg_ping },		/* Received PING from server	*/
 	{ "pong", "v:", gaym_msg_pong },		/* Received PONG from server	*/
 	{ "privmsg", "t:", gaym_msg_privmsg },	/* Received private message	*/

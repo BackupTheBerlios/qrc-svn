@@ -37,7 +37,7 @@
 
 #include "gaym.h"
 
-static void gaym_buddy_append(char *name, struct gaym_buddy *ib, GString *string);
+
 
 static const char *gaym_blist_icon(GaimAccount *a, GaimBuddy *b);
 static void gaym_blist_emblems(GaimBuddy *b, char **se, char **sw, char **nw, char **ne);
@@ -56,6 +56,9 @@ static guint gaym_nick_hash(const char *nick);
 static gboolean gaym_nick_equal(const char *nick1, const char *nick2);
 static void gaym_buddy_free(struct gaym_buddy *ib);
 
+static void gaym_buddy_append(char *name, struct gaym_buddy *ib, GString *string);
+static void gaym_buddy_clear_done(char *name, struct gaym_buddy *ib, gpointer nothing);
+	
 static GaimPlugin *_gaym_plugin = NULL;
 
 static const char *status_chars = "@+%&";
@@ -99,54 +102,53 @@ int gaym_send(struct gaym_conn *gaym, const char *buf)
 gboolean gaym_blist_timeout(struct gaym_conn *gaym)
 {
 	GString *string = g_string_sized_new(512);
-	char *list, *buf, *temp_list;
-#define CHUNK_SIZE 500
-	
+	char *list, *buf;
+
 	g_hash_table_foreach(gaym->buddies, (GHFunc)gaym_buddy_append, (gpointer)string);
 
 	list = g_string_free(string, FALSE);
-	if (!list || !strlen(list) || gaym->ison_pending) {
+	if (!list || !strlen(list)) {
+		g_hash_table_foreach(gaym->buddies, (GHFunc)gaym_buddy_clear_done, NULL);
+		gaim_timeout_remove(gaym->timer);
+		gaym->timer = gaim_timeout_add(BLIST_UPDATE_PERIOD, (GSourceFunc)gaym_blist_timeout, (gpointer)gaym);
 		g_free(list);
+		
 		return TRUE;
 	}
 
-	int index=0;
+	gaym->blist_updating=TRUE;
+	buf = gaym_format(gaym, "vn", "ISON", list);
+	gaym_send(gaym, buf);
+	gaim_timeout_remove(gaym->timer);
+	gaym->timer = gaim_timeout_add(BLIST_CHUNK_INTERVAL, (GSourceFunc)gaym_blist_timeout, (gpointer)gaym);
+		
+	g_free(buf);
 	
-	while(index<strlen(list))
-	{
-			int copysize=((index+CHUNK_SIZE)>strlen(list)?
-							strlen(list)-index:
-							CHUNK_SIZE);
-		    while((((char)*(list+index+copysize)) != ' ') &&
-				(((char)*(list+index+copysize)) != '\0') &&
-			      (copysize > 0) )
-			{
-				gaim_debug_misc("gaym", "%c is not a space\n",(char)*(list+index+copysize));
-				copysize--;
-			}
-			
-			temp_list=g_strndup(list+index, 
-							copysize);
-			buf = gaym_format(gaym, "vn", "ISON", temp_list);
-			gaim_debug_misc("gaym", "Sending command: %s\n",buf);
-			index+=copysize;
-			gaym_send(gaym, buf);
-			g_free(temp_list);
-			g_free(buf);
-			gaym->ison_pending++;
-	}
 	g_free(list);
 	
 
 	return TRUE;
 }
 
+static void gaym_buddy_clear_done(char *name, struct gaym_buddy *ib, gpointer nothing)
+{
+	ib->done=FALSE;
+}
 static void gaym_buddy_append(char *name, struct gaym_buddy *ib, GString *string)
 {
-	ib->flag = FALSE;
+	if((strlen(name) + string->len) > CHUNK_SIZE)
+		return;
+	else if (ib->done == FALSE)
+	{
+		ib->stale = TRUE;
+		ib->done = TRUE;
+		g_string_append_printf(string, "%s ", name);
+		return;
+	}
 	
-	g_string_append_printf(string, "%s ", name);
 }
+
+
 
 static void gaym_ison_one(struct gaym_conn *gaym, struct gaym_buddy *ib)
 {

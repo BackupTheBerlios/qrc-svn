@@ -35,6 +35,11 @@
 
 #define IRC_INITIAL_BUFSIZE 1024
 
+#define CHUNK_SIZE 500
+
+#define BLIST_UPDATE_PERIOD 45000 //buddy list updated every 45s
+#define BLIST_CHUNK_INTERVAL 5000 //5s between ISON chunks
+
 
 enum { IRC_USEROPT_SERVER, IRC_USEROPT_PORT, IRC_USEROPT_CHARSET };
 enum gaym_state { IRC_STATE_NEW, IRC_STATE_ESTABLISHED };
@@ -55,8 +60,8 @@ struct gaym_conn {
 	char* thumbnail;
 	char* hash_pw;
 	char* server_bioline;
-	 
-	int ison_pending; //Split ISON counter.
+	
+	gboolean blist_updating;
 	
 	GString *motd;
 	GString *names;
@@ -82,7 +87,10 @@ struct gaym_conn {
 struct gaym_buddy {
 	char *name;
 	gboolean online;
-	gboolean flag;
+	gboolean flag;  //Marks an ISON response.
+	
+	gboolean stale; //Signifies ISON update needed
+	gboolean done; //Keep track of which buddies have been checked.
 	
 };
 
@@ -184,4 +192,6 @@ int gaym_cmd_whois(struct gaym_conn *gaym, const char *cmd, const char *target, 
 void gaym_dccsend_send_file(GaimConnection *gc, const char *who, const char *file);
 void gaym_dccsend_recv(struct gaym_conn *gaym, const char *from, const char *msg);
 void gaym_get_hash_from_weblogin(GaimAccount* account, void(*callback)(GaimAccount*));
+
+
 #endif /* _GAIM_GAYM_H */

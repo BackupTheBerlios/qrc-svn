@@ -423,7 +423,7 @@ void gaym_msg_endmotd(struct gaym_conn *gaym, const char *name, const char *from
 
 	gaym_blist_timeout(gaym);
 	if (!gaym->timer)
-		gaym->timer = gaim_timeout_add(45000, (GSourceFunc)gaym_blist_timeout, (gpointer)gaym);
+		gaym->timer = gaim_timeout_add(BLIST_UPDATE_PERIOD, (GSourceFunc)gaym_blist_timeout, (gpointer)gaym);
 }
 
 void gaym_msg_nochan(struct gaym_conn *gaym, const char *name, const char *from, char **args)
@@ -533,15 +533,14 @@ void gaym_msg_inviteonly(struct gaym_conn *gaym, const char *name, const char *f
 	g_free(buf);
 }
 
+
+
 void gaym_msg_ison(struct gaym_conn *gaym, const char *name, const char *from, char **args)
 {
 	char **nicks;
 	struct gaym_buddy *ib;
 	int i;
 
-	if(gaym->ison_pending>0)
-		gaym->ison_pending--;
-	
 	if (!args || !args[1])
 		return;
 
@@ -551,15 +550,20 @@ void gaym_msg_ison(struct gaym_conn *gaym, const char *name, const char *from, c
 		if ((ib = g_hash_table_lookup(gaym->buddies, (gconstpointer)nicks[i])) == NULL) {
 			continue;
 		}
-		ib->flag = TRUE;
+		ib->flag=TRUE; 
+		
 	}
 
 	g_strfreev(nicks);
 
 	
+	g_hash_table_foreach(gaym->buddies, (GHFunc)gaym_buddy_status, (gpointer)gaym);
 	
-	if(!gaym->ison_pending)
-		g_hash_table_foreach(gaym->buddies, (GHFunc)gaym_buddy_status, (gpointer)gaym);
+
+	
+		
+	
+	
 }
 
 
@@ -574,12 +578,17 @@ static void gaym_buddy_status(char *name, struct gaym_buddy *ib, struct gaym_con
 	if (ib->online && !ib->flag) {
 		serv_got_update(gc, buddy->name, FALSE, 0, 0, 0, 0);
 		ib->online = FALSE;
+		ib->flag = TRUE;
+		
 	}
 
 	if (!ib->online && ib->flag) {
 		serv_got_update(gc, buddy->name, TRUE, 0, 0, 0, 0);
 		ib->online = TRUE;
+		ib->flag = TRUE;
+		
 	}
+	ib->stale = FALSE;
 }
 
 void gaym_msg_join(struct gaym_conn *gaym, const char *name, const char *from, char **args)
@@ -788,21 +797,7 @@ void gaym_msg_part(struct gaym_conn *gaym, const char *name, const char *from, c
 	if (!args || !args[0] || !gc)
 		return;
 
-	//If someone QUITs gay.com, the PART message still has a colon in front of the channel name. 
-	//This COULD create problems in theory, if there was a channel name that began with a colon.
-	//But there's not. 
-	if(args[0][0]==':')
-		convo = gaim_find_conversation_with_account(&(args[0][1]), gaym->account);
-	else
-		convo = gaim_find_conversation_with_account(args[0], gaym->account);
-	if (!convo) {
-		if(args[0][0]==':')
-			gaim_debug(GAIM_DEBUG_INFO, "gaym", "Got a QUIT PART on %s, which doesn't exist -- probably closed\n", &(args[0][1]));
-		else
-			gaim_debug(GAIM_DEBUG_INFO, "gaym", "Got a PART on %s, which doesn't exist -- probably closed\n", args[0]);	
-		
-		return;
-	}
+	
 
 	nick = gaym_mask_nick(from);
 	if (!gaim_utf8_strcasecmp(nick, gaim_connection_get_display_name(gc))) {
@@ -997,7 +992,7 @@ void gaym_msg_toomany_channels (struct gaym_conn *gaym, const char *name, const 
              return;
 
        buf = g_strdup_printf(_("You have joined too many channels the maximum is (2). You cannot join channel %s. Part another channel first ."), args[1]);
-       gaim_notify_error(gc, _("Maximum Channels Reached"), _("Maximum ChannelsReached"), buf);
+       gaim_notify_error(gc, _("Maximum ChannelsReached"), _("Maximum ChannelsReached"), buf);
        g_free(buf);
 }
 
