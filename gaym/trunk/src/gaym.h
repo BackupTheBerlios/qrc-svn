@@ -96,8 +96,14 @@ struct gaym_conn {
 
         GList** node_menu;
 	gboolean quitting;
-	
+	char* subroom;
+	char* configtxt;
 	GaimUrlSession* session;
+	
+	char* persist_room;
+	gboolean cancelling_persist;
+	void *hammer_cancel_dialog;
+	
 };
 
 struct gaym_buddy {
@@ -148,6 +154,7 @@ void gaym_msg_names(struct gaym_conn *gaym, const char *name, const char *from, 
 void gaym_msg_nick(struct gaym_conn *gaym, const char *name, const char *from, char **args);
 void gaym_msg_nickused(struct gaym_conn *gaym, const char *name, const char *from, char **args);
 void gaym_msg_nochan(struct gaym_conn *gaym, const char *name, const char *from, char **args);
+void gaym_msg_nonick_chan(struct gaym_conn *gaym, const char *name, const char *from, char **args);
 void gaym_msg_nonick(struct gaym_conn *gaym, const char *name, const char *from, char **args);
 void gaym_msg_no_such_nick(struct gaym_conn *gaym, const char *name, const char *from, char **args);
 void gaym_msg_nochangenick(struct gaym_conn *gaym, const char *name, const char *from, char **args);
@@ -169,7 +176,6 @@ void gaym_msg_whois(struct gaym_conn *gaym, const char *name, const char *from, 
 void gaym_msg_ignore(struct gaym_conn *gaym, const char *name, const char *from, char **args);
 
 
-/* GAYMDIFF: This section has additional gay.com messages */
 void gaym_msg_richnames_list(struct gaym_conn *gaym, const char *name, const char *from, char **args);
 void gaym_msg_pay_channel(struct gaym_conn *gaym, const char *name, const char *from, char **args);
 void gaym_msg_toomany_channels(struct gaym_conn *gaym, const char *name, const char * from, char **args);

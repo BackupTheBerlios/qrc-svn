@@ -38,10 +38,10 @@ pkglibdir = $(libdir)/AC_PACKAGE_NAME
 pkgincludedir = $(includedir)/AC_PACKAGE_NAME
 top_builddir = ..
 
-ACLOCAL = ${SHELL} /home/jason/packages/gaym-working/missing --run aclocal
-AUTOCONF = ${SHELL} /home/jason/packages/gaym-working/missing --run autoconf
-AUTOMAKE = ${SHELL} /home/jason/packages/gaym-working/missing --run automake
-AUTOHEADER = ${SHELL} /home/jason/packages/gaym-working/missing --run autoheader
+ACLOCAL = ${SHELL} /home/jason/packages/gaym-svn/missing --run aclocal
+AUTOCONF = ${SHELL} /home/jason/packages/gaym-svn/missing --run autoconf
+AUTOMAKE = ${SHELL} /home/jason/packages/gaym-svn/missing --run automake
+AUTOHEADER = ${SHELL} /home/jason/packages/gaym-svn/missing --run autoheader
 
 INSTALL = /usr/bin/install -c
 INSTALL_PROGRAM = ${INSTALL}
@@ -57,7 +57,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_alias = 
 host_triplet = i686-pc-linux-gnu
-AMTAR = ${SHELL} /home/jason/packages/gaym-working/missing --run tar
+AMTAR = ${SHELL} /home/jason/packages/gaym-svn/missing --run tar
 AR = ar
 AS = @AS@
 AWK = gawk
@@ -90,13 +90,12 @@ STRIP = strip
 VERSION = AC_PACKAGE_VERSION
 am__include = include
 am__quote = 
-install_sh = /home/jason/packages/gaym-working/install-sh
+install_sh = /home/jason/packages/gaym-svn/install-sh
 
 EXTRA_DIST = PROTOCOL Makefile.mingw
 
 pkgdir = $(libdir)/gaim
-gaiminclude = /usr/include/gaim
-
+gaimheaders = ${includedir}/gaim
 GAYMSOURCES = weblogin.c gaym.c parse.c cmds.c msgs.c gaym.h dcc_send.c helpers.c
 
 AM_CFLAGS = $(st)
@@ -112,7 +111,7 @@ libgaym_la_SOURCES = $(GAYMSOURCES)
 
 #endif
 AM_CPPFLAGS = \
-	-I$(gaiminclude)\
+	-I$(gaimheaders)\
 	-I$(top_srcdir)/src \
 	$(GLIB_CFLAGS) \
 	$(DEBUG_CFLAGS)

@@ -40,7 +40,7 @@
 
 #include "gaym.h"
 
-
+char *gaym_mask_bio(const char *biostring);
 static const char *gaym_blist_icon(GaimAccount *a, GaimBuddy *b);
 static void gaym_blist_emblems(GaimBuddy *b, char **se, char **sw, char **nw, char **ne);
 static GList *gaym_away_states(GaimConnection *gc);
@@ -165,12 +165,34 @@ static void gaym_set_info(GaimConnection *gc, const char* info) {
 	struct gaym_conn *gaym=gc->proto_data;
 	GaimAccount* account = gaim_connection_get_account(gc);
 	char* hostname="none";
-	char* buf;
-	gaym->bio = g_strdup(info);
-	gaim_account_set_user_info(account, info);
-	gaim_account_set_string(account, "bioline",info);
-	buf = gaym_format(gaym, "vvvv:", "USER", gaim_account_get_username(account), hostname, gaym->server,
-			  gaym->bio);
+ char* buf, *bioline;
+
+       if (gaym->bio)
+               g_free (gaym->bio);
+
+       if (info && strlen(info) > 2) {
+       		gaim_debug_misc("gaym","option1, info=%x\n",info);
+               gaym->bio = g_strdup(info);
+       } else if (gaym->server_bioline && strlen(gaym->server_bioline) > 2) {
+       		gaim_debug_misc("gaym","option2\n");
+               gaym->bio = g_strdup(gaym_mask_bio(gaym->server_bioline));
+       } else {
+       		gaim_debug_misc("gaym","option3\n");
+               gaym->bio = g_strdup("Gaim User");
+       }
+
+       gaim_account_set_user_info(account, gaym->bio);
+       gaim_account_set_string(account, "bioline",gaym->bio);
+       gaim_debug_info ("gaym","INFO=%x BIO=%x\n",info,gaym->bio);
+       gaim_debug_misc("gaym","In login_cb, gc->account=%x\n",gc->account);
+       bioline=g_strdup_printf("%s#%s", gaym->thumbnail,gaym->bio);
+
+       buf = gaym_format(gaym, "vvvv:", "USER",
+               gaim_account_get_username(account),
+               hostname, gaym->server, bioline);
+
+       gaim_debug_misc("gaym","BIO=%x\n",bioline);
+       g_free (bioline);
 	
 	if (gaym_send(gaym, buf) < 0) {
 		gaim_connection_error(gc, "Error registering with server");
@@ -180,8 +202,6 @@ static void gaym_set_info(GaimConnection *gc, const char* info) {
 static void gaym_show_set_info(GaimPluginAction *action)
 {
 	GaimConnection *gc = (GaimConnection *) action->context;
-	gaim_debug_misc("gaym","in show-set_info, gc->account=%x\n",gc->account);
-	
 	gaim_account_request_change_user_info(gaim_connection_get_account(gc));
 }
 static GList *gaym_actions(GaimPlugin *plugin, gpointer context)
@@ -295,7 +315,7 @@ static void gaym_login(GaimAccount *account) {
 
 }
 
-static void gaym_get_roomlist_cb(gpointer proto_data, const char* config_text, size_t len) {
+static void gaym_get_roomlist_from_text(gpointer proto_data) {
   
   int current_level=0;
   char * list_position=NULL;
@@ -315,13 +335,13 @@ static void gaym_get_roomlist_cb(gpointer proto_data, const char* config_text, s
   int num_rooms=0;
    
   
-  if(!config_text)
+  if(!gaym->configtxt)
   {
     gaim_debug_misc("gaym","Room list parsing error: No config webpage\n");
            
     return;
   }
-  list_position=strstr(config_text,match);
+  list_position=strstr(gaym->configtxt,match);
   if(!list_position)
   {
     gaim_debug_misc("gaym","Room list parsing error: No roomlist found\n");
@@ -460,9 +480,8 @@ static void gaym_get_roomlist_cb(gpointer proto_data, const char* config_text, s
     {
       //gaim_debug_misc("gaym","list_position: 0(%c) 1(%c) 2(%c) 3(%c)\n",*list_position,*(list_position+1),*(list_position+2),*(list_position+3));
       gaim_roomlist_unref(gaym->roomlist);
-      gaim_roomlist_unref(gaym->roomlist);
-      gaim_roomlist_set_in_progress(gaym->roomlist, FALSE);
-      gaym->roomlist = NULL;
+       gaim_roomlist_set_in_progress(gaym->roomlist, FALSE);
+      //gaym->roomlist = NULL;
       if(gaym->roomlist_filter)
         g_free(gaym->roomlist_filter);
       gaym->roomlist_filter=NULL;
@@ -471,11 +490,17 @@ static void gaym_get_roomlist_cb(gpointer proto_data, const char* config_text, s
     last_room=room;
     }
     
-   
-    
-    
-       
-        
+}
+static void gaym_get_configtxt_cb(gpointer proto_data, const char* config_text, size_t len) {
+	
+	struct gaym_conn *gaym = (struct gaym_conn*)proto_data;
+	
+	if (!config_text)
+		return;
+	
+	gaym->configtxt = g_strdup(config_text);
+	return;
+		
 }
 
 static void gaym_login_cb(gpointer data, gint source, GaimInputCondition cond)
@@ -485,8 +510,9 @@ static void gaym_login_cb(gpointer data, gint source, GaimInputCondition cond)
 	char hostname[256];
 	char *buf;
 	const char *username;
-	const char* user_bioline; 
+	const char* user_bioline=NULL; 
 	char* bioline;
+	char* login_name;
 	
 	if(GAIM_CONNECTION_IS_VALID(gc))
 	{
@@ -497,6 +523,8 @@ static void gaym_login_cb(gpointer data, gint source, GaimInputCondition cond)
 		return;
 	}
 
+	
+		
 	if (!g_list_find(connections, gc)) {
 		close(source);
 		return;
@@ -504,7 +532,7 @@ static void gaym_login_cb(gpointer data, gint source, GaimInputCondition cond)
 
 	gaym->fd = source;
 	gaim_debug_misc("gaym","In login_cb with pw_hash=%s\n",gaym->hash_pw);
-	if (gc->account->password && *gc->account->password) {
+	if (gaym->hash_pw) {
 		
 		buf = gaym_format(gaym, "vv", "PASS", gaym->hash_pw);
 		if (gaym_send(gaym, buf) < 0) {
@@ -513,16 +541,24 @@ static void gaym_login_cb(gpointer data, gint source, GaimInputCondition cond)
 		}
 		g_free(buf);
 	}
-
+	else
+	{
+		gaim_connection_error(gc, _("Password wasn't recorded. Report bug."));
+		return;
+	}
 	gethostname(hostname, sizeof(hostname));
 	hostname[sizeof(hostname) - 1] = '\0';
 	username = gaim_account_get_string(gaym->account, "username", "");
-	user_bioline = gaim_account_get_string(gaym->account, "bioline", ""); 
+	user_bioline = g_strdup(gaim_account_get_string(gaym->account, "bioline", "")); 
+	gaim_debug_info ("gaym","USER BIOLINE=%x\n",user_bioline);
 	gaim_account_set_user_info(gc->account, user_bioline);
-	gaim_debug_misc("gaym","In login_cb, gc->account=%x\n",gc->account);
+	gaim_debug_misc("gaym","In login_cb, user_bioline: %x, gc->account=%x\n",user_bioline,gc->account);
+	
+	login_name=g_strdup(gaim_connection_get_display_name(gc));
+	gaym_convert_nick_to_gaycom(login_name);
 	bioline=g_strdup_printf("%s#%s", gaym->thumbnail,user_bioline); 
 	
-	buf = gaym_format(gaym, "vn", "NICK", gaim_connection_get_display_name(gc));
+	buf = gaym_format(gaym, "vn", "NICK", login_name);
 	gaim_debug_misc("gaym","Command: %s\n",buf);
 	
 	if (gaym_send(gaym, buf) < 0) {
@@ -530,9 +566,9 @@ static void gaym_login_cb(gpointer data, gint source, GaimInputCondition cond)
 		return;
 	}
 	g_free(buf);
-	
-	buf = gaym_format(gaym, "vvvv:", "USER", gaim_account_get_username(gc->account), hostname, gaym->server,
+	buf = gaym_format(gaym, "vvvv:", "USER", login_name, hostname, gaym->server,
 			      bioline);
+
 	gaim_debug_misc("gaym","Command: %s\n",buf);
 	if (gaym_send(gaym, buf) < 0) {
 		gaim_connection_error(gc, "Error registering with server");
@@ -540,7 +576,8 @@ static void gaym_login_cb(gpointer data, gint source, GaimInputCondition cond)
 	}
         
         g_free(buf);
-	
+	const char* roomlisturl="http://www.gay.com/messenger/config.txt";
+	gaim_session_fetch(roomlisturl, FALSE, "Mozilla/4.0 (compatible; MSIE 5.0)", FALSE, gaym_get_configtxt_cb, gaym, gaym->session);
 
 	gc->inpa = gaim_input_add(gaym->fd, GAIM_INPUT_READ, gaym_input_cb, gc);
 	}
@@ -592,8 +629,6 @@ static void gaym_get_info(GaimConnection *gc, const char *who)
 	args[0] = who;
 	gaym->info_window_needed=TRUE;
 	gaym_cmd_whois(gaym, "whois", NULL, args);
-	
-	
 }
 
 static void gaym_set_away(GaimConnection *gc, const char *state, const char *msg)
@@ -806,22 +841,6 @@ static void gaym_buddy_free(struct gaym_buddy *ib)
 	g_free(ib);
 }
 
-static void gaym_chat_set_topic(GaimConnection *gc, int id, const char *topic)
-{
-	char *buf;
-	const char *name = NULL;
-	struct gaym_conn *gaym;
-
-	gaym = gc->proto_data;
-	name = gaim_conversation_get_name(gaim_find_chat(gc, id));
-
-	if (name == NULL)
-		return;
-
-	buf = gaym_format(gaym, "vt:", "TOPIC", name, topic);
-	gaym_send(gaym, buf);
-	g_free(buf);
-}
 
 static GaimRoomlist *gaym_roomlist_get_list(GaimConnection *gc)
 {
@@ -848,9 +867,7 @@ static GaimRoomlist *gaym_roomlist_get_list(GaimConnection *gc)
         fields = g_list_append(fields, f);
 
         gaim_roomlist_set_fields(gaym->roomlist, fields);
-        char* roomlisturl=g_strdup("http://www.gay.com/messenger/config.txt");
-        gaim_session_fetch(roomlisturl, FALSE, "Mozilla/4.0 (compatible; MSIE 5.0)", FALSE, gaym_get_roomlist_cb, gaym, gaym->session);
-        g_free(roomlisturl);		
+	gaym_get_roomlist_from_text(gaym);	
 	
         gaim_roomlist_set_in_progress(gaym->roomlist, TRUE);
         return gaym->roomlist;
@@ -876,7 +893,7 @@ static void gaym_roomlist_cancel(GaimRoomlist *list)
 
 static GaimPluginProtocolInfo prpl_info =
 {
-	OPT_PROTO_CHAT_TOPIC | OPT_PROTO_PASSWORD_OPTIONAL,
+	OPT_PROTO_PASSWORD_OPTIONAL,
 	NULL,					/* user_splits */
 	NULL,					/* protocol_options */
 	{"jpg",55,75,55,75},			/* icon_spec */
@@ -902,9 +919,9 @@ static GaimPluginProtocolInfo prpl_info =
 	gaym_remove_buddy,		/* remove_buddy */
 	NULL,					/* remove_buddies */
 	NULL,					/* add_permit */
-	NULL,					/* add_deny */
+	NULL,				/* add_deny */
 	NULL,					/* rem_permit */
-	NULL,					/* rem_deny */
+	NULL,			/* rem_deny */
 	NULL,					/* set_permit_deny */
 	NULL,					/* warn */
 	gaym_chat_join,			/* join_chat */
@@ -927,7 +944,7 @@ static GaimPluginProtocolInfo prpl_info =
 	NULL,					/* set_buddy_icon */
 	NULL,					/* remove_group */
 	NULL,					/* get_cb_real_name */
-	gaym_chat_set_topic,		/* set_chat_topic */
+	NULL,					/* set_chat_topic */
 	NULL,					/* find_blist_chat */
 	gaym_roomlist_get_list,	/* roomlist_get_list */
 	gaym_roomlist_cancel,	/* roomlist_cancel */
@@ -956,16 +973,28 @@ void gaym_get_photo_info(GaimConversation* conv) {
         }
 	
 }
-/*
+
 static void gaym_join_subroom(GaimBlistNode * node, gpointer data) {
   
-  }
- */ 
+	struct gaym_conn* gaym=(struct gaym_conn*)((GaimChat*)node)->account->gc->proto_data;
+	char *buf;
+
+	
+	if (!data)
+		return;
+
+	buf = gaym_format(gaym, "cv", "JOIN", data);
+	gaim_debug_misc("gaym","Command: %s\n", buf);
+	gaym_send(gaym, buf);
+	g_free(buf);
+
+	
+ } 
 static void gaym_add_subchannels(GaimBlistNode *node, GList **menu)
 {
   
-  char* room,*buf;
-  
+	char *label,*room;	
+  int i;
   
   struct gaym_conn *gaym;
   GaimChat *chat=(GaimChat*)node;
@@ -976,35 +1005,32 @@ static void gaym_add_subchannels(GaimBlistNode *node, GList **menu)
   gaym=chat->account->gc->proto_data;
   
   room=g_hash_table_lookup(chat->components,"ircname");
-  if(room)
+  
+  if(!room)
+  	return;
+  
+  for(i=1; i<3; i++)
   {
-    gaym->node_menu=menu;
-    buf = gaym_format(gaym, "vn", "WHOIS", room);
-    gaym_send(gaym, buf);
-  }
-  /*
-  for(i=1; i<4; i++)
-  {
-    alias=((GaimChat*)node)->alias;
-    data = g_strdup_printf("#557=%d",i);
-    label = g_strdup_printf("%s %d",alias,i);
+    
+    label = g_strdup_printf("%s %d",chat->alias,i);
+    room=g_strdup_printf("%.*s%d",strlen(room)-1,room,i);
     GaimBlistNodeAction* act=gaim_blist_node_action_new(label,
         gaym_join_subroom,
-        &data);
+        room);
   
-("gaym","Got blist-node-extended menu signal, menu is %x, act is %x\n",menu,act);
     *menu=g_list_append(*menu,act);
-  */
+    //g_free(label);
   }
-
+}
   
-  /*
+  
 static GaimPluginPrefFrame *
     get_plugin_pref_frame(GaimPlugin *plugin)
 {
   GaimPluginPrefFrame *frame;
   GaimPluginPref *ppref;
 
+  gaim_debug_misc("gaym","get pref frame...\n");
   frame = gaim_plugin_pref_frame_new();
 
   ppref = gaim_plugin_pref_new_with_label(_("Conversations"));
@@ -1015,6 +1041,10 @@ static GaimPluginPrefFrame *
   _("Show bioline for users joining the room."));
   gaim_plugin_pref_frame_add(frame, ppref);
 
+  ppref = gaim_plugin_pref_new_with_name_and_label(
+		  "/plugins/prpl/gaym/bot_lines",
+  _("Space-seperated list of terms that bots use. <Not yet implemented>"));
+  gaim_plugin_pref_frame_add(frame, ppref);
   return frame;
 }
 
@@ -1022,7 +1052,7 @@ static GaimPluginPrefFrame *
 static GaimPluginUiInfo prefs_info = {
   get_plugin_pref_frame
 };
-*/
+
 
 static GaimPluginInfo info =
 {
@@ -1049,7 +1079,7 @@ static GaimPluginInfo info =
 
 	NULL,                                             /**< ui_info        */
 	&prpl_info,                                       /**< extra_info     */
-	NULL,
+	&prefs_info,
 	gaym_actions
 };
 
@@ -1078,7 +1108,9 @@ static void _init_plugin(GaimPlugin *plugin)
                           "blist-node-extended-menu",
                           plugin, GAIM_CALLBACK(gaym_add_subchannels), NULL);
      
-      gaim_prefs_add_bool("/plugins/prpl/msn/show_bio_with_join",   TRUE);
+      gaim_prefs_add_none("/plugins/prpl/gaym");
+      gaim_prefs_add_bool("/plugins/prpl/gaym/show_bio_with_join",   TRUE);
+      gaim_prefs_add_string("/plugins/prpl/gaym/bot_lines",NULL);
 
         
 	_gaym_plugin = plugin;

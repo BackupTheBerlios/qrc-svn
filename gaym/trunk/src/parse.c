@@ -45,7 +45,7 @@ static struct _gaym_msg {
 	char *format;
 	void (*cb)(struct gaym_conn *gaym, const char *name, const char *from, char **args);
 } _gaym_msgs[] = {
-	{ "001", "n:", gaym_msg_endmotd },	/* GAYMDIFF - login ok */
+	{ "001", "n:", gaym_msg_endmotd },	/*  login ok */
 	{ "301", "nn:", gaym_msg_away },	/* User is away			*/
 	{ "303", "n:", gaym_msg_ison },		/* ISON reply			*/
 	{ "311", "nnvvv:", gaym_msg_whois },	/* Whois user			*/
@@ -57,6 +57,7 @@ static struct _gaym_msg {
 	{ "353", "nvc:", gaym_msg_names },	/* Names list			*/
 	{ "366", "nc:", gaym_msg_names },	/* End of names			*/
     	{ "376", "n:", gaym_msg_endmotd },	/* End of MOTD			*/
+	{ "401", "nc:", gaym_msg_nonick_chan },	/* No such channel		*/
 	{ "403", "nc:", gaym_msg_nochan },	/* No such channel		*/
 	{ "404", "nt:", gaym_msg_nosend },	/* Cannot send to chan		*/
 	{ "421", "nv:", gaym_msg_unknown },	/* Unknown command		*/
@@ -307,7 +308,6 @@ char *gaym_format(struct gaym_conn *gaym, const char *format, ...)
 			g_string_append_c(string, ' ');
 
 		tok = va_arg(ap, char *);
-                tok=g_strdup(tok);
                 
                 switch (*cur) {
 		case 'v':
@@ -320,12 +320,9 @@ char *gaym_format(struct gaym_conn *gaym, const char *format, ...)
                 case 'n':
                 case 't':    
 		case 'c':
-                        if(*cur!=':')
-                          tok=convert_nick_to_gc(tok);
 			tmp = gaym_send_convert(gaym, tok);
 			g_string_append(string, tmp);
 			g_free(tmp);
-                        g_free(tok);
 			break;
 		default:
 			gaim_debug(GAIM_DEBUG_ERROR, "gaym", "Invalid format character '%c'\n", *cur);
@@ -342,7 +339,7 @@ char *gaym_format(struct gaym_conn *gaym, const char *format, ...)
 void gaym_parse_msg(struct gaym_conn *gaym, char *input)
 {
 	struct _gaym_msg *msgent;
-	char *cur, *end, *tmp, *from, *msgname, *fmt, **args, *msg;
+	char *cur=NULL, *end=NULL, *tmp=NULL, *from=NULL, *msgname=NULL, *fmt=NULL, **args=NULL, *msg=NULL;
 	guint i;
 
 	gaim_debug (GAIM_DEBUG_INFO, "gaym", "RAW Protocol: %s\n", input);
@@ -364,19 +361,14 @@ void gaym_parse_msg(struct gaym_conn *gaym, char *input)
 
 	from = g_strndup(&input[1], cur - &input[1]);
         
-        for(i=0; i<strlen(from); i++)
-          if(from[i]=='|')
-            from[i]='.';
-        
 	cur++;
 	end = strchr(cur, ' ');
 	if (!end)
 		end = cur + strlen(cur);
-
 	tmp = g_strndup(cur, end - cur);
 	msgname = g_ascii_strdown(tmp, -1);
 	g_free(tmp);
-
+	tmp=NULL;
 	if ((msgent = g_hash_table_lookup(gaym->msgs, msgname)) == NULL) {
 		gaym_msg_default(gaym, "", from, &input);
 		g_free(msgname);
@@ -401,6 +393,7 @@ void gaym_parse_msg(struct gaym_conn *gaym, char *input)
 			tmp = g_strndup(cur, end - cur);
 			args[i] = gaym_recv_convert(gaym, tmp);
 			g_free(tmp);
+			tmp=NULL;
 			cur += end - cur;
 			break;
 		case ':':

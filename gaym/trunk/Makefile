@@ -38,10 +38,10 @@ pkglibdir = $(libdir)/AC_PACKAGE_NAME
 pkgincludedir = $(includedir)/AC_PACKAGE_NAME
 top_builddir = .
 
-ACLOCAL = ${SHELL} /home/jason/packages/gaym-working/missing --run aclocal
-AUTOCONF = ${SHELL} /home/jason/packages/gaym-working/missing --run autoconf
-AUTOMAKE = ${SHELL} /home/jason/packages/gaym-working/missing --run automake
-AUTOHEADER = ${SHELL} /home/jason/packages/gaym-working/missing --run autoheader
+ACLOCAL = ${SHELL} /home/jason/packages/gaym-svn/missing --run aclocal
+AUTOCONF = ${SHELL} /home/jason/packages/gaym-svn/missing --run autoconf
+AUTOMAKE = ${SHELL} /home/jason/packages/gaym-svn/missing --run automake
+AUTOHEADER = ${SHELL} /home/jason/packages/gaym-svn/missing --run autoheader
 
 INSTALL = /usr/bin/install -c
 INSTALL_PROGRAM = ${INSTALL}
@@ -57,7 +57,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_alias = 
 host_triplet = i686-pc-linux-gnu
-AMTAR = ${SHELL} /home/jason/packages/gaym-working/missing --run tar
+AMTAR = ${SHELL} /home/jason/packages/gaym-svn/missing --run tar
 AR = ar
 AS = @AS@
 AWK = gawk
@@ -90,7 +90,7 @@ STRIP = strip
 VERSION = AC_PACKAGE_VERSION
 am__include = include
 am__quote = 
-install_sh = /home/jason/packages/gaym-working/install-sh
+install_sh = /home/jason/packages/gaym-svn/install-sh
 
 SUBDIRS = src
 subdir = .

@@ -26,8 +26,9 @@
 #include "debug.h"
 #include "notify.h"
 #include "util.h"
-
+#include "helpers.h"
 #include "gaym.h"
+
 
 
 static void gaym_do_mode(struct gaym_conn *gaym, const char *target, const char *sign, char **ops);
@@ -248,6 +249,7 @@ int gaym_cmd_nick(struct gaym_conn *gaym, const char *cmd, const char *target, c
 	if (!args || !args[0])
 		return 0;
 
+	gaym_convert_nick_to_gaycom(args[0]);
 	buf = gaym_format(gaym, "v:", "NICK", args[0]);
 	gaym_send(gaym, buf);
 	g_free(buf);
@@ -346,6 +348,7 @@ int gaym_cmd_privmsg(struct gaym_conn *gaym, const char *cmd, const char *target
 	if (!args || !args[0] || !args[1])
 		return 0;
 
+	gaym_convert_nick_to_gaycom(args[0]);
 	cur = args[1];
 	end = args[1];
 	while (*end && *cur) {
@@ -497,6 +500,7 @@ int gaym_cmd_whois(struct gaym_conn *gaym, const char *cmd, const char *target, 
 	if (!args || !args[0])
 		return 0;
 
+	gaym_convert_nick_to_gaycom(args[0]);
 	buf = gaym_format(gaym, "vn", "WHOIS", args[0]);
 	gaym_send(gaym, buf);
 	g_free(buf);

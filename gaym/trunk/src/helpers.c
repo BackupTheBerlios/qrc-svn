@@ -1,6 +1,13 @@
 #include "helpers.h"
 
-
+void gaym_convert_nick_to_gaycom(char* name) {
+	int i;
+	if (!name)
+		return;
+        for(i=0; i<strlen(name); i++)
+          if(name[i]=='.')
+            name[i]='|';
+}
 char * return_string_between(const char* startbit, const char* endbit, const char* source) {
 
   char* start=0;
@@ -31,14 +38,11 @@ char* convert_nick_to_gc(char* nick) {
   return out;
   } 
  
-  char* convert_nick_from_gc(char* nick) {
-    int i;
-    char* out=g_strdup(nick);
-    for(i=0; i<strlen(out); i++)
-      if(out[i]=='|')
-        out[i]='.';
-    //gaim_debug_misc("gaym","Converted %s to %s\n",nick,out);
-    return out;
-  }  
-
-  
+ void convert_nick_from_gaycom(char* name) {
+	int i;
+	if (!name)
+		return;
+        for(i=0; i<strlen(name); i++)
+          if(name[i]=='|')
+            name[i]='.';
+				}

@@ -63,6 +63,22 @@ typedef struct
   GaimUrlSession* session;
 
 } GaimFetchUrlData;
+
+/* gaim_url_decode doesn't change pluses to spaces - edit in place */
+static const char * gaym_url_decode (const char *string)
+{
+	char * retval;
+
+	retval = string = gaim_url_decode(string);
+	while (*retval != 0) {
+		if (*retval == '+')
+			*retval = ' ';
+		retval++;
+	}
+	gaim_debug_info ("gaym","Changed %s with gaym_url_decode\n", string);
+	return string;
+}
+
 static void
     destroy_fetch_url_data(GaimFetchUrlData *gfud)
 {
@@ -496,7 +512,7 @@ gaym_weblogin_step5(gpointer session, const char* text, size_t len) {
 	if(temp && temp2)
 	{
 		thumbnail=g_strndup(temp,(temp2-temp)*sizeof(char));
-		result=gaim_url_decode(thumbnail);
+		result=gaym_url_decode(thumbnail);
 		(gaym->thumbnail=g_strdup(result)) ||(gaym->thumbnail=g_strdup(" "));
 		
 		g_free(thumbnail);
@@ -505,16 +521,15 @@ gaym_weblogin_step5(gpointer session, const char* text, size_t len) {
 		if(temp) 
 		{
 			bio=g_strndup(temp2,(temp-temp2)*sizeof(char));
-			result=gaim_url_decode(bio);
+			result=gaym_url_decode(bio);
+			gaim_debug_info("gaym","Server BIO: %s Thumb: %s\n",
+				result, gaym->thumbnail);
 			(gaym->server_bioline=g_strdup(result))
-					||(gaym->server_bioline=g_strdup(" "));
+					||(gaym->server_bioline=NULL);
 			g_free(bio);
 			
 		}
 		//We have established a session. Call session callback.
-		
-		
-	
 		
 	}
 	else

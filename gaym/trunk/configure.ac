@@ -14,7 +14,7 @@ AM_DISABLE_STATIC
 
 AC_PROG_LIBTOOL
 AC_DEFINE(GAIM_PLUGINS, 1, [Define if plugins are enabled.])
-
+AC_PREFIX_PROGRAM(gaim)
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_TYPE_SIZE_T
