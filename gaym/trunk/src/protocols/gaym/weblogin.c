@@ -29,9 +29,142 @@
 #include "util.h"
 
 #include "gaym.h"
-#include "util.c"
 
 
+typedef struct
+{
+  void (*callback)(void *, const char *, size_t);
+  void *user_data;
+
+  struct
+  {
+    char *user;
+    char *passwd;
+    char *address;
+    int port;
+    char *page;
+
+  } website;
+
+  char *url;
+  gboolean full;
+  char *user_agent;
+  gboolean http11;
+
+  int inpa;
+
+  gboolean sentreq;
+  gboolean newline;
+  gboolean startsaving;
+  gboolean has_explicit_data_len;
+  char *webdata;
+  unsigned long len;
+  unsigned long data_len;
+
+} GaimFetchUrlData;
+static void
+    destroy_fetch_url_data(GaimFetchUrlData *gfud)
+{
+  if (gfud->webdata         != NULL) g_free(gfud->webdata);
+  if (gfud->url             != NULL) g_free(gfud->url);
+  if (gfud->user_agent      != NULL) g_free(gfud->user_agent);
+  if (gfud->website.address != NULL) g_free(gfud->website.address);
+  if (gfud->website.page    != NULL) g_free(gfud->website.page);
+  if (gfud->website.user    != NULL) g_free(gfud->website.user);
+  if (gfud->website.passwd    != NULL) g_free(gfud->website.passwd);
+
+  g_free(gfud);
+}
+
+static gboolean
+    parse_redirect(const char *data, size_t data_len, gint sock,
+                   GaimFetchUrlData *gfud)
+{
+  gchar *s;
+
+  if ((s = g_strstr_len(data, data_len, "Location: ")) != NULL)
+  {
+    gchar *new_url, *temp_url, *end;
+    gboolean full;
+    int len;
+
+    s += strlen("Location: ");
+    end = strchr(s, '\r');
+
+    /* Just in case :) */
+    if (end == NULL)
+      end = strchr(s, '\n');
+
+    len = end - s;
+
+    new_url = g_malloc(len + 1);
+    strncpy(new_url, s, len);
+    new_url[len] = '\0';
+
+    full = gfud->full;
+
+    if (*new_url == '/' || g_strstr_len(new_url, len, "://") == NULL)
+    {
+      temp_url = new_url;
+
+      new_url = g_strdup_printf("%s:%d%s", gfud->website.address,
+                                gfud->website.port, temp_url);
+
+      g_free(temp_url);
+
+      full = FALSE;
+    }
+
+    /* Close the existing stuff. */
+    gaim_input_remove(gfud->inpa);
+    close(sock);
+
+    gaim_debug_info("gaim_url_fetch", "Redirecting to %s\n", new_url);
+
+    /* Try again, with this new location. */
+    gaim_url_fetch(new_url, full, gfud->user_agent, gfud->http11,
+                   gfud->callback, gfud->user_data);
+
+    /* Free up. */
+    g_free(new_url);
+    destroy_fetch_url_data(gfud);
+
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+static size_t
+    parse_content_len(const char *data, size_t data_len)
+{
+  size_t content_len = 0;
+  const char *p = NULL;
+
+	/* This is still technically wrong, since headers are case-insensitive
+  * [RFC 2616, section 4.2], though this ought to catch the normal case.
+  * Note: data is _not_ nul-terminated.
+        */
+  if (data_len > 16) {
+    p = strncmp(data, "Content-Length: ", 16) == 0? data: NULL;
+    if (!p) {
+      p = g_strstr_len(data, data_len, "\nContent-Length: ");
+      if (p)
+        p += 1;
+    }
+  }
+
+	/* If we can find a Content-Length header at all, try to sscanf it.
+  * Response headers should end with at least \r\n, so sscanf is safe,
+  * if we make sure that there is indeed a \n in our header.
+        */
+  if (p && g_strstr_len(p, data_len - (p - data), "\n")) {
+    sscanf(p, "Content-Length: %zu", &content_len);
+    gaim_debug_misc("parse_content_len", "parsed %u\n", content_len);
+  }
+
+  return content_len;
+}
 
 //This looks for Set-cookie: fields in headers, and adds those cookies 
 //To the session struct.

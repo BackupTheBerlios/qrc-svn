@@ -28,6 +28,7 @@
 #include "debug.h"
 #include "cmds.h"
 #include "gaym.h"
+#include "helpers.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -56,56 +57,27 @@ static struct _gaym_msg {
 	{ "312", "nnv:", gaym_msg_whois },	/* Whois server			*/
 	{ "313", "nn:", gaym_msg_whois },	/* Whois gaymop			*/
 	{ "317", "nnvv", gaym_msg_whois },	/* Whois idle			*/
-	//{ "318", "nt:", gaym_msg_endwhois },	/* End of WHOIS			*/
-	{ "319", "nn:", gaym_msg_whois },	/* Whois channels		*/
-	{ "320", "nn:", gaym_msg_whois },	/* Whois (fn ident)		*/
-	{ "321", "*", gaym_msg_list },		/* Start of list		*/
-	{ "322", "ncv:", gaym_msg_list },	/* List.			*/
-	{ "323", ":", gaym_msg_list },		/* End of list.			*/
-	{ "324", "ncv:", gaym_msg_chanmode },	/* Channel modes		*/
-	{ "331", "nc:",	gaym_msg_topic },	/* No channel topic		*/
-	{ "332", "nc:", gaym_msg_topic },	/* Channel topic		*/
-	{ "333", "*", gaym_msg_ignore },		/* Topic setter stuff		*/
 	{ "353", "nvc:", gaym_msg_names },	/* Names list			*/
 	{ "366", "nc:", gaym_msg_names },	/* End of names			*/
-	{ "372", "n:", gaym_msg_motd },		/* MOTD				*/
-	{ "375", "n:", gaym_msg_motd },		/* Start MOTD			*/
-	{ "376", "n:", gaym_msg_endmotd },	/* End of MOTD			*/
-	{ "401", "nt:", gaym_msg_nonick },	/* No such nick/chan		*/
+    	{ "376", "n:", gaym_msg_endmotd },	/* End of MOTD			*/
 	{ "403", "nc:", gaym_msg_nochan },	/* No such channel		*/
 	{ "404", "nt:", gaym_msg_nosend },	/* Cannot send to chan		*/
 	{ "421", "nv:", gaym_msg_unknown },	/* Unknown command		*/
 	{ "422", "nv:", gaym_msg_endmotd },	/* No MOTD available		*/
-	{ "433", "vn:", gaym_msg_nickused },	/* Nickname already in use	*/
-	{ "438", "nn:", gaym_msg_nochangenick },	/* Nick may not change		*/
-	{ "442", "nc:", gaym_msg_notinchan },	/* Not in channel		*/
-	{ "473", "nc:", gaym_msg_inviteonly },	/* Tried to join invite-only	*/
-	{ "474", "nc:", gaym_msg_banned },	/* Banned from channel		*/
-	{ "482", "nc:", gaym_msg_notop },	/* Need to be op to do that	*/
-	{ "501", "n:", gaym_msg_badmode },	/* Unknown mode flag		*/
-	{ "506", "nc:", gaym_msg_nosend },	/* Must identify to send	*/
-	{ "515", "nc:", gaym_msg_regonly },	/* Registration required	*/
-	/* GAYDIFF the 600s are gay.com specific */
-	{ "690", "ncnt:", gaym_msg_richnames_list },  /* Gay.com's RPL for names list 
-*/
-	{ "695", "nc:", gaym_msg_toomany_channels },  /* Too many channels (2) maximum joined
-*/
-	{ "696", "nc:", gaym_msg_pay_channel },  /* User tried to enter pay channel, rejected
-*/
+     	{ "442", "nc:", gaym_msg_notinchan },	/* Not in channel		*/
+        { "690", "ncnt:", gaym_msg_richnames_list },  /* Gay.com's RPL for names list */
+        { "695", "nc:", gaym_msg_toomany_channels },  /* Too many channels (2) maximum joined */
+        { "696", "nc:", gaym_msg_pay_channel },  /* User tried to enter pay channel, rejected */
 	{ "701", "nt:", gaym_msg_no_such_nick}, /* Tried to get whois for someone not on */
 	{ "invite", "n:", gaym_msg_invite },	/* Invited			*/
 	{ "join", "c:", gaym_msg_join },	/* Joined a channel		*/
-	{ "kick", "cn:", gaym_msg_kick },	/* KICK				*/
-	{ "mode", "tv:", gaym_msg_mode },	/* MODE for channel		*/
 	{ "nick", ":", gaym_msg_nick },		/* Nick change			*/
 	{ "notice", "t:", gaym_msg_notice },	/* NOTICE recv			*/
 	{ "part", "::", gaym_msg_part },		/* Parted a channel		*/
 	{ "ping", ":", gaym_msg_ping },		/* Received PING from server	*/
 	{ "pong", "v:", gaym_msg_pong },		/* Received PONG from server	*/
 	{ "privmsg", "t:", gaym_msg_privmsg },	/* Received private message	*/
-	{ "topic", "c:", gaym_msg_topic },	/* TOPIC command		*/
 	{ "quit", ":", gaym_msg_quit },		/* QUIT notice			*/
-	{ "wallops", ":", gaym_msg_wallops },	/* WALLOPS command		*/
 	{ NULL, NULL, NULL }
 };
 
@@ -117,30 +89,18 @@ static struct _gaym_user_cmd {
 } _gaym_cmds[] = {
 	{ "action", ":", gaym_cmd_ctcp_action, N_("action &lt;action to perform&gt;:  Perform an action.") },
 	{ "away", ":", gaym_cmd_away, N_("away [message]:  Set an away message, or use no message to return from being away.") },
-	{ "deop", ":", gaym_cmd_op, N_("deop &lt;nick1&gt; [nick2] ...:  Remove channel operator status from someone. You must be a channel operator to do this.") },
-	{ "devoice", ":", gaym_cmd_op, N_("devoice &lt;nick1&gt; [nick2] ...:  Remove channel voice status from someone, preventing them from speaking if the channel is moderated (+m). You must be a channel operator to do this.") },
-	{ "invite", ":", gaym_cmd_invite, N_("invite &lt;nick&gt; [room]:  Invite someone to join you in the specified channel, or the current channel.") },
 	{ "j", "cv", gaym_cmd_join, N_("j &lt;room1&gt;[,room2][,...] [key1[,key2][,...]]:  Enter one or more channels, optionally providing a channel key for each if needed.") },
 	{ "join", "cv", gaym_cmd_join, N_("join &lt;room1&gt;[,room2][,...] [key1[,key2][,...]]:  Enter one or more channels, optionally providing a channel key for each if needed.") },
-	{ "kick", "n:", gaym_cmd_kick, N_("kick &lt;nick&gt; [message]:  Remove someone from a channel. You must be a channel operator to do this.") },
-	{ "list", ":", gaym_cmd_list, N_("list:  Display a list of chat rooms on the network. <i>Warning, some servers may disconnect you upon doing this.</i>") },
 	{ "me", ":", gaym_cmd_ctcp_action, N_("me &lt;action to perform&gt;:  Perform an action.") },
-	{ "mode", ":", gaym_cmd_mode, N_("mode &lt;nick|channel&gt; &lt;+|-&gt;&lt;A-Za-z&gt;:  Set or unset a channel or user mode.") },
 	{ "msg", "t:", gaym_cmd_privmsg, N_("msg &lt;nick&gt; &lt;message&gt;:  Send a private message to a user (as opposed to a channel).") },
 	{ "names", "c", gaym_cmd_names, N_("names [channel]:  List the users currently in a channel.") },
 	{ "nick", "n", gaym_cmd_nick, N_("nick &lt;new nickname&gt;:  Change your nickname.") },
-	{ "op", ":", gaym_cmd_op, N_("op &lt;nick1&gt; [nick2] ...:  Grant channel operator status to someone. You must be a channel operator to do this.") },
-	{ "operwall", ":", gaym_cmd_wallops, N_("operwall &lt;message&gt;:  If you don't know what this is, you probably can't use it.") },
 	{ "part", "c:", gaym_cmd_part, N_("part [room] [message]:  Leave the current channel, or a specified channel, with an optional message.") },
 	{ "ping", "n", gaym_cmd_ping, N_("ping [nick]:  Asks how much lag a user (or the server if no user specified) has.") },
 	{ "query", "n:", gaym_cmd_query, N_("query &lt;nick&gt; &lt;message&gt;:  Send a private message to a user (as opposed to a channel).") },
 	{ "quit", ":", gaym_cmd_quit, N_("quit [message]:  Disconnect from the server, with an optional message.") },
 	{ "quote", "*", gaym_cmd_quote, N_("quote [...]:  Send a raw command to the server.") },
-	{ "remove", "n:", gaym_cmd_remove, N_("remove &lt;nick&gt; [message]:  Remove someone from a room. You must be a channel operator to do this.") },
-	{ "topic", ":", gaym_cmd_topic, N_("topic [new topic]:  View or change the channel topic.") },
 	{ "umode", ":", gaym_cmd_mode, N_("umode &lt;+|-&gt;&lt;A-Za-z&gt;:  Set or unset a user mode.") },
-	{ "voice", ":", gaym_cmd_op, N_("voice &lt;nick1&gt; [nick2] ...:  Grant channel voice status to someone. You must be a channel operator to do this.") },
-	{ "wallops", ":", gaym_cmd_wallops, N_("wallops &lt;message&gt;:  If you don't know what this is, you probably can't use it.") },
 	{ "whois", "n", gaym_cmd_whois, N_("whois &lt;nick&gt;:  Get information on a user.") },
 	{ NULL, NULL, NULL }
 };
@@ -253,128 +213,7 @@ static char *gaym_recv_convert(struct gaym_conn *gaym, const char *string)
 	return utf8;
 }
 
-/* XXX tag closings are not necessarily correctly nested here!  If we
- *     get a ^O or reach the end of the string and there are open
- *     tags, they are closed in a fixed order ... this means, for
- *     example, you might see <FONT COLOR="blue">some text <B>with
- *     various attributes</FONT></B> (notice that B and FONT overlap
- *     and are not cleanly nested).  This is imminently fixable but
- *     I am not fixing it right now.
- */
-char *gaym_mgaym2html(const char *string)
-{
-	const char *cur, *end;
-	char fg[3] = "\0\0", bg[3] = "\0\0";
-	int fgnum, bgnum;
-	int font = 0, bold = 0, underline = 0;
-	GString *decoded = g_string_sized_new(strlen(string));
-
-	cur = string;
-	do {
-		end = strpbrk(cur, "\002\003\007\017\026\037");
-
-		decoded = g_string_append_len(decoded, cur, end ? end - cur : strlen(cur));
-		cur = end ? end : cur + strlen(cur);
-
-		switch (*cur) {
-		case '\002':
-			cur++;
-			if (!bold) {
-				decoded = g_string_append(decoded, "<B>");
-				bold = TRUE;
-			} else {
-				decoded = g_string_append(decoded, "</B>");
-				bold = FALSE;
-			}
-			break;
-		case '\003':
-			cur++;
-			fg[0] = fg[1] = bg[0] = bg[1] = '\0';
-			if (isdigit(*cur))
-				fg[0] = *cur++;
-			if (isdigit(*cur))
-				fg[1] = *cur++;
-			if (*cur == ',') {
-				cur++;
-				if (isdigit(*cur))
-					bg[0] = *cur++;
-				if (isdigit(*cur))
-					bg[1] = *cur++;
-			}
-			if (font) {
-				decoded = g_string_append(decoded, "</FONT>");
-				font = FALSE;
-			}
-
-			if (fg[0]) {
-				fgnum = atoi(fg);
-				if (fgnum < 0 || fgnum > 15)
-					continue;
-				font = TRUE;
-				g_string_append_printf(decoded, "<FONT COLOR=\"%s\"", gaym_mgaym_colors[fgnum]);
-				if (bg[0]) {
-					bgnum = atoi(bg);
-					if (bgnum >= 0 && bgnum < 16)
-						g_string_append_printf(decoded, " BACK=\"%s\"", gaym_mgaym_colors[bgnum]);
-				}
-				decoded = g_string_append_c(decoded, '>');
-			}
-			break;
-		case '\037':
-			cur++;
-			if (!underline) {
-				decoded = g_string_append(decoded, "<U>");
-				underline = TRUE;
-			} else {
-				decoded = g_string_append(decoded, "</U>");
-				underline = TRUE;
-			}
-			break;
-		case '\007':
-		case '\026':
-			cur++;
-			break;
-		case '\017':
-			cur++;
-			/* fallthrough */
-		case '\000':
-			if (bold)
-				decoded = g_string_append(decoded, "</B>");
-			if (underline)
-				decoded = g_string_append(decoded, "</U>");
-			if (font)
-				decoded = g_string_append(decoded, "</FONT>");
-			break;
-		default:
-			gaim_debug(GAIM_DEBUG_ERROR, "gaym", "Unexpected mIRC formatting character %d\n", *cur);
-		}
-	} while (*cur);
-
-	return g_string_free(decoded, FALSE);
-}
-
-char *gaym_mgaym2txt (const char *string)
-{
-	char *result = g_strdup (string);
-	int i, j;
-
-	for (i = 0, j = 0; result[i]; i++) {
-		switch (result[i]) {
-		case '\002':
-		case '\003':
-		case '\007':
-		case '\017':
-		case '\026':
-		case '\037':
-			continue;
-		default:
-			result[j++] = result[i];
-		}
-	}
-	result[i] = '\0';
-        return result;
-}
-
+               
 char *gaym_parse_ctcp(struct gaym_conn *gaym, const char *from, const char *to, const char *msg, int notice)
 {
 	GaimConnection *gc;
@@ -460,31 +299,41 @@ char *gaym_format(struct gaym_conn *gaym, const char *format, ...)
 	char *tok, *tmp;
 	const char *cur;
 	va_list ap;
+        int i;
 
 	va_start(ap, format);
 	for (cur = format; *cur; cur++) {
+         
 		if (cur != format)
 			g_string_append_c(string, ' ');
 
 		tok = va_arg(ap, char *);
-		switch (*cur) {
+                tok=g_strdup(tok);
+                
+                switch (*cur) {
 		case 'v':
+                
 			g_string_append(string, tok);
 			break;
 		case ':':
 			g_string_append_c(string, ':');
 			/* no break! */
-		case 't':
-		case 'n':
+                case 'n':
+                case 't':    
 		case 'c':
+                        if(*cur!=':')
+                          tok=convert_nick_to_gc(tok);
 			tmp = gaym_send_convert(gaym, tok);
 			g_string_append(string, tmp);
 			g_free(tmp);
+                        g_free(tok);
 			break;
 		default:
 			gaim_debug(GAIM_DEBUG_ERROR, "gaym", "Invalid format character '%c'\n", *cur);
 			break;
 		}
+               
+                
 	}
 	va_end(ap);
 	g_string_append(string, "\r\n");
@@ -515,6 +364,11 @@ void gaym_parse_msg(struct gaym_conn *gaym, char *input)
 	}
 
 	from = g_strndup(&input[1], cur - &input[1]);
+        
+        for(i=0; i<strlen(from); i++)
+          if(from[i]=='|')
+            from[i]='.';
+        
 	cur++;
 	end = strchr(cur, ' ');
 	if (!end)
@@ -534,6 +388,7 @@ void gaym_parse_msg(struct gaym_conn *gaym, char *input)
 
 	args = g_new0(char *, strlen(msgent->format));
 	for (cur = end, fmt = msgent->format, i = 0; fmt[i] && *cur++; i++) {
+                
 		switch (fmt[i]) {
 		case 'v':
 			if (!(end = strchr(cur, ' '))) end = cur + strlen(cur);

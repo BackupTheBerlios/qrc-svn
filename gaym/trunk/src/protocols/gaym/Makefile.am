@@ -2,7 +2,7 @@ EXTRA_DIST = PROTOCOL Makefile.mingw
 
 pkgdir = $(libdir)/gaim
 
-GAYMSOURCES = weblogin.c gaym.c parse.c cmds.c msgs.c gaym.h dcc_send.c
+GAYMSOURCES = weblogin.c gaym.c parse.c cmds.c msgs.c gaym.h dcc_send.c helpers.c
 
 AM_CFLAGS = $(st)
 

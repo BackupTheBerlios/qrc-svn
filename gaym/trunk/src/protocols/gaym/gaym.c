@@ -63,6 +63,7 @@ static GaimPlugin *_gaym_plugin = NULL;
 
 static const char *status_chars = "@+%&";
 
+
 static void gaym_view_motd(GaimPluginAction *action)
 {
 	GaimConnection *gc = (GaimConnection *) action->context;
@@ -254,6 +255,7 @@ static void gaym_login_with_hash(GaimAccount *account)
 		gaim_debug_misc("gaym","err: %d, account->gc: %x\n",err,account->gc);
 		return;
 	}
+
 }
 
 static void gaym_login(GaimAccount *account) {
@@ -709,8 +711,51 @@ static GaimPluginProtocolInfo prpl_info =
 	NULL,					/* can_receive_file */
 	gaym_dccsend_send_file	/* send_file */
 };
+static
+void gaym_get_photo_info(GaimConversation* conv) {
+	char *buf;
+	
+	gaim_debug_misc("gaym","Got conversation-created signal\n");
+        if(strncmp(conv->account->protocol_id,"prpl-gaym",9) == 0 && gaim_conversation_get_type(conv) == GAIM_CONV_IM) {
 
-/* GAYMDIFF: Number of minor changes here */
+	struct gaym_conn *gaym;
+	
+	GaimConnection *gc = gaim_conversation_get_gc(conv);
+	gaym = (struct gaym_conn*) gc->proto_data;
+
+	gaym->info_window_needed=FALSE;
+        buf = gaym_format(gaym, "vn", "WHOIS", conv->name);
+        gaim_debug_misc("gaym","Conversation triggered command: %s\n",buf);
+	gaym_send(gaym, buf);
+	g_free(buf);
+        gaym->whois.nick = g_strdup(conv->name);
+        }
+	
+}
+
+static GaimPluginPrefFrame *
+    get_plugin_pref_frame(GaimPlugin *plugin)
+{
+  GaimPluginPrefFrame *frame;
+  GaimPluginPref *ppref;
+
+  frame = gaim_plugin_pref_frame_new();
+
+  ppref = gaim_plugin_pref_new_with_label(_("Conversations"));
+  gaim_plugin_pref_frame_add(frame, ppref);
+
+  ppref = gaim_plugin_pref_new_with_name_and_label(
+      "/plugins/prpl/gaym/show_bio_with_join",
+  _("Show bioline for users joining the room."));
+  gaim_plugin_pref_frame_add(frame, ppref);
+
+  return frame;
+}
+
+static GaimPluginUiInfo prefs_info = {
+  get_plugin_pref_frame
+};
+
 static GaimPluginInfo info =
 {
 	GAIM_PLUGIN_MAGIC,
@@ -740,23 +785,7 @@ static GaimPluginInfo info =
 	gaym_actions
 };
 
-static void get_photo_info(GaimConversation* conv) {
-	char *buf;
 
-	
-	struct gaym_conn *gaym;
-	
-	GaimConnection *gc = gaim_conversation_get_gc(conv);
-	gaym = (struct gaym_conn*) gc->proto_data;
-
-	gaym->info_window_needed=FALSE;
-	buf = gaym_format(gaym, "vn", "WHOIS", conv->name);
-	gaym_send(gaym, buf);
-	g_free(buf);
-	gaym->whois.nick = g_strdup(conv->name);
-	
-	
-}
 
 static void _init_plugin(GaimPlugin *plugin)
 {
@@ -769,19 +798,17 @@ static void _init_plugin(GaimPlugin *plugin)
 	option = gaim_account_option_int_new(_("Port"), "port", IRC_DEFAULT_PORT);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
-	option = gaim_account_option_string_new(_("Encoding"), "encoding", IRC_DEFAULT_CHARSET);
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-
-	option = gaim_account_option_string_new(_("Username"), "username", "");
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-
-	/* GAYDIFF: Should likely set this to BIO */
+	
 	option = gaim_account_option_string_new(_("Bio Line"), "bioline", "");
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
-	gaim_signal_connect(gaim_conversations_get_handle(),
-			    "conversation-created",
-			    plugin, GAIM_CALLBACK(get_photo_info), NULL);
+        //We have to pull thumbnails, since they aren't pushed like with other protocols.
+      gaim_signal_connect(gaim_conversations_get_handle(),
+                            "conversation-created",
+                            plugin, GAIM_CALLBACK(gaym_get_photo_info), NULL);
+      gaim_prefs_add_bool("/plugins/prpl/msn/show_bio_with_join",   TRUE);
+
+        
 	_gaym_plugin = plugin;
 
 	gaym_register_commands();
