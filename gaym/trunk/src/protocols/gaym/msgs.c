@@ -572,20 +572,20 @@ static void gaym_buddy_status(char *name, struct gaym_buddy *ib, struct gaym_con
 	GaimConnection *gc = gaim_account_get_connection(gaym->account);
 	GaimBuddy *buddy = gaim_find_buddy(gaym->account, name);
 
-	if (!gc || !buddy)
+	if (!gc || !buddy || !ib->stale)
 		return;
 
 	if (ib->online && !ib->flag) {
 		serv_got_update(gc, buddy->name, FALSE, 0, 0, 0, 0);
 		ib->online = FALSE;
-		ib->flag = TRUE;
 		
 	}
 
 	if (!ib->online && ib->flag) {
 		serv_got_update(gc, buddy->name, TRUE, 0, 0, 0, 0);
 		ib->online = TRUE;
-		ib->flag = TRUE;
+		ib->flag=FALSE;
+		
 		
 	}
 	ib->stale = FALSE;

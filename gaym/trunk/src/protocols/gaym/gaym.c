@@ -142,6 +142,7 @@ static void gaym_buddy_append(char *name, struct gaym_buddy *ib, GString *string
 	{
 		ib->stale = TRUE;
 		ib->done = TRUE;
+		ib->flag = FALSE;
 		g_string_append_printf(string, "%s ", name);
 		return;
 	}
