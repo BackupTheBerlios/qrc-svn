@@ -44,6 +44,16 @@
 enum { IRC_USEROPT_SERVER, IRC_USEROPT_PORT, IRC_USEROPT_CHARSET };
 enum gaym_state { IRC_STATE_NEW, IRC_STATE_ESTABLISHED };
 
+typedef struct {
+
+	char *cookies;
+	void (*session_cb)(GaimAccount*);
+	GaimAccount* account;
+	char *username;
+	char *password;
+	gboolean hasFormData;
+
+} GaimUrlSession;
 struct gaym_conn {
 	GaimAccount *account;
 	GHashTable *msgs;
@@ -61,6 +71,7 @@ struct gaym_conn {
 	char* hash_pw;
 	char* server_bioline;    
 	char* roomlist_filter;
+	char* bio;
 	
 	gboolean blist_updating;
 	gboolean info_window_needed;
@@ -85,6 +96,8 @@ struct gaym_conn {
 
         GList** node_menu;
 	gboolean quitting;
+	
+	GaimUrlSession* session;
 };
 
 struct gaym_buddy {
@@ -97,16 +110,7 @@ struct gaym_buddy {
 	
 };
 
-typedef struct {
 
-	char *cookies;
-	void (*session_cb)(GaimAccount*);
-	GaimAccount* account;
-	char *username;
-	char *password;
-	gboolean hasFormData;
-
-} GaimUrlSession;
 
 
 typedef int (*IRCCmdCallback) (struct gaym_conn *gaym, const char *cmd, const char *target, const char **args);
@@ -199,5 +203,7 @@ void gaym_dccsend_send_file(GaimConnection *gc, const char *who, const char *fil
 void gaym_dccsend_recv(struct gaym_conn *gaym, const char *from, const char *msg);
 void gaym_get_hash_from_weblogin(GaimAccount* account, void(*callback)(GaimAccount*));
 
+void gaim_session_fetch(const char *url, gboolean full, const char *user_agent, gboolean http11, void (*cb)(gpointer, const char *, size_t),
+				   void *user_data, GaimUrlSession* session);
 
 #endif /* _GAIM_GAYM_H */

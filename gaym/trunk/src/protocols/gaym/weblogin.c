@@ -60,6 +60,7 @@ typedef struct
   char *webdata;
   unsigned long len;
   unsigned long data_len;
+  GaimUrlSession* session;
 
 } GaimFetchUrlData;
 static void
@@ -238,6 +239,9 @@ session_fetched_cb(gpointer url_data, gint sock, GaimInputCondition cond)
 	{
 		char buf[2048];
 
+		if (gfud->session->cookies==NULL)
+			gfud->session->cookies=g_strdup("");
+		
 		if (gfud->user_agent)
 		{
 			/* Host header is not forbidden in HTTP/1.0 requests, and HTTP/1.1
@@ -254,7 +258,7 @@ session_fetched_cb(gpointer url_data, gint sock, GaimInputCondition cond)
 					   (gfud->full ? gfud->url : gfud->website.page),
 					   (gfud->http11 ? "1.1" : "1.0"),
 					   gfud->user_agent, gfud->website.address,
-					   ((GaimUrlSession*)(gfud->user_data))->cookies);
+					   gfud->session->cookies);
 		}
 		else
 		{
@@ -267,9 +271,9 @@ session_fetched_cb(gpointer url_data, gint sock, GaimInputCondition cond)
 					   (gfud->full ? gfud->url : gfud->website.page),
 					   (gfud->http11 ? "1.1" : "1.0"),
 					   gfud->website.address,
-					   ((GaimUrlSession*)(gfud->user_data))->cookies);
+					   gfud->session->cookies);
 		}
-		if (((GaimUrlSession*)gfud->user_data)->hasFormData)
+		if (gfud->session->hasFormData)
 			strcat(buf, "Content-Type: application/x-www-form-urlencoded\r\n\r\n");
 		else
 			strcat(buf, "\r\n");
@@ -323,8 +327,8 @@ session_fetched_cb(gpointer url_data, gint sock, GaimInputCondition cond)
 					//JBL 10-16-2004: Put cookies into session 
 					gaim_debug(GAIM_DEBUG_MISC, "gaym", "Parsing cookies...");
 					
-					parse_cookies(gfud->webdata, (GaimUrlSession*)(gfud->user_data), gfud->len); 
-					gaim_debug(GAIM_DEBUG_MISC, "gaym", "Found cookies: %s\n",((GaimUrlSession*)(gfud->user_data))->cookies);
+					parse_cookies(gfud->webdata, gfud->session, gfud->len); 
+					gaim_debug(GAIM_DEBUG_MISC, "gaym", "Found cookies: %s\n",(gfud->session->cookies));
 					gaim_debug_misc("gaim_url_fetch", "Parsing of cookies successful\n");
 					/* See if we can find a redirect. */
 					if (parse_redirect(gfud->webdata, gfud->len, sock, gfud))
@@ -401,12 +405,12 @@ session_fetched_cb(gpointer url_data, gint sock, GaimInputCondition cond)
 }
 
 
-//Ugh. A whole function replicate just to change url_fetched_cb to session_fetched_cb
-static void
+
+void
 gaim_session_fetch(const char *url, gboolean full,
 			   const char *user_agent, gboolean http11,
 			   void (*cb)(gpointer, const char *, size_t),
-			   void *user_data)
+			   void *user_data, GaimUrlSession *session)
 {
 	int sock;
 	GaimFetchUrlData *gfud;
@@ -426,7 +430,7 @@ gaim_session_fetch(const char *url, gboolean full,
 	gfud->user_agent = (user_agent != NULL ? g_strdup(user_agent) : NULL);
 	gfud->http11     = http11;
 	gfud->full       = full;
-
+	gfud->session	 = session;
 	gaim_url_parse(url, &gfud->website.address, &gfud->website.port,
 				   &gfud->website.page, &gfud->website.user, &gfud->website.passwd);
 
@@ -443,54 +447,57 @@ gaim_session_fetch(const char *url, gboolean full,
 static void
 gaym_weblogin_step5(gpointer session, const char* text, size_t len) {
 
+	struct gaym_conn *gaym=(struct gaym_conn*)session;
 	//Get hash from text
-	if(GAIM_CONNECTION_IS_VALID(((GaimUrlSession*)session)->account->gc))
+	if(GAIM_CONNECTION_IS_VALID(gaym->account->gc))
 	{
 	char *pw_hash;
 	char *bio;
 	char *thumbnail;
-	char *temp;
-	char *temp2;
+	char *temp=NULL;
+	char *temp2=NULL;
 	const char* match;
 	const char* result;
-	char *empty=g_malloc0(1);
+	
 	
 	
 	
 	//First, look for password
 	match="password\" value=\""; 
-	temp=strstr(text, match)+strlen(match);
-	temp2=strstr(temp,"\" ");
+	temp=strstr(text, match);
+	if(temp)
+	{
+		temp+=strlen(match);
+		temp2=strstr(temp,"\" ");
+	}
 	if(temp && temp2)
 	{
 		pw_hash=g_strndup(temp,(temp2-temp)*sizeof(char));
 		
-		(((struct gaym_conn*)((GaimUrlSession*)session)->account->gc->proto_data)->
-				hash_pw=g_strdup(pw_hash)) 
-		|| (((struct gaym_conn*)((GaimUrlSession*)session)->account->gc->proto_data)->
-				hash_pw=empty);
-			g_free(pw_hash);
+		(gaym->hash_pw=g_strdup(pw_hash)) 
+				|| (gaym->hash_pw=g_strdup(" "));
+		g_free(pw_hash);
 	}
 	else
 	{
 		gaim_connection_error(
-			(((GaimUrlSession*)session)->account->gc),
+			(gaym->account->gc),
 			_("Problem parsing password from web. Report a bug."));
 	}
 	
 	//Next, loook for bio
 	match="param name=\"bio\" value=\"";
-	temp=strstr(text,match)+strlen(match);
- 	temp2=strstr(temp,"%23"); //a # delimits the thumbnail
-	
+	temp=strstr(text,match);
+	if(temp)
+	{
+		temp+=strlen(match);
+		temp2=strstr(temp,"%23");
+	}
 	if(temp && temp2)
 	{
 		thumbnail=g_strndup(temp,(temp2-temp)*sizeof(char));
 		result=gaim_url_decode(thumbnail);
-		(((struct gaym_conn*)((GaimUrlSession*)session)->account->gc->proto_data)->
-				thumbnail=g_strdup(result) )
-		||(  ((struct gaym_conn*)((GaimUrlSession*)session)->account->gc->proto_data)->
-				thumbnail=empty);
+		(gaym->thumbnail=g_strdup(result)) ||(gaym->thumbnail=g_strdup(" "));
 		
 		g_free(thumbnail);
 		//Parse out non	thumbnail part of bio.
@@ -499,10 +506,8 @@ gaym_weblogin_step5(gpointer session, const char* text, size_t len) {
 		{
 			bio=g_strndup(temp2,(temp-temp2)*sizeof(char));
 			result=gaim_url_decode(bio);
-			(((struct gaym_conn*)((GaimUrlSession*)session)->account->gc->proto_data)->
-					server_bioline=g_strdup(result))
-			||(((struct gaym_conn*)((GaimUrlSession*)session)->account->gc->proto_data)->
-					server_bioline=empty);
+			(gaym->server_bioline=g_strdup(result))
+					||(gaym->server_bioline=g_strdup(" "));
 			g_free(bio);
 			
 		}
@@ -518,76 +523,81 @@ gaym_weblogin_step5(gpointer session, const char* text, size_t len) {
 		//		gaim_account_get_connection(((struct gaym_conn*)((GaimUrlSession*)session)->account),
 		//		_("Problem parsing password from web. Report a bug."));
 	}
-	((GaimUrlSession*)session)->session_cb(((GaimUrlSession*)session)->account);
+	gaym->session->session_cb(gaym->account);
 	
 	}
-	g_free(session);
+	
+	
 }
 
 static void
-gaym_weblogin_step4(gpointer session, const char* text, size_t len) {
+gaym_weblogin_step4(gpointer data, const char* text, size_t len) {
 
-	if(GAIM_CONNECTION_IS_VALID(((GaimUrlSession*)session)->account->gc))
+	struct gaym_conn *gaym=(struct gaym_conn*)data;
+	if(GAIM_CONNECTION_IS_VALID(gaym->session->account->gc))
 	{
 	//The fourth step is to parse a rand=# value out of the message text from 
 	//The previous step.
 	//We then connect to messenger/applet.html  
 	char url[512];
 	int nonce;
-	char* buf = g_strdup_printf(_("Signon: %s"), ((GaimUrlSession*)session)->account->username);
-	gaim_connection_update_progress(((GaimUrlSession*)session)->account->gc, buf, 5, 6);
+	char* buf = g_strdup_printf(_("Signon: %s"), (gaym->session->account->username));
+	gaim_connection_update_progress(gaym->session->account->gc, buf, 5, 6);
 	sscanf(text, "?rand=%d",&nonce);
 	snprintf(url,512,"http://www.gay.com/messenger/applet.html?rand=%d",nonce);
 	
-	((GaimUrlSession*)session)->hasFormData=TRUE;
-	gaim_session_fetch(url, FALSE, NULL, FALSE,gaym_weblogin_step5, session);
+	gaym->session->hasFormData=TRUE;
+	gaim_session_fetch(url, FALSE, NULL, FALSE,gaym_weblogin_step5, gaym, gaym->session);
 	}
 	else
-		g_free(session);
+		g_free(gaym->session);
 }
 
 
 static void
-gaym_weblogin_step3(gpointer session, const char* text, size_t len) {
+gaym_weblogin_step3(gpointer data, const char* text, size_t len) {
 
-	if(GAIM_CONNECTION_IS_VALID(((GaimUrlSession*)session)->account->gc))
+	struct gaym_conn *gaym=(struct gaym_conn*)data;
+	if(GAIM_CONNECTION_IS_VALID(gaym->account->gc))
 	{
 	//The third step is to get a nonce needed for getting the applet.
 	//We connect to messenger/frameset.html, using previously set cookie values.
 	//From the returned body, we will need to parse out the rand values.
 	char* url = "http://www.gay.com/messenger/frameset.html";
-	char* buf = g_strdup_printf(_("Signon: %s"), ((GaimUrlSession*)session)->account->username);
-	gaim_connection_update_progress(((GaimUrlSession*)session)->account->gc, buf, 4, 6);
-	((GaimUrlSession*)session)->hasFormData=FALSE;
-	gaim_session_fetch(url, FALSE, NULL, FALSE,gaym_weblogin_step4, session);
+	char* buf = g_strdup_printf(_("Signon: %s"), (gaym->session->account->username));
+	gaim_connection_update_progress(gaym->session->account->gc, buf, 4, 6);
+	gaym->session->hasFormData=FALSE;
+	gaim_session_fetch(url, FALSE, NULL, FALSE,gaym_weblogin_step4, gaym, gaym->session);
 	}
 	else
-		g_free(session);
+		g_free(gaym->session);
 }
 static void
-gaym_weblogin_step2(gpointer session, const char* text, size_t len) {
+gaym_weblogin_step2(gpointer data, const char* text, size_t len) {
 
-	if(GAIM_CONNECTION_IS_VALID(((GaimUrlSession*)session)->account->gc))
+	struct gaym_conn *gaym=(struct gaym_conn*)data;
+	if(GAIM_CONNECTION_IS_VALID(gaym->session->account->gc))
 	{
 	//The second step is to do the actual login.
 	//We connect to misc/dologin.html, using cookies set from step 1
 	//And add a few more cookie values.
 	char url[1024];
-	char* buf = g_strdup_printf(_("Signon: %s"), ((GaimUrlSession*)session)->account->username);
-	gaim_connection_update_progress(((GaimUrlSession*)session)->account->gc, buf, 3, 6);
-	gaim_debug(GAIM_DEBUG_MISC, "gaym", "From step one, got cookies: %s\n", ((GaimUrlSession*)session)->cookies);
+	char* buf = g_strdup_printf(_("Signon: %s"), gaym->session->account->username);
+	gaim_connection_update_progress(gaym->session->account->gc, buf, 3, 6);
+	gaim_debug(GAIM_DEBUG_MISC, "gaym", "From step one, got cookies: %s\n", (gaym->session->cookies));
 	
 	snprintf(url,1024,"http://www.gay.com/misc/dologin.html?__login_haveForm=1&__login_save=1&__login_member=%s&redir=%%2Findex.html&__login_basepage=%%2Fmisc%%2Fdologin.html&__login_password=%s",
-	((GaimUrlSession*)session)->username, 
-	((GaimUrlSession*)session)->password);
+	gaym->session->username, 
+	gaym->session->password);
 	
 	gaim_debug(GAIM_DEBUG_MISC, "gaym", "In step 2, trying: %s\n", url);
-	((GaimUrlSession*)session)->hasFormData=TRUE;
-	gaim_session_fetch(url, FALSE, NULL, FALSE,gaym_weblogin_step3, session);
+	gaym->session->hasFormData=TRUE;
+	gaim_session_fetch(url, FALSE, NULL, FALSE,gaym_weblogin_step3, gaym, gaym->session);
 	}
 	else
-		g_free(session);
+		g_free(gaym->session);
 }
+/*
 static void
 gaym_weblogin_step1(gpointer session) {
 
@@ -604,18 +614,35 @@ gaym_weblogin_step1(gpointer session) {
 	else
 		g_free(session);
 }
-
+*/
 void 
 gaym_get_hash_from_weblogin(GaimAccount* account, void(*callback)(GaimAccount* account)) {
 	
+	struct gaym_conn* gaym=account->gc->proto_data;
 	if(GAIM_CONNECTION_IS_VALID(account->gc))
 	{
+	
 	GaimUrlSession* session=g_new0(GaimUrlSession, 1);
 	session->session_cb = callback;
 	session->cookies=NULL;
 	session->account=account;
 	session->username=g_strdup(account->username);
 	session->password=g_strdup(account->password);
-	gaym_weblogin_step1(session);
+	if(gaym->session)
+		g_free(gaym->session);
+	
+	gaym->session=session;
+	
+	if(GAIM_CONNECTION_IS_VALID(((GaimUrlSession*)session)->account->gc))
+	{
+	//The first step is to establish the initial sesion
+	//We connect to index.html, and get a few cookie values. 
+		char* url = "http://www.gay.com/index.html";
+		char* buf = g_strdup_printf(_("Signon: %s"), ((GaimUrlSession*)session)->account->username);
+		gaim_connection_update_progress(((GaimUrlSession*)session)->account->gc, buf, 2, 6);
+		((GaimUrlSession*)session)->hasFormData=FALSE;
+		gaim_session_fetch(url, FALSE, NULL, FALSE,gaym_weblogin_step2, gaym, gaym->session);
+	}
+	
 	}
 }

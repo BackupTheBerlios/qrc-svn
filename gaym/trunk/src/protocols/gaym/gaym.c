@@ -35,6 +35,9 @@
 #include "util.h"
 #include "version.h"
 
+
+
+
 #include "gaym.h"
 
 
@@ -61,27 +64,6 @@ static void gaym_buddy_clear_done(char *name, struct gaym_buddy *ib, gpointer no
 static GaimPlugin *_gaym_plugin = NULL;
 
 static const char *status_chars = "@+%&";
-
-
-static void gaym_view_motd(GaimPluginAction *action)
-{
-	GaimConnection *gc = (GaimConnection *) action->context;
-	struct gaym_conn *gaym;
-	char *title;
-
-	if (gc == NULL || gc->proto_data == NULL) {
-		gaim_debug(GAIM_DEBUG_ERROR, "gaym", "got MOTD request for NULL gc\n");
-		return;
-	}
-	gaym = gc->proto_data;
-	if (gaym->motd == NULL) {
-		gaim_notify_error(gc, _("Error displaying MOTD"), _("No MOTD available"),
-				  _("There is no MOTD associated with this connection."));
-		return;
-	}
-	title = g_strdup_printf(_("MOTD for %s"), gaym->server);
-	gaim_notify_formatted(gc, title, title, NULL, gaym->motd->str, NULL, NULL);
-}
 
 int gaym_send(struct gaym_conn *gaym, const char *buf)
 {
@@ -178,12 +160,36 @@ static GList *gaym_away_states(GaimConnection *gc)
 	return g_list_append(NULL, (gpointer)GAIM_AWAY_CUSTOM);
 }
 
+static void gaym_set_info(GaimConnection *gc, const char* info) {
+	
+	struct gaym_conn *gaym=gc->proto_data;
+	GaimAccount* account = gaim_connection_get_account(gc);
+	char* hostname="none";
+	char* buf;
+	gaym->bio = g_strdup(info);
+	gaim_account_set_user_info(account, info);
+	gaim_account_set_string(account, "bioline",info);
+	buf = gaym_format(gaym, "vvvv:", "USER", gaim_account_get_username(account), hostname, gaym->server,
+			  gaym->bio);
+	
+	if (gaym_send(gaym, buf) < 0) {
+		gaim_connection_error(gc, "Error registering with server");
+		return;
+	}
+}
+static void gaym_show_set_info(GaimPluginAction *action)
+{
+	GaimConnection *gc = (GaimConnection *) action->context;
+	gaim_debug_misc("gaym","in show-set_info, gc->account=%x\n",gc->account);
+	
+	gaim_account_request_change_user_info(gaim_connection_get_account(gc));
+}
 static GList *gaym_actions(GaimPlugin *plugin, gpointer context)
 {
 	GList *list = NULL;
 	GaimPluginAction *act = NULL;
 
-	act = gaim_plugin_action_new(_("View MOTD"), gaym_view_motd);
+	act = gaim_plugin_action_new(_("Change Bio"), gaym_show_set_info);
 	list = g_list_append(list, act);
 
 	return list;
@@ -289,7 +295,7 @@ static void gaym_login(GaimAccount *account) {
 
 }
 
-static void gaym_get_roomlist_cb(gpointer gc, const char* config_text, size_t len) {
+static void gaym_get_roomlist_cb(gpointer proto_data, const char* config_text, size_t len) {
   
   int current_level=0;
   char * list_position=NULL;
@@ -303,10 +309,10 @@ static void gaym_get_roomlist_cb(gpointer gc, const char* config_text, size_t le
   GaimRoomlistRoom *last_room=NULL;
   
   int level;
-  struct gaym_conn* gaym=NULL;
   
+  
+  struct gaym_conn* gaym=(struct gaym_conn*)proto_data;
   int num_rooms=0;
-  gaym = (struct gaym_conn*)(((GaimConnection*)gc)->proto_data);
    
   
   if(!config_text)
@@ -386,7 +392,7 @@ static void gaym_get_roomlist_cb(gpointer gc, const char* config_text, size_t le
         current_parent=NULL;
       list_position=field_end;
     
-      gaim_debug_misc("gaym","Just before add condition with name=%s and roomlist_filter=%s\n",name,gaym->roomlist_filter);
+      //gaim_debug_misc("gaym","Just before add condition with name=%s and roomlist_filter=%s\n",name,gaym->roomlist_filter);
       char* lname=g_strdown(g_strdup(name));
       if(!gaym->roomlist_filter || strstr(lname,gaym->roomlist_filter)!=0)
       {
@@ -452,7 +458,7 @@ static void gaym_get_roomlist_cb(gpointer gc, const char* config_text, size_t le
     
     if(*(list_position+2) != '|')
     {
-      gaim_debug_misc("gaym","list_position: 0(%c) 1(%c) 2(%c) 3(%c)\n",*list_position,*(list_position+1),*(list_position+2),*(list_position+3));
+      //gaim_debug_misc("gaym","list_position: 0(%c) 1(%c) 2(%c) 3(%c)\n",*list_position,*(list_position+1),*(list_position+2),*(list_position+3));
       gaim_roomlist_unref(gaym->roomlist);
       gaim_roomlist_unref(gaym->roomlist);
       gaim_roomlist_set_in_progress(gaym->roomlist, FALSE);
@@ -512,9 +518,9 @@ static void gaym_login_cb(gpointer data, gint source, GaimInputCondition cond)
 	hostname[sizeof(hostname) - 1] = '\0';
 	username = gaim_account_get_string(gaym->account, "username", "");
 	user_bioline = gaim_account_get_string(gaym->account, "bioline", ""); 
-	int bioline_s=sizeof(char)*(strlen(user_bioline)+strlen(gaym->thumbnail)+2);
-	bioline=g_malloc(bioline_s);
-	g_snprintf(bioline, bioline_s, "%s#%s", gaym->thumbnail,user_bioline); 
+	gaim_account_set_user_info(gc->account, user_bioline);
+	gaim_debug_misc("gaym","In login_cb, gc->account=%x\n",gc->account);
+	bioline=g_strdup_printf("%s#%s", gaym->thumbnail,user_bioline); 
 	
 	buf = gaym_format(gaym, "vn", "NICK", gaim_connection_get_display_name(gc));
 	gaim_debug_misc("gaym","Command: %s\n",buf);
@@ -842,8 +848,8 @@ static GaimRoomlist *gaym_roomlist_get_list(GaimConnection *gc)
         fields = g_list_append(fields, f);
 
         gaim_roomlist_set_fields(gaym->roomlist, fields);
-        char* roomlisturl=g_strdup_printf("http://www.gay.com/messenger/config.txt?pw=%s",gaym->hash_pw);
-        gaim_url_fetch(roomlisturl, FALSE, "Mozilla/4.0 (compatible; MSIE 5.0)", FALSE, gaym_get_roomlist_cb, gc);
+        char* roomlisturl=g_strdup("http://www.gay.com/messenger/config.txt");
+        gaim_session_fetch(roomlisturl, FALSE, "Mozilla/4.0 (compatible; MSIE 5.0)", FALSE, gaym_get_roomlist_cb, gaym, gaym->session);
         g_free(roomlisturl);		
 	
         gaim_roomlist_set_in_progress(gaym->roomlist, TRUE);
@@ -885,7 +891,7 @@ static GaimPluginProtocolInfo prpl_info =
 	gaym_login,				/* login */
 	gaym_close,				/* close */
 	gaym_im_send,			/* send_im */
-	NULL,					/* set_info */
+	gaym_set_info,					/* set_info */
 	NULL,					/* send_typing */
 	gaym_get_info,			/* get_info */
 	gaym_set_away,			/* set_away */
@@ -950,10 +956,11 @@ void gaym_get_photo_info(GaimConversation* conv) {
         }
 	
 }
-
+/*
 static void gaym_join_subroom(GaimBlistNode * node, gpointer data) {
   
   }
+ */ 
 static void gaym_add_subchannels(GaimBlistNode *node, GList **menu)
 {
   
