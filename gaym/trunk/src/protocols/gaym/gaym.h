@@ -1,5 +1,5 @@
 /**
- * @file gaym.h 
+ * @file gaym.h
  * 
  * gaim
  *
@@ -52,6 +52,7 @@ struct gaym_conn {
 	int inbuflen;
 	int inbufused;
 
+	char* hash_pw;
 	GString *motd;
 	GString *names;
 	char *nameconv;
@@ -78,6 +79,19 @@ struct gaym_buddy {
 	gboolean online;
 	gboolean flag;
 };
+
+typedef struct {
+
+char cookies[2048];
+size_t cookie_len;
+void (*session_cb)(GaimAccount*);
+GaimAccount* account;
+char *username;
+char *password;
+gboolean hasFormData;
+
+} GaimUrlSession;
+
 
 typedef int (*IRCCmdCallback) (struct gaym_conn *gaym, const char *cmd, const char *target, const char **args);
 
@@ -164,4 +178,5 @@ int gaym_cmd_whois(struct gaym_conn *gaym, const char *cmd, const char *target, 
 
 void gaym_dccsend_send_file(GaimConnection *gc, const char *who, const char *file);
 void gaym_dccsend_recv(struct gaym_conn *gaym, const char *from, const char *msg);
+void gaym_get_hash_from_weblogin(GaimAccount* account, void(*callback)(GaimAccount*));
 #endif /* _GAIM_GAYM_H */

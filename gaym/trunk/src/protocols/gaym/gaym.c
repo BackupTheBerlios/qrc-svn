@@ -202,13 +202,37 @@ GHashTable *gaym_chat_info_defaults(GaimConnection *gc, const char *chat_name)
 	return defaults;
 }
 
-static void gaym_login(GaimAccount *account)
+static void gaym_login_with_hash(GaimAccount *account)
 {
+	GaimConnection *gc;
+	struct gaym_conn *gaym;
+	char *buf;
+	const char *username = gaim_account_get_username(account);
+	int err;
+
+	gc = gaim_account_get_connection(account);
+	gaym = gc->proto_data;
+
+	buf = g_strdup_printf(_("Signon: %s"), username);
+	gaim_connection_update_progress(gc, buf, 5, 6);
+	g_free(buf);
+
+	gaim_debug_misc("gaym","Trying login to %s\n",gaym->server);
+	err = gaim_proxy_connect(account, gaym->server, 
+				 gaim_account_get_int(account, "port", IRC_DEFAULT_PORT),
+				 gaym_login_cb, gc);
+	if (err || !account->gc) {
+		gaim_connection_error(gc, _("Couldn't create socket"));
+		gaim_debug_misc("gaym","err: %d, account->gc: %x\n",err,account->gc);
+		return;
+	}
+}
+
+static void gaym_login(GaimAccount *account) {
 	GaimConnection *gc;
 	struct gaym_conn *gaym;
 	char *buf, **userparts;
 	const char *username = gaim_account_get_username(account);
-	int err;
 
 	gc = gaim_account_get_connection(account);
 	gc->flags |= GAIM_CONNECTION_NO_NEWLINES;
@@ -223,9 +247,12 @@ static void gaym_login(GaimAccount *account)
 
 	userparts = g_strsplit(username, "@", 2);
 	gaim_connection_set_display_name(gc, userparts[0]);
-	gaym->server = g_strdup(userparts[1]);
+	//JBL 10-16-2004
+	//I hardcoded the server for now. We should make it variable,
+	//but NOT like the IRC code does it. More like AIM. People
+	//don't change servers very often.
+	gaym->server = "www.gay.com";
 	g_strfreev(userparts);
-
 	gaym->buddies = g_hash_table_new_full((GHashFunc)gaym_nick_hash, (GEqualFunc)gaym_nick_equal, 
 					     NULL, (GDestroyNotify)gaym_buddy_free);
 	gaym->cmds = g_hash_table_new(g_str_hash, g_str_equal);
@@ -234,19 +261,13 @@ static void gaym_login(GaimAccount *account)
 	gaym_msg_table_build(gaym);
 
 	buf = g_strdup_printf(_("Signon: %s"), username);
-	gaim_connection_update_progress(gc, buf, 1, 2);
+	gaim_connection_update_progress(gc, buf, 1, 6);
 	g_free(buf);
 
-	err = gaim_proxy_connect(account, gaym->server, 
-				 gaim_account_get_int(account, "port", IRC_DEFAULT_PORT),
-				 gaym_login_cb, gc);
+	gaym_get_hash_from_weblogin(account, gaym_login_with_hash);
 
-	if (err || !account->gc) {
-		gaim_connection_error(gc, _("Couldn't create socket"));
-		return;
-	}
+
 }
-
 static void gaym_login_cb(gpointer data, gint source, GaimInputCondition cond)
 {
 	GaimConnection *gc = data;
@@ -267,9 +288,10 @@ static void gaym_login_cb(gpointer data, gint source, GaimInputCondition cond)
 	}
 
 	gaym->fd = source;
-
+	gaim_debug_misc("gaym","In login_cb with pw_hash=%s\n",gaym->hash_pw);
 	if (gc->account->password && *gc->account->password) {
-		buf = gaym_format(gaym, "vv", "PASS", gc->account->password);
+		
+		buf = gaym_format(gaym, "vv", "PASS", gaym->hash_pw);
 		if (gaym_send(gaym, buf) < 0) {
 			gaim_connection_error(gc, "Error sending password");
 			return;
