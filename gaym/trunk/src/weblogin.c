@@ -465,7 +465,7 @@ gaym_weblogin_step5(gpointer session, const char* text, size_t len) {
 
 	struct gaym_conn *gaym=(struct gaym_conn*)session;
 	//Get hash from text
-	if(GAIM_CONNECTION_IS_VALID(gaym->account->gc))
+	if(gaym->session && GAIM_CONNECTION_IS_VALID(gaym->account->gc))
 	{
 	char *pw_hash;
 	char *bio;
@@ -486,21 +486,15 @@ gaym_weblogin_step5(gpointer session, const char* text, size_t len) {
 		temp+=strlen(match);
 		temp2=strstr(temp,"\" ");
 	}
-	if(temp && temp2)
-	{
-		pw_hash=g_strndup(temp,(temp2-temp)*sizeof(char));
-		
-		(gaym->hash_pw=g_strdup(pw_hash)) 
-				|| (gaym->hash_pw=g_strdup(" "));
-		g_free(pw_hash);
-	}
-	else
+	if(!(temp && temp2 && temp!=temp2 && (gaym->hash_pw=g_strndup(temp,(temp2-temp)*sizeof(char)))))
 	{
 		gaim_connection_error(
 			(gaym->account->gc),
 			_("Problem parsing password from web. Report a bug."));
+			return;
 	}
-	
+
+	gaim_debug_misc("weblogin","Got hash, temp=%x, temp2=%x, gaym->hash_pw=%x\n",temp,temp2,gaym->hash_pw);
 	//Next, loook for bio
 	match="param name=\"bio\" value=\"";
 	temp=strstr(text,match);
@@ -549,7 +543,7 @@ static void
 gaym_weblogin_step4(gpointer data, const char* text, size_t len) {
 
 	struct gaym_conn *gaym=(struct gaym_conn*)data;
-	if(GAIM_CONNECTION_IS_VALID(gaym->session->account->gc))
+	if(gaym->session && GAIM_CONNECTION_IS_VALID(gaym->session->account->gc))
 	{
 	//The fourth step is to parse a rand=# value out of the message text from 
 	//The previous step.
@@ -565,16 +559,31 @@ gaym_weblogin_step4(gpointer data, const char* text, size_t len) {
 	gaim_session_fetch(url, FALSE, NULL, FALSE,gaym_weblogin_step5, gaym, gaym->session);
 	}
 	else
+	{
 		g_free(gaym->session);
+	}
 }
 
 
 static void
 gaym_weblogin_step3(gpointer data, const char* text, size_t len) {
 
+	
+	
+	
 	struct gaym_conn *gaym=(struct gaym_conn*)data;
-	if(GAIM_CONNECTION_IS_VALID(gaym->account->gc))
+	
+	//gaim_debug_misc("weblogin","***************************%s\n",gaym->session->cookies);
+	if(gaym->session && GAIM_CONNECTION_IS_VALID(gaym->session->account->gc))
 	{
+			if(!strstr(gaym->session->cookies,"MEMBERX"))
+			{
+					g_free(gaym->session);
+					gaim_connection_error(
+									(gaym->account->gc),
+									_("Problem during login. Are you sure your password is correct?"));
+					return;
+			}
 	//The third step is to get a nonce needed for getting the applet.
 	//We connect to messenger/frameset.html, using previously set cookie values.
 	//From the returned body, we will need to parse out the rand values.
@@ -591,7 +600,7 @@ static void
 gaym_weblogin_step2(gpointer data, const char* text, size_t len) {
 
 	struct gaym_conn *gaym=(struct gaym_conn*)data;
-	if(GAIM_CONNECTION_IS_VALID(gaym->session->account->gc))
+	if(gaym->session && GAIM_CONNECTION_IS_VALID(gaym->session->account->gc))
 	{
 	//The second step is to do the actual login.
 	//We connect to misc/dologin.html, using cookies set from step 1

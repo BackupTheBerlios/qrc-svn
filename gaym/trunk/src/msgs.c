@@ -62,7 +62,11 @@ char * gaym_mask_thumbnail(const char* biostring)
        
 }
 
+char * make_nick_profile_link(char * name) {
 
+	return g_strdup_printf("<A href='http://my.gay.com/%s'>%s</A>",name,name);
+
+}
 char * gaym_bot_detect(char * bio,GaimConversation *chat,const char *name)
 {
 	static char * appendStr = 
@@ -95,7 +99,7 @@ char * gaym_bot_detect(char * bio,GaimConversation *chat,const char *name)
 	if(gaim_prefs_get_bool("/plugins/prpl/gaym/show_bio_with_join")) 
 		return bio;
 	else
-		return "";
+		return g_strdup("");
 	}
 	
 	/* Bots make MODE errors */
@@ -151,7 +155,7 @@ char * gaym_bot_detect(char * bio,GaimConversation *chat,const char *name)
 		{
 			tempbio = g_malloc (strlen(bio) + strlen(appendStr)+1);
 			g_stpcpy (g_stpcpy (tempbio,bio), appendStr);
-			g_free (bio);
+			//g_free (bio);
 			bio = tempbio;
 		}
 		else
@@ -702,10 +706,11 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name, const char *from, c
 {
 	GaimConnection *gc = gaim_account_get_connection(gaym->account);
 	GaimConversation *convo;
+	GaimConvChatBuddyFlags flags=GAIM_CBFLAGS_NONE;
 	char *nick = gaym_mask_nick(from), *bio=NULL, *bio_markedup=NULL;
 	struct gaym_buddy *ib;
 	static int id = 1;
-		
+	
 	if (!gc) {
 		g_free(nick);
 		return;
@@ -744,16 +749,19 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name, const char *from, c
 	}
 	
 	
-	gaim_conv_chat_add_user(GAIM_CONV_CHAT(convo), nick, bio_markedup, GAIM_CBFLAGS_NONE, TRUE);
+	if(strstr(args[1],"thumb.jpg#"))
+		if(args[1][1]=='9')
+			flags=GAIM_CBFLAGS_HALFOP;
+		else
+			flags=GAIM_CBFLAGS_OP;
+	gaim_conv_chat_add_user(GAIM_CONV_CHAT(convo), nick, bio_markedup, flags, TRUE);
        
 	if ((ib = g_hash_table_lookup(gaym->buddies, nick)) != NULL) {
 		ib->flag = TRUE;
 		gaym_buddy_status(nick, ib, gaym);
 	}
-	if(bio_markedup)
-		g_free(bio_markedup);
-	if(nick)
-		g_free(nick);
+	g_free(bio_markedup);
+	g_free(nick);
 }
 
 
@@ -980,6 +988,7 @@ void gaym_msg_privmsg(struct gaym_conn *gaym, const char *name, const char *from
 	}
 
 	msg = gaim_escape_html(tmp);
+		
 	g_free(tmp);
 
 	
@@ -994,6 +1003,7 @@ void gaym_msg_privmsg(struct gaym_conn *gaym, const char *name, const char *from
 	} else if (notice) {
 		serv_got_im(gc, nick, msg, 0, time(NULL));
 	} else if (convo) {
+		
 		serv_got_chat_in(gc, gaim_conv_chat_get_id(GAIM_CONV_CHAT(convo)), nick, 0, msg, time(NULL));
 	} else {
 		gaim_debug(GAIM_DEBUG_ERROR, "gaym", "Got a PRIVMSG on %s, which does not exist\n", args[0]);
@@ -1134,6 +1144,7 @@ void gaym_msg_richnames_list(struct gaym_conn *gaym, const char *name, const cha
 {
        GaimConnection *gc = gaim_account_get_connection(gaym->account);
        GaimConversation *convo;
+	   GaimConvChatBuddyFlags flags=GAIM_CBFLAGS_NONE;
        char *channel = args[1];
 	char *nick = args[2];
 	char *extra = args[4];
@@ -1153,6 +1164,11 @@ void gaym_msg_richnames_list(struct gaym_conn *gaym, const char *name, const cha
                gaim_debug (GAIM_DEBUG_ERROR, "gaym", "690 for %s failed\n", args[1]);
                return;
        }
-
-       gaim_conv_chat_add_user(GAIM_CONV_CHAT(convo), nick, NULL, GAIM_CBFLAGS_NONE, FALSE);
+		
+		if(strstr(extra,"thumb.jpg#"))
+			if(extra[1]=='9')
+				flags=GAIM_CBFLAGS_HALFOP;
+			else
+				flags=GAIM_CBFLAGS_OP;
+       gaim_conv_chat_add_user(GAIM_CONV_CHAT(convo), nick, NULL, flags, FALSE);
 }

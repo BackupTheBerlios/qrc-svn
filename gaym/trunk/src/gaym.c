@@ -288,7 +288,7 @@ static void gaym_login(GaimAccount *account) {
 	const char *username = gaim_account_get_username(account);
 
 	gc = gaim_account_get_connection(account);
-	gc->flags |= GAIM_CONNECTION_NO_NEWLINES;
+	gc->flags |= GAIM_CONNECTION_NO_NEWLINES | GAIM_CONNECTION_AUTO_RESP;
 
 	if (strpbrk(username, " \t\v\r\n") != NULL) {
 		gaim_connection_error(gc, _("IRC nicks may not contain whitespace"));
@@ -601,7 +601,8 @@ static void gaym_login_cb(gpointer data, gint source, GaimInputCondition cond)
 	
 	login_name=g_strdup(gaim_connection_get_display_name(gc));
 	gaym_convert_nick_to_gaycom(login_name);
-	bioline=g_strdup_printf("%s#%s", gaym->thumbnail,user_bioline); 
+	bioline=g_strdup_printf("%s#%s",
+					gaym->thumbnail,user_bioline?user_bioline:""); 
 	
 	buf = gaym_format(gaym, "vn", "NICK", login_name);
 	gaim_debug_misc("gaym","Command: %s\n",buf);
@@ -656,14 +657,27 @@ static int gaym_im_send(GaimConnection *gc, const char *who, const char *what, G
 {
 	struct gaym_conn *gaym = gc->proto_data;
 	const char *args[2];
-
+	const char *awaymsg=NULL;
 	if (strchr(status_chars, *who) != NULL)
 		args[0] = who + 1;
 	else
 		args[0] = who;
-	args[1] = what;
+		
 
+	if(flags & GAIM_CONV_IM_AUTO_RESP)
+	{
+		 awaymsg = g_strdup_printf("<Auto-response> %s",what);
+		 args[1]=awaymsg;
+		//Prevent memory leak
+		//g_free(what);
+		//what=args[1];
+		
+	}
+	else
+		args[1] = what;
+	
 	gaym_cmd_privmsg(gaym, "msg", NULL, args);
+	g_free(awaymsg);
 	return 1;
 }
 
@@ -679,7 +693,7 @@ static void gaym_get_info(GaimConnection *gc, const char *who)
 static void gaym_set_away(GaimConnection *gc, const char *state, const char *msg)
 {
 	struct gaym_conn *gaym = gc->proto_data;
-	const char *args[1];
+	//const char *args[1];
 
 	if (gc->away) {
 		g_free(gc->away);
@@ -689,8 +703,8 @@ static void gaym_set_away(GaimConnection *gc, const char *state, const char *msg
 	if (msg)
 		gc->away = g_strdup(msg);
 
-	args[0] = msg;
-	gaym_cmd_away(gaym, "away", NULL, args);
+	//args[0] = msg;
+	//gaym_cmd_away(gaym, "away", NULL, args);
 }
 
 static void gaym_add_buddy(GaimConnection *gc, GaimBuddy *buddy, GaimGroup *group)
@@ -1188,7 +1202,7 @@ static GaimPluginInfo info =
 	GAIM_MINOR_VERSION,
 	GAIM_PLUGIN_PROTOCOL,                             /**< type           */
 	NULL,                                             /**< ui_requirement */
-	0,                                                /**< flags          */
+	NULL,                     /**< flags          */
 	NULL,                                             /**< dependencies   */
 	GAIM_PRIORITY_DEFAULT,                            /**< priority       */
 
