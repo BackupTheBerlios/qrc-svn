@@ -10,7 +10,6 @@ the #xxx=* room, OR a particular #xxx=x room, to the buddy list.
 2. Profile retreival needs to be implemented. This should be fairly simple, and whoever does this should come up with a  
 basic, but useful mini-profile to display in the info window.
 
-
 4. Bio Line display in Join/Parts (room window). This should be easy. 
 
 5. Turning Join/part messages on and off. 
