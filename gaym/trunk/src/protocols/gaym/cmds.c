@@ -498,7 +498,7 @@ int gaym_cmd_whois(struct gaym_conn *gaym, const char *cmd, const char *target, 
 	gaym_send(gaym, buf);
 	g_free(buf);
 	gaym->whois.nick = g_strdup(args[0]);
-
+	
 	return 0;
 }
 

@@ -56,7 +56,7 @@ static struct _gaym_msg {
 	{ "312", "nnv:", gaym_msg_whois },	/* Whois server			*/
 	{ "313", "nn:", gaym_msg_whois },	/* Whois gaymop			*/
 	{ "317", "nnvv", gaym_msg_whois },	/* Whois idle			*/
-	{ "318", "nt:", gaym_msg_endwhois },	/* End of WHOIS			*/
+	//{ "318", "nt:", gaym_msg_endwhois },	/* End of WHOIS			*/
 	{ "319", "nn:", gaym_msg_whois },	/* Whois channels		*/
 	{ "320", "nn:", gaym_msg_whois },	/* Whois (fn ident)		*/
 	{ "321", "*", gaym_msg_list },		/* Start of list		*/

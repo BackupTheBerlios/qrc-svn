@@ -99,20 +99,44 @@ int gaym_send(struct gaym_conn *gaym, const char *buf)
 gboolean gaym_blist_timeout(struct gaym_conn *gaym)
 {
 	GString *string = g_string_sized_new(512);
-	char *list, *buf;
-
+	char *list, *buf, *temp_list;
+#define CHUNK_SIZE 500
+	
 	g_hash_table_foreach(gaym->buddies, (GHFunc)gaym_buddy_append, (gpointer)string);
 
 	list = g_string_free(string, FALSE);
-	if (!list || !strlen(list)) {
+	if (!list || !strlen(list) || gaym->ison_pending) {
 		g_free(list);
 		return TRUE;
 	}
 
-	buf = gaym_format(gaym, "vn", "ISON", list);
+	int index=0;
+	
+	while(index<strlen(list))
+	{
+			int copysize=((index+CHUNK_SIZE)>strlen(list)?
+							strlen(list)-index:
+							CHUNK_SIZE);
+		    while((((char)*(list+index+copysize)) != ' ') &&
+				(((char)*(list+index+copysize)) != '\0') &&
+			      (copysize > 0) )
+			{
+				gaim_debug_misc("gaym", "%c is not a space\n",(char)*(list+index+copysize));
+				copysize--;
+			}
+			
+			temp_list=g_strndup(list+index, 
+							copysize);
+			buf = gaym_format(gaym, "vn", "ISON", temp_list);
+			gaim_debug_misc("gaym", "Sending command: %s\n",buf);
+			index+=copysize;
+			gaym_send(gaym, buf);
+			g_free(temp_list);
+			g_free(buf);
+			gaym->ison_pending++;
+	}
 	g_free(list);
-	gaym_send(gaym, buf);
-	g_free(buf);
+	
 
 	return TRUE;
 }
@@ -120,6 +144,7 @@ gboolean gaym_blist_timeout(struct gaym_conn *gaym)
 static void gaym_buddy_append(char *name, struct gaym_buddy *ib, GString *string)
 {
 	ib->flag = FALSE;
+	
 	g_string_append_printf(string, "%s ", name);
 }
 
@@ -374,6 +399,8 @@ static void gaym_get_info(GaimConnection *gc, const char *who)
 	const char *args[1];
 	args[0] = who;
 	gaym_cmd_whois(gaym, "whois", NULL, args);
+	
+	
 }
 
 static void gaym_set_away(GaimConnection *gc, const char *state, const char *msg)
@@ -399,7 +426,7 @@ static void gaym_add_buddy(GaimConnection *gc, GaimBuddy *buddy, GaimGroup *grou
 	struct gaym_buddy *ib = g_new0(struct gaym_buddy, 1);
 	ib->name = g_strdup(buddy->name);
 	g_hash_table_insert(gaym->buddies, ib->name, ib);
-
+	gaim_debug_misc("gaym","Add buddy: %s\n",buddy->name);
 	/* if the timer isn't set, this is during signon, so we don't want to flood
 	 * ourself off with ISON's, so we don't, but after that we want to know when
 	 * someone's online asap */

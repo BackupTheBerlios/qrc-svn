@@ -141,6 +141,7 @@ void gaym_msg_whois(struct gaym_conn *gaym, const char *name, const char *from, 
 		return;
 	}
 
+	
 	if (!strcmp(name, "301")) {
 		gaym->whois.away = g_strdup(args[2]);
 	} else if (!strcmp(name, "311")) {
@@ -160,9 +161,18 @@ void gaym_msg_whois(struct gaym_conn *gaym, const char *name, const char *from, 
 	} else if (!strcmp(name, "320")) {
 		gaym->whois.identified = 1;
 	}
+	
+	char* thumburl;
+	char* urlstart=args[5]+3;
+	char* endthumb=strchr(urlstart,'#');
+	thumburl=g_strdup_printf("<img src='http://www.gay.com/images/personals/pictures%.*s'>",endthumb-urlstart,urlstart);
+	gaim_debug_misc("gaym","HTML string: %s\n",thumburl);
+	//gaim_notify_userinfo(gaym->account->gc, args[1], NULL, "GC Info", NULL, thumburl, NULL, NULL);
+
 }
 
-void gaym_msg_endwhois(struct gaym_conn *gaym, const char *name, const char *from, char **args)
+//Slated for removal, gay.com doesn't send these.
+/*void gaym_msg_endwhois(struct gaym_conn *gaym, const char *name, const char *from, char **args)
 {
 	GaimConnection *gc;
 	GString *info;
@@ -227,7 +237,7 @@ void gaym_msg_endwhois(struct gaym_conn *gaym, const char *name, const char *fro
 	g_free(str);
 	memset(&gaym->whois, 0, sizeof(gaym->whois));
 }
-
+*/
 void gaym_msg_list(struct gaym_conn *gaym, const char *name, const char *from, char **args)
 {
 	if (!gaym->roomlist)
@@ -529,6 +539,9 @@ void gaym_msg_ison(struct gaym_conn *gaym, const char *name, const char *from, c
 	struct gaym_buddy *ib;
 	int i;
 
+	if(gaym->ison_pending>0)
+		gaym->ison_pending--;
+	
 	if (!args || !args[1])
 		return;
 
@@ -543,8 +556,12 @@ void gaym_msg_ison(struct gaym_conn *gaym, const char *name, const char *from, c
 
 	g_strfreev(nicks);
 
-	g_hash_table_foreach(gaym->buddies, (GHFunc)gaym_buddy_status, (gpointer)gaym);
+	
+	
+	if(!gaym->ison_pending)
+		g_hash_table_foreach(gaym->buddies, (GHFunc)gaym_buddy_status, (gpointer)gaym);
 }
+
 
 static void gaym_buddy_status(char *name, struct gaym_buddy *ib, struct gaym_conn *gaym)
 {

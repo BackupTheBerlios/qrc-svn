@@ -335,6 +335,7 @@ gaym_weblogin_step5(gpointer session, const char* text, size_t len) {
 				hash_pw=g_strdup(pw_hash)) 
 		|| (((struct gaym_conn*)((GaimUrlSession*)session)->account->gc->proto_data)->
 				hash_pw=empty);
+			g_free(pw_hash);
 	}
 	else
 	{
@@ -346,7 +347,7 @@ gaym_weblogin_step5(gpointer session, const char* text, size_t len) {
 	//Next, loook for bio
 	match="param name=\"bio\" value=\"";
 	temp=strstr(text,match)+strlen(match);
- 	temp2=strstr(temp,"%23%01");
+ 	temp2=strstr(temp,"%23"); //a # delimits the thumbnail
 	
 	if(temp && temp2)
 	{
@@ -357,7 +358,7 @@ gaym_weblogin_step5(gpointer session, const char* text, size_t len) {
 		||(  ((struct gaym_conn*)((GaimUrlSession*)session)->account->gc->proto_data)->
 				thumbnail=empty);
 		
-		
+		g_free(thumbnail);
 		//Parse out non	thumbnail part of bio.
 		temp=strstr(temp2,"\"");
 		if(temp) 
@@ -368,13 +369,14 @@ gaym_weblogin_step5(gpointer session, const char* text, size_t len) {
 					server_bioline=g_strdup(result))
 			||(((struct gaym_conn*)((GaimUrlSession*)session)->account->gc->proto_data)->
 					server_bioline=empty);
+			g_free(bio);
 			
 		}
 		//We have established a session. Call session callback.
-		g_free(thumbnail);
-		g_free(bio);
-		g_free(pw_hash);
-		((GaimUrlSession*)session)->session_cb(((GaimUrlSession*)session)->account);
+		
+		
+	
+		
 	}
 	else
 	{
@@ -382,6 +384,7 @@ gaym_weblogin_step5(gpointer session, const char* text, size_t len) {
 		//		gaim_account_get_connection(((struct gaym_conn*)((GaimUrlSession*)session)->account),
 		//		_("Problem parsing password from web. Report a bug."));
 	}
+	((GaimUrlSession*)session)->session_cb(((GaimUrlSession*)session)->account);
 }
 
 static void

@@ -55,7 +55,8 @@ struct gaym_conn {
 	char* thumbnail;
 	char* hash_pw;
 	char* server_bioline;
-	
+	 
+	int ison_pending; //Split ISON counter.
 	
 	GString *motd;
 	GString *names;
@@ -82,6 +83,7 @@ struct gaym_buddy {
 	char *name;
 	gboolean online;
 	gboolean flag;
+	
 };
 
 typedef struct {
