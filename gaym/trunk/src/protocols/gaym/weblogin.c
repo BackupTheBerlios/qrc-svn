@@ -52,7 +52,7 @@ static void parse_cookies(const char* webdata, GaimUrlSession *session, size_t l
 	char *new_cookie;
 	
 	const char* match="Set-cookie: ";
-	while(next_token=strstr(next_token, match)) {
+	while((next_token=strstr(next_token, match))) {
 		
 		next_token += strlen(match); //We don't want the "Set-cookie: " part!
 		end_token=strstr(next_token,"\r\n"); 
@@ -319,43 +319,69 @@ gaym_weblogin_step5(gpointer session, const char* text, size_t len) {
 	char *temp2;
 	const char* match;
 	const char* result;
+	char *empty=g_malloc0(1);
+	
+	
 	
 	//First, look for password
 	match="password\" value=\""; 
 	temp=strstr(text, match)+strlen(match);
 	temp2=strstr(temp,"\" ");
-	
-	pw_hash=g_strndup(temp,(temp2-temp)*sizeof(char));
-	gaim_debug_misc("gaym","Found hash: %s\n",pw_hash);
-	
-	((struct gaym_conn*)((GaimUrlSession*)session)->account->gc->proto_data)->
-			hash_pw=pw_hash;
+	if(temp && temp2)
+	{
+		pw_hash=g_strndup(temp,(temp2-temp)*sizeof(char));
+		
+		(((struct gaym_conn*)((GaimUrlSession*)session)->account->gc->proto_data)->
+				hash_pw=g_strdup(pw_hash)) 
+		|| (((struct gaym_conn*)((GaimUrlSession*)session)->account->gc->proto_data)->
+				hash_pw=empty);
+	}
+	else
+	{
+		gaim_connection_error(
+			(((GaimUrlSession*)session)->account->gc),
+			_("Problem parsing password from web. Report a bug."));
+	}
 	
 	//Next, loook for bio
 	match="param name=\"bio\" value=\"";
 	temp=strstr(text,match)+strlen(match);
  	temp2=strstr(temp,"%23%01");
 	
-	thumbnail=g_strndup(temp,(temp2-temp)*sizeof(char));
-	result=gaim_url_decode(thumbnail);
-	((struct gaym_conn*)((GaimUrlSession*)session)->account->gc->proto_data)->
-		thumbnail=g_strdup(result);
-	
-	
-	//Parse out non	thumbnail part of bio.
-	temp=strstr(temp2,"\"");
-	
-	bio=g_strndup(temp2,(temp-temp2)*sizeof(char));
-	result=gaim_url_decode(bio);
-	((struct gaym_conn*)((GaimUrlSession*)session)->account->gc->proto_data)->
-		server_bioline=g_strdup(result);
-	
-	
-	//We have established a session. Call session callback.
-	g_free(thumbnail);
-	g_free(bio);
-	((GaimUrlSession*)session)->session_cb(((GaimUrlSession*)session)->account);
-	
+	if(temp && temp2)
+	{
+		thumbnail=g_strndup(temp,(temp2-temp)*sizeof(char));
+		result=gaim_url_decode(thumbnail);
+		(((struct gaym_conn*)((GaimUrlSession*)session)->account->gc->proto_data)->
+				thumbnail=g_strdup(result) )
+		||(  ((struct gaym_conn*)((GaimUrlSession*)session)->account->gc->proto_data)->
+				thumbnail=empty);
+		
+		
+		//Parse out non	thumbnail part of bio.
+		temp=strstr(temp2,"\"");
+		if(temp) 
+		{
+			bio=g_strndup(temp2,(temp-temp2)*sizeof(char));
+			result=gaim_url_decode(bio);
+			(((struct gaym_conn*)((GaimUrlSession*)session)->account->gc->proto_data)->
+					server_bioline=g_strdup(result))
+			||(((struct gaym_conn*)((GaimUrlSession*)session)->account->gc->proto_data)->
+					server_bioline=empty);
+			
+		}
+		//We have established a session. Call session callback.
+		g_free(thumbnail);
+		g_free(bio);
+		g_free(pw_hash);
+		((GaimUrlSession*)session)->session_cb(((GaimUrlSession*)session)->account);
+	}
+	else
+	{
+		//gaim_connection_error(
+		//		gaim_account_get_connection(((struct gaym_conn*)((GaimUrlSession*)session)->account),
+		//		_("Problem parsing password from web. Report a bug."));
+	}
 }
 
 static void
