@@ -16,7 +16,6 @@ channel, there may be a delay if, for example,
 the buddy list is updating. This is NOT acceptable from a UI standpoint, since feedback should occur as soon as possible. 
 So, we need to incorporate notification dialogs for these operations, to give the user instant feedback. 
 
-5. There is a problem with the translation from . to | in nicks. It's not happening everywhere.
 
 NON PROTOCOL FEATURES (Probably a "gaym++" plugin that provides these features.)
 

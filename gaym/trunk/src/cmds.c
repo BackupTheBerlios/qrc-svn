@@ -245,15 +245,17 @@ int gaym_cmd_names(struct gaym_conn *gaym, const char *cmd, const char *target, 
 int gaym_cmd_nick(struct gaym_conn *gaym, const char *cmd, const char *target, const char **args)
 {
 	char *buf;
-
+	char *temp;
+	
 	if (!args || !args[0])
 		return 0;
 
-	gaym_convert_nick_to_gaycom(args[0]);
-	buf = gaym_format(gaym, "v:", "NICK", args[0]);
+	temp=g_strdup(args[0]);
+	gaym_convert_nick_to_gaycom(temp);
+	buf = gaym_format(gaym, "v:", "NICK", temp);
 	gaym_send(gaym, buf);
 	g_free(buf);
-
+	g_free(temp);
 	return 0;
 }
 
@@ -343,12 +345,13 @@ int gaym_cmd_ping(struct gaym_conn *gaym, const char *cmd, const char *target, c
 int gaym_cmd_privmsg(struct gaym_conn *gaym, const char *cmd, const char *target, const char **args)
 {
 	const char *cur, *end;
-	char *msg, *buf;
+	char *msg, *buf, *nick;
 
 	if (!args || !args[0] || !args[1])
 		return 0;
 
-	gaym_convert_nick_to_gaycom(args[0]);
+	nick =  g_strdup(args[0]);
+	gaym_convert_nick_to_gaycom(nick);
 	cur = args[1];
 	end = args[1];
 	while (*end && *cur) {
@@ -356,13 +359,13 @@ int gaym_cmd_privmsg(struct gaym_conn *gaym, const char *cmd, const char *target
 		if (!end)
 			end = cur + strlen(cur);
 		msg = g_strndup(cur, end - cur);
-		buf = gaym_format(gaym, "vt:", "PRIVMSG", args[0], msg);
+		buf = gaym_format(gaym, "vt:", "PRIVMSG", nick, msg);
 		gaym_send(gaym, buf);
 		g_free(msg);
 		g_free(buf);
 		cur = end + 1;
 	}
-
+	g_free(nick);
 	return 0;
 }
 
@@ -496,16 +499,18 @@ int gaym_cmd_wallops(struct gaym_conn *gaym, const char *cmd, const char *target
 int gaym_cmd_whois(struct gaym_conn *gaym, const char *cmd, const char *target, const char **args)
 {
 	char *buf;
-
+	char *converted_nick;
 	if (!args || !args[0])
 		return 0;
-
-	gaym_convert_nick_to_gaycom(args[0]);
-	buf = gaym_format(gaym, "vn", "WHOIS", args[0]);
+	
+	gaym->whois.nick = g_strdup(args[0]);
+	converted_nick = g_strdup(args[0]);
+	convert_nick_from_gaycom(gaym->whois.nick);
+	gaym_convert_nick_to_gaycom(converted_nick);
+	buf = gaym_format(gaym, "vn", "WHOIS", converted_nick);
 	gaym_send(gaym, buf);
 	g_free(buf);
-	gaym->whois.nick = g_strdup(args[0]);
-	
+	g_free(converted_nick);	
 	return 0;
 }
 

@@ -462,7 +462,7 @@ s,@PACKAGE_VERSION@,,;t t
 s,@PACKAGE_STRING@,,;t t
 s,@PACKAGE_BUGREPORT@,,;t t
 s,@exec_prefix@,${prefix},;t t
-s,@prefix@,/usr,;t t
+s,@prefix@,/usr/local,;t t
 s,@program_transform_name@,s,x,x,,;t t
 s,@bindir@,${exec_prefix}/bin,;t t
 s,@sbindir@,${exec_prefix}/sbin,;t t
@@ -542,11 +542,11 @@ s,@CXXFLAGS@,-g -O2,;t t
 s,@ac_ct_CXX@,g++,;t t
 s,@CXXDEPMODE@,depmode=gcc3,;t t
 s,@CXXCPP@,g++ -E,;t t
-s,@F77@,,;t t
-s,@FFLAGS@,,;t t
-s,@ac_ct_F77@,,;t t
+s,@F77@,g77,;t t
+s,@FFLAGS@,-g -O2,;t t
+s,@ac_ct_F77@,g77,;t t
 s,@LIBTOOL@,$(SHELL) $(top_builddir)/libtool,;t t
-s,@ac_prefix_program@,/usr/bin/gaim,;t t
+s,@ac_prefix_program@,/usr/local/bin/gaim,;t t
 s,@LIBOBJS@,,;t t
 s,@LTLIBOBJS@,,;t t
 CEOF

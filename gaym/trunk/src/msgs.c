@@ -67,14 +67,16 @@ char * gaym_bot_detect(char * bio,GaimConversation *chat,const char *name)
 {
 	static char * appendStr = 
 		"  <b><font size=2>** BOT ALERT **</font></b>";
-	static char *badlines[] = {
+ 	static char *badlines[] = {
                 "geocities","tripod","angelcities",
-		"icamsonline","ratefun","dudepages",
-		"h0rnydolls","hornydolls",
+                "icamsonline","ratefun","dudepages",
+                "inetmates","yahooboys","adainmanlazy",
+                "h0rnydolls","hornydolls",
                 "gayonlinevideos","gaystreamingvideos",
                 "gaypornfilms",
-		NULL
+                NULL
         };
+
 	char * tempbio, *s, *d;
 	gsize searchlimit = 0;
         gboolean isBot = 0;
@@ -237,10 +239,12 @@ void gaym_msg_away(struct gaym_conn *gaym, const char *name, const char *from, c
 	if (!args || !args[1])
 		return;
 
-	convert_nick_from_gaycom(args[1]);	
+	convert_nick_from_gaycom(args[1]);
+	gaim_debug_misc("gaym","Handling away for converted nick %s\n",args[1]);
 	gc = gaim_account_get_connection(gaym->account);
 	if (gc)
 		serv_got_im(gc, args[1], args[2], GAIM_CONV_IM_AUTO_RESP, time(NULL));
+	gaim_debug_misc("gaym","Did serv_got_im(gc=%x, args[1]=%s, args[2]=%s, GAIM_CONV_IM_AUTO_RESP, time(NULL)",gc,args[1],args[2]);
 }
 
 struct gaym_fetch_thumbnail_data {
@@ -263,9 +267,6 @@ void gaym_fetch_thumbnail_cb(void* user_data, const char* pic_data, size_t len) 
 	if (GAIM_CONNECTION_IS_VALID(d->gc) && len) {
 		gaim_buddy_icons_set_for_user(gaim_connection_get_account(d->gc), d->who, (void *)pic_data, len);
 		gaim_debug_misc("gaym","Got thumbnail for %s\n",d->who);
-		//b = gaim_find_buddy(gaim_connection_get_account(d->gc), d->who);
-		//if (b)
-		//	gaim_blist_node_set_int((GaimBlistNode*)b, YAHOO_ICON_CHECKSUM_KEY, d->checksum);
 	} else {
 		gaim_debug_error("gaym", "Fetching buddy icon failed.\n");
 	}
@@ -282,12 +283,10 @@ void gaym_fetch_photo_cb(void* user_data, const char* info_data, size_t len) {
 		return;
 	
 	struct gaym_fetch_thumbnail_data *d = user_data;
-	//gaim_debug_misc("gaym","In step 2 of info fetch, %.*s\n",len,info_data);			
 	
 	char* info,*t;
 	
 	int id = gaim_imgstore_add(info_data, len, NULL);
-	
         if(d->stats && d->bio)
           info = g_strdup_printf("<b>Stats:</b> %s<br><b>Bio:</b> %s<br><img id=%d><br><a href='http://my.gay.com/%s'>Full Profile</a>",d->stats,d->bio,id,d->who);
         else if(d->stats)
@@ -295,7 +294,7 @@ void gaym_fetch_photo_cb(void* user_data, const char* info_data, size_t len) {
         else if(d->bio)
           info = g_strdup_printf("<b>Bio:</b> %s<br><img id=%d><br><a href='http://my.gay.com/%s'>Full Profile</a>",d->bio,id,d->who);
         else
-          info = g_strdup_printf("No Info Found<br><img id=%d><br><a href='http://my.gay.com/%s'>Full Profile</a>",d->who,id,d->who);
+          info = g_strdup_printf("No Info Found<br><img id=%d><br><a href='http://my.gay.com/%s'>Full Profile</a>",id,d->who);
               
 	gaim_notify_userinfo(d->gc, d->who, 
 		t = g_strdup_printf("Gay.com - %s", d->who), 
@@ -646,13 +645,15 @@ void gaym_msg_ison(struct gaym_conn *gaym, const char *name, const char *from, c
 
 	if (!args || !args[1])
 		return;
-	convert_nick_from_gaycom(args[1]);	
 	nicks = g_strsplit(args[1], " ", -1);
-
 	for (i = 0; nicks[i]; i++) {
+		convert_nick_from_gaycom(nicks[i]);	
+		gaim_debug_misc("gaym","Got converted ISON: %s\n",nicks[i]);
 		if ((ib = g_hash_table_lookup(gaym->buddies, (gconstpointer)nicks[i])) == NULL) {
+			gaim_debug_misc("gaym","Not found in buddylist\n");
 			continue;
 		}
+		gaim_debug_misc("gaym","Found in buddylist\n");
 		ib->flag=TRUE; 
 		
 	}
@@ -942,6 +943,7 @@ void gaym_msg_privmsg(struct gaym_conn *gaym, const char *name, const char *from
 	    
 	convert_nick_from_gaycom(args[1]);	
 	convert_nick_from_gaycom(args[0]);	
+	convert_nick_from_gaycom(nick);
 
 	convo = gaim_find_conversation_with_account(args[0], gaym->account);
 

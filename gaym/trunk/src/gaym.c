@@ -34,7 +34,7 @@
 #include "plugin.h"
 #include "util.h"
 #include "version.h"
-
+#include "helpers.h"
 
 
 
@@ -97,7 +97,6 @@ gboolean gaym_blist_timeout(struct gaym_conn *gaym)
 		
 		return TRUE;
 	}
-
 	gaym->blist_updating=TRUE;
 	buf = gaym_format(gaym, "vn", "ISON", list);
 	gaym_send(gaym, buf);
@@ -118,6 +117,7 @@ static void gaym_buddy_clear_done(char *name, struct gaym_buddy *ib, gpointer no
 }
 static void gaym_buddy_append(char *name, struct gaym_buddy *ib, GString *string)
 {
+	char* converted_name;
 	if((strlen(name) + string->len) > CHUNK_SIZE)
 		return;
 	else if (ib->done == FALSE)
@@ -125,7 +125,9 @@ static void gaym_buddy_append(char *name, struct gaym_buddy *ib, GString *string
 		ib->stale = TRUE;
 		ib->done = TRUE;
 		ib->flag = FALSE;
-		g_string_append_printf(string, "%s ", name);
+		converted_name=g_strdup(name);
+		gaym_convert_nick_to_gaycom(converted_name);
+		g_string_append_printf(string, "%s ", converted_name);
 		return;
 	}
 	
@@ -136,9 +138,11 @@ static void gaym_buddy_append(char *name, struct gaym_buddy *ib, GString *string
 static void gaym_ison_one(struct gaym_conn *gaym, struct gaym_buddy *ib)
 {
 	char *buf;
-
+	char *nick;
 	ib->flag = FALSE;
-	buf = gaym_format(gaym, "vn", "ISON", ib->name);
+	nick=g_strdup(ib->name);
+	gaym_convert_nick_to_gaycom(nick);
+	buf = gaym_format(gaym, "vn", "ISON", nick);
 	gaym_send(gaym, buf);
 	g_free(buf);
 }
@@ -185,7 +189,8 @@ static void gaym_set_info(GaimConnection *gc, const char* info) {
        gaim_account_set_string(account, "bioline",gaym->bio);
        gaim_debug_info ("gaym","INFO=%x BIO=%x\n",info,gaym->bio);
        gaim_debug_misc("gaym","In login_cb, gc->account=%x\n",gc->account);
-       bioline=g_strdup_printf("%s#%s", gaym->thumbnail,gaym->bio);
+       bioline=g_strdup_printf("%s#%s", gaym->thumbnail?gaym->thumbnail:"",
+       					gaym->bio?gaym->bio:"");
 
        buf = gaym_format(gaym, "vvvv:", "USER",
                gaim_account_get_username(account),
@@ -955,7 +960,7 @@ static GaimPluginProtocolInfo prpl_info =
 static
 void gaym_get_photo_info(GaimConversation* conv) {
 	char *buf;
-	
+	char *name;
 	gaim_debug_misc("gaym","Got conversation-created signal\n");
         if(strncmp(conv->account->protocol_id,"prpl-gaym",9) == 0 && gaim_conversation_get_type(conv) == GAIM_CONV_IM) {
 
@@ -965,11 +970,14 @@ void gaym_get_photo_info(GaimConversation* conv) {
 	gaym = (struct gaym_conn*) gc->proto_data;
 
 	gaym->info_window_needed=FALSE;
-        buf = gaym_format(gaym, "vn", "WHOIS", conv->name);
+        name = g_strdup(conv->name);
+	
+        gaym->whois.nick = g_strdup(name);
+	gaym_convert_nick_to_gaycom(name);
+	buf = gaym_format(gaym, "vn", "WHOIS", name);
         gaim_debug_misc("gaym","Conversation triggered command: %s\n",buf);
 	gaym_send(gaym, buf);
 	g_free(buf);
-        gaym->whois.nick = g_strdup(conv->name);
         }
 	
 }
