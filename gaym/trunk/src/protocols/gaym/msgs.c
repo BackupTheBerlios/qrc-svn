@@ -797,8 +797,8 @@ void gaym_msg_part(struct gaym_conn *gaym, const char *name, const char *from, c
 	if (!args || !args[0] || !gc)
 		return;
 
+	convo = gaim_find_conversation_with_account(args[0], gaym->account);
 	
-
 	nick = gaym_mask_nick(from);
 	if (!gaim_utf8_strcasecmp(nick, gaim_connection_get_display_name(gc))) {
 		msg = g_strdup_printf(_("You have parted the channel%s%s"),
