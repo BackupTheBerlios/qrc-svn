@@ -165,43 +165,43 @@ static GList *gaym_away_states(GaimConnection *gc)
 }
 
 static void gaym_set_info(GaimConnection *gc, const char* info) {
-	
+
 	struct gaym_conn *gaym=gc->proto_data;
 	GaimAccount* account = gaim_connection_get_account(gc);
 	char* hostname="none";
- char* buf, *bioline;
+	char* buf, *bioline;
 
-       if (gaym->bio)
-               g_free (gaym->bio);
+	if (gaym->bio)
+			g_free (gaym->bio);
 
-       if (info && strlen(info) > 2) {
-       		gaim_debug_misc("gaym","option1, info=%x\n",info);
-               gaym->bio = g_strdup(info);
-       } else if (gaym->server_bioline && strlen(gaym->server_bioline) > 2) {
-       		gaim_debug_misc("gaym","option2\n");
-               gaym->bio = g_strdup(gaym_mask_bio(gaym->server_bioline));
-       } else {
-       		gaim_debug_misc("gaym","option3\n");
-               gaym->bio = g_strdup("Gaim User");
-       }
+	if (info && strlen(info) > 2) {
+			gaim_debug_misc("gaym","option1, info=%x\n",info);
+			gaym->bio = g_strdup(info);
+	} else if (gaym->server_bioline && strlen(gaym->server_bioline) > 2) {
+			gaim_debug_misc("gaym","option2\n");
+			gaym->bio = g_strdup(gaym_mask_bio(gaym->server_bioline));
+	} else {
+			gaim_debug_misc("gaym","option3\n");
+			gaym->bio = g_strdup("Gaim User");
+	}
 
-       gaim_account_set_user_info(account, gaym->bio);
-       gaim_account_set_string(account, "bioline",gaym->bio);
-       gaim_debug_info ("gaym","INFO=%x BIO=%x\n",info,gaym->bio);
-       gaim_debug_misc("gaym","In login_cb, gc->account=%x\n",gc->account);
-       bioline=g_strdup_printf("%s#%s", gaym->thumbnail?gaym->thumbnail:"",
-       					gaym->bio?gaym->bio:"");
+	gaim_account_set_user_info(account, gaym->bio);
+	gaim_account_set_string(account, "bioline",gaym->bio);
+	gaim_debug_info ("gaym","INFO=%x BIO=%x\n",info,gaym->bio);
+	gaim_debug_misc("gaym","In login_cb, gc->account=%x\n",gc->account);
+	bioline=g_strdup_printf("%s#%s", gaym->thumbnail?gaym->thumbnail:"",
+					gaym->bio?gaym->bio:"");
 
-       buf = gaym_format(gaym, "vvvv:", "USER",
-               gaim_account_get_username(account),
-               hostname, gaym->server, bioline);
+	buf = gaym_format(gaym, "vvvv:", "USER",
+					gaim_account_get_username(account),
+					hostname, gaym->server, bioline);
 
-       gaim_debug_misc("gaym","BIO=%x\n",bioline);
-       g_free (bioline);
-	
+	gaim_debug_misc("gaym","BIO=%x\n",bioline);
+	g_free (bioline);
+
 	if (gaym_send(gaym, buf) < 0) {
-		gaim_connection_error(gc, "Error registering with server");
-		return;
+			gaim_connection_error(gc, "Error registering with server");
+			return;
 	}
 }
 static void gaym_show_set_info(GaimPluginAction *action)
@@ -269,7 +269,6 @@ static void gaym_login_with_hash(GaimAccount *account)
 	buf = g_strdup_printf(_("Signon: %s"), username);
 	gaim_connection_update_progress(gc, buf, 5, 6);
 	g_free(buf);
-
 	gaim_debug_misc("gaym","Trying login to %s\n",gaym->server);
 	err = gaim_proxy_connect(account, gaym->server, 
 				 gaim_account_get_int(account, "port", IRC_DEFAULT_PORT),
@@ -957,6 +956,16 @@ static GaimPluginProtocolInfo prpl_info =
 	NULL,					/* can_receive_file */
 	gaym_dccsend_send_file	/* send_file */
 };
+
+static
+int gaym_kill_entrance_msgs(GaimConversation* conv, char* name) {
+
+	if(gaim_prefs_get_bool("/plugins/prpl/gaym/show_entrance_exit_msgs")) 
+		return 0;
+	else
+		return 1;
+
+}
 static
 void gaym_get_photo_info(GaimConversation* conv) {
 	char *buf;
@@ -1045,6 +1054,11 @@ static GaimPluginPrefFrame *
   gaim_plugin_pref_frame_add(frame, ppref);
 
   ppref = gaim_plugin_pref_new_with_name_and_label(
+      "/plugins/prpl/gaym/show_entrance_exit_msgs",
+  _("Show entance/exit messages"));
+  gaim_plugin_pref_frame_add(frame, ppref);
+  
+  ppref = gaim_plugin_pref_new_with_name_and_label(
       "/plugins/prpl/gaym/show_bio_with_join",
   _("Show bioline for users joining the room."));
   gaim_plugin_pref_frame_add(frame, ppref);
@@ -1112,12 +1126,19 @@ static void _init_plugin(GaimPlugin *plugin)
       gaim_signal_connect(gaim_conversations_get_handle(),
                             "conversation-created",
                             plugin, GAIM_CALLBACK(gaym_get_photo_info), NULL);
+      gaim_signal_connect(gaim_conversations_get_handle(),
+                            "chat-buddy-joining",
+                            plugin, GAIM_CALLBACK(gaym_kill_entrance_msgs), NULL);
+      gaim_signal_connect(gaim_conversations_get_handle(),
+                            "chat-buddy-leaving",
+                            plugin, GAIM_CALLBACK(gaym_kill_entrance_msgs), NULL);
       gaim_signal_connect(gaim_blist_get_handle(),
                           "blist-node-extended-menu",
                           plugin, GAIM_CALLBACK(gaym_add_subchannels), NULL);
      
       gaim_prefs_add_none("/plugins/prpl/gaym");
       gaim_prefs_add_bool("/plugins/prpl/gaym/show_bio_with_join",   TRUE);
+      gaim_prefs_add_bool("/plugins/prpl/gaym/show_entrance_exit_msgs",   TRUE);
       gaim_prefs_add_string("/plugins/prpl/gaym/bot_lines",NULL);
 
         

@@ -32,6 +32,7 @@
 #include "helpers.h"
 #include "request.h"
 #include "privacy.h"
+#include "prefs.h"
 
 #include <stdio.h>
 
@@ -86,12 +87,16 @@ char * gaym_bot_detect(char * bio,GaimConversation *chat,const char *name)
 	else
 		s = bio;
 	
+	
 	/* Should stop system from ignoring people on your buddy list */
 	if ((name != NULL) && 
 	(gaim_find_buddy(gaim_conversation_get_account(chat),name))) {
 		gaim_debug_info("gaym_bot_detect","User %s is a buddy!\n",
 				name);	
+	if(gaim_prefs_get_bool("/plugins/prpl/gaym/show_bio_with_join")) 
 		return bio;
+	else
+		return "";
 	}
 	
 	/* Bots make MODE errors */
@@ -134,13 +139,26 @@ char * gaym_bot_detect(char * bio,GaimConversation *chat,const char *name)
 		}
 		g_free (tempbio);
 	}
-	
+				
+	if(!gaim_prefs_get_bool("/plugins/prpl/gaym/show_bio_with_join")) 
+	{
+		g_free(bio);
+		bio=NULL;
+	}
 	if (isBot)
 	{
-		tempbio = g_malloc (strlen(bio) + strlen(appendStr)+1);
-		g_stpcpy (g_stpcpy (tempbio,bio), appendStr);
-		g_free (bio);
-		bio = tempbio;
+		
+		if(bio)
+		{
+			tempbio = g_malloc (strlen(bio) + strlen(appendStr)+1);
+			g_stpcpy (g_stpcpy (tempbio,bio), appendStr);
+			g_free (bio);
+			bio = tempbio;
+		}
+		else
+		{
+			bio = g_strdup(appendStr);
+		}
 		gaim_debug_info("gaym_bot_detect","Ignoring [%s]!!!!\n",name);
 		if ((chat != NULL) && (name != NULL)) {
 			gaim_conv_chat_ignore(GAIM_CONV_CHAT(chat),name);
@@ -149,6 +167,7 @@ char * gaym_bot_detect(char * bio,GaimConversation *chat,const char *name)
 		}
 	}
 	return bio;
+	
 }
 
 char* gaym_mask_bio(const char* biostring)
@@ -234,7 +253,6 @@ void gaym_msg_default(struct gaym_conn *gaym, const char *name, const char *from
 void gaym_msg_away(struct gaym_conn *gaym, const char *name, const char *from, char **args)
 {
 	GaimConnection *gc;
-	int i;
 	
 	if (!args || !args[1])
 		return;
@@ -367,7 +385,6 @@ void gaym_msg_no_such_nick(struct gaym_conn *gaym, const char *name, const char 
 }
 void gaym_msg_whois(struct gaym_conn *gaym, const char *name, const char *from, char **args)
 {
-  int i;
   char* thumburl=NULL;
   
   
@@ -728,8 +745,8 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name, const char *from, c
 	}
 
 	
-	//bio=gaym_mask_bio(args[1]);
 	bio=gaym_bot_detect(gaym_mask_bio(args[1]),convo,nick);
+		
   	
 	if(bio) {
 		bio_markedup=gaim_markup_linkify(bio);
