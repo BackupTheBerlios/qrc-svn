@@ -1,5 +1,5 @@
 /**
- * @file gaym.h
+ * @file gaym.h 
  * 
  * gaim
  *
