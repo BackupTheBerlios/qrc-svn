@@ -1,4 +1,4 @@
-/**
+ /**
  * @file msgs.c
  * 
  * gaim
@@ -998,4 +998,3 @@ void gaym_msg_richnames_list(struct gaym_conn *gaym, const char *name, const cha
        /* GAYMDIFF: what is args[2]?  Need to make it a descriptive var */
        gaim_conv_chat_add_user(GAIM_CONV_CHAT(convo), args[2], NULL, GAIM_CBFLAGS_NONE, FALSE);
 }
-

@@ -52,7 +52,11 @@ struct gaym_conn {
 	int inbuflen;
 	int inbufused;
 
+	char* thumbnail;
 	char* hash_pw;
+	char* server_bioline;
+	
+	
 	GString *motd;
 	GString *names;
 	char *nameconv;

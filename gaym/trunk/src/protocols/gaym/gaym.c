@@ -231,7 +231,7 @@ static void gaym_login_with_hash(GaimAccount *account)
 static void gaym_login(GaimAccount *account) {
 	GaimConnection *gc;
 	struct gaym_conn *gaym;
-	char *buf, **userparts;
+	char *buf;
 	const char *username = gaim_account_get_username(account);
 
 	gc = gaim_account_get_connection(account);
@@ -245,14 +245,11 @@ static void gaym_login(GaimAccount *account) {
 	gc->proto_data = gaym = g_new0(struct gaym_conn, 1);
 	gaym->account = account;
 
-	userparts = g_strsplit(username, "@", 2);
-	gaim_connection_set_display_name(gc, userparts[0]);
-	//JBL 10-16-2004
-	//I hardcoded the server for now. We should make it variable,
-	//but NOT like the IRC code does it. More like AIM. People
-	//don't change servers very often.
-	gaym->server = "www.gay.com";
-	g_strfreev(userparts);
+	
+	//gaim_connection_set_display_name(gc, userparts[0]);
+	gaim_connection_set_display_name(gc,username);
+	gaym->server = g_strdup(gaim_account_get_string(account, "server", "www.gay.com"));
+	//gaym->server = "www.gay.com";
 	gaym->buddies = g_hash_table_new_full((GHashFunc)gaym_nick_hash, (GEqualFunc)gaym_nick_equal, 
 					     NULL, (GDestroyNotify)gaym_buddy_free);
 	gaym->cmds = g_hash_table_new(g_str_hash, g_str_equal);
@@ -274,7 +271,10 @@ static void gaym_login_cb(gpointer data, gint source, GaimInputCondition cond)
 	struct gaym_conn *gaym = gc->proto_data;
 	char hostname[256];
 	char *buf;
-	const char *username, *realname;
+	const char *username;
+	const char* user_bioline; 
+	char* bioline;
+	
 	GList *connections = gaim_connections_get_all();
 
 	if (source < 0) {
@@ -302,20 +302,29 @@ static void gaym_login_cb(gpointer data, gint source, GaimInputCondition cond)
 	gethostname(hostname, sizeof(hostname));
 	hostname[sizeof(hostname) - 1] = '\0';
 	username = gaim_account_get_string(gaym->account, "username", "");
-	realname = gaim_account_get_string(gaym->account, "realname", "");
-	buf = gaym_format(gaym, "vvvv:", "USER", strlen(username) ? username : g_get_user_name(), hostname, gaym->server,
-			      strlen(realname) ? realname : IRC_DEFAULT_ALIAS);
-	if (gaym_send(gaym, buf) < 0) {
-		gaim_connection_error(gc, "Error registering with server");
-		return;
-	}
-	g_free(buf);
+	user_bioline = gaim_account_get_string(gaym->account, "bioline", ""); 
+	int bioline_s=sizeof(char)*(strlen(user_bioline)+strlen(gaym->thumbnail)+2);
+	bioline=g_malloc(bioline_s);
+	g_snprintf(bioline, bioline_s, "%s#%s", gaym->thumbnail,user_bioline); 
+	
 	buf = gaym_format(gaym, "vn", "NICK", gaim_connection_get_display_name(gc));
+	gaim_debug_misc("gaym","Command: %s\n",buf);
+	
 	if (gaym_send(gaym, buf) < 0) {
 		gaim_connection_error(gc, "Error sending nickname");
 		return;
 	}
 	g_free(buf);
+	
+	buf = gaym_format(gaym, "vvvv:", "USER", gaim_account_get_username(gc->account), hostname, gaym->server,
+			      bioline);
+	gaim_debug_misc("gaym","Command: %s\n",buf);
+	if (gaym_send(gaym, buf) < 0) {
+		gaim_connection_error(gc, "Error registering with server");
+		return;
+	}
+	g_free(buf);
+	
 
 	gc->inpa = gaim_input_add(gaym->fd, GAIM_INPUT_READ, gaym_input_cb, gc);
 }
@@ -699,11 +708,11 @@ static GaimPluginInfo info =
 
 static void _init_plugin(GaimPlugin *plugin)
 {
-	GaimAccountUserSplit *split;
+	
 	GaimAccountOption *option;
 
-	split = gaim_account_user_split_new(_("Server"), IRC_DEFAULT_SERVER, '@');
-	prpl_info.user_splits = g_list_append(prpl_info.user_splits, split);
+	option = gaim_account_option_string_new(_("Server"), "server", IRC_DEFAULT_SERVER);
+	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
 	option = gaim_account_option_int_new(_("Port"), "port", IRC_DEFAULT_PORT);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
@@ -715,7 +724,7 @@ static void _init_plugin(GaimPlugin *plugin)
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
 	/* GAYDIFF: Should likely set this to BIO */
-	option = gaim_account_option_string_new(_("Real name"), "realname", "");
+	option = gaim_account_option_string_new(_("Bio Line"), "bioline", "");
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
 	_gaym_plugin = plugin;

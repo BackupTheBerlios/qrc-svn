@@ -307,21 +307,57 @@ gaym_weblogin_step5(gpointer session, const char* text, size_t len) {
 	
 	char *pw_hash;
 	char *bio;
+	char *thumbnail;
 	char *temp;
+	char *temp2;
+	const char* match;
+	const char* result;
+	match="password\" value=\"";
+	temp=strstr(text, match)+strlen(match);
+	temp2=strstr(temp,"\" ");
 	
-	temp=strstr(text, "v0_");
-	pw_hash=strtok(temp,"\" ");
-	gaim_debug_misc("gaym","Found hash: %s",pw_hash);
+	pw_hash=g_strndup(temp,(temp2-temp)*sizeof(char));
+	gaim_debug_misc("gaym","Found hash: %s\n",pw_hash);
 	
- 
+	match="param name=\"bio\" value=\"";
+	temp=strstr(text,match)+strlen(match);
+ 	temp2=strstr(temp,"%23%01");
 	
+	thumbnail=g_strndup(temp,(temp2-temp)*sizeof(char));
+	result=gaim_url_decode(thumbnail);
+	((struct gaym_conn*)((GaimUrlSession*)session)->account->gc->proto_data)->
+		thumbnail=g_strdup(result);
+	
+	gaim_debug_misc("gaym","Found tnail: %s\n",result);
+		temp2+=strlen("%23%01");
+	temp=strstr(temp2,"\"");
+	
+	bio=g_strndup(temp2,(temp-temp2)*sizeof(char));
+	result=gaim_url_decode(bio);
+	((struct gaym_conn*)((GaimUrlSession*)session)->account->gc->proto_data)->
+		server_bioline=g_strdup(result);
+	
+	gaim_debug_misc("gaym","Got bio string: %s\n",result);
+
 	//Ok, maybe we should set this somewhere else. This looks silly. Hehe.
 	((struct gaym_conn*)((GaimUrlSession*)session)->account->gc->proto_data)->
-		hash_pw=strdup(pw_hash);
+		hash_pw=pw_hash;
+	 
 	
 	
-	temp=strstr(text, "
+	
+	
+	gaim_debug_misc("gaym","Saved thumbnail string: %s\n",thumbnail);
+	gaim_debug_misc("gaym","Saved bio string: %s\n",bio);
+		
+ 
+
+		//bio=gaim_url_decode(bio);
+	
+	
 	//We have established a session. Call session callback.
+	g_free(thumbnail);
+	g_free(bio);
 	((GaimUrlSession*)session)->session_cb(((GaimUrlSession*)session)->account);
 	
 }
