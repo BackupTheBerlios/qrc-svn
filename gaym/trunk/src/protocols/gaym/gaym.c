@@ -303,6 +303,8 @@ static void gaym_login_cb(gpointer data, gint source, GaimInputCondition cond)
 	const char* user_bioline; 
 	char* bioline;
 	
+	if(GAIM_CONNECTION_IS_VALID(gc))
+	{
 	GList *connections = gaim_connections_get_all();
 
 	if (source < 0) {
@@ -355,6 +357,7 @@ static void gaym_login_cb(gpointer data, gint source, GaimInputCondition cond)
 	
 
 	gc->inpa = gaim_input_add(gaym->fd, GAIM_INPUT_READ, gaym_input_cb, gc);
+	}
 }
 
 static void gaym_close(GaimConnection *gc)
@@ -746,7 +749,7 @@ static void get_photo_info(GaimConversation* conv) {
 	GaimConnection *gc = gaim_conversation_get_gc(conv);
 	gaym = (struct gaym_conn*) gc->proto_data;
 
-
+	gaym->info_window_needed=FALSE;
 	buf = gaym_format(gaym, "vn", "WHOIS", conv->name);
 	gaym_send(gaym, buf);
 	g_free(buf);

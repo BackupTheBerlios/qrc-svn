@@ -178,28 +178,42 @@ void gaym_fetch_info_cb(void* user_data, const char* info_data, size_t len) {
 	char * picpath;
 	char * endpicpath;
 	char * picurl;
+	char * info;
 	char * match="pictures.0.url=";
 	size_t pathlen=0;
+	size_t biolen=0;
+	char * serverinfo = strchr(d->bio, 1)+1;
 	
+	biolen = serverinfo - d->bio -1;
 	
-	picpath=strstr(info_data, match)+strlen(match);
+	info = g_strdup_printf("%s<br>%.*s",serverinfo,biolen,d->bio);
+	picpath=strstr(info_data, match);
 	if(picpath)
-	{	endpicpath=strstr(picpath, "\n");
-		pathlen = endpicpath-picpath;
-	}
+	{	
+		picpath+=strlen(match);
+		endpicpath=strstr(picpath, "\n");
 	
-	if(pathlen)
-	{
+		if(endpicpath)	
+		{
+			pathlen = endpicpath-picpath;
+	
+	
+			if(pathlen)
+			{
 		
-		picurl=g_strdup_printf("http://www.gay.com%.*s",pathlen,picpath);
-		if(picurl)
-			gaim_url_fetch(picurl, FALSE, "Mozilla/4.0 (compatible; MSIE 5.0)", FALSE, gaym_fetch_photo_cb, user_data);
+				picurl=g_strdup_printf("http://www.gay.com%.*s",pathlen,picpath);
+				if(picurl)
+					d->bio=info;
+					gaim_url_fetch(picurl, FALSE, "Mozilla/4.0 (compatible; MSIE 5.0)", FALSE, gaym_fetch_photo_cb, user_data);
+				return;
+			}
+			
+		}
+	
 	}
-	else
-	{
 	gaim_notify_userinfo(d->gc, d->who, NULL, "Gay.com Profile",
-				     NULL, d->bio, NULL, NULL);
-	}
+			     NULL, info, NULL, NULL);
+	
 	
 }
 void gaym_msg_no_such_nick(struct gaym_conn *gaym, const char *name, const char *from, char **args) {
@@ -252,24 +266,39 @@ void gaym_msg_whois(struct gaym_conn *gaym, const char *name, const char *from, 
 	
 	data2->gc = gaim_account_get_connection(gaym->account);
 	data2->who = g_strdup(gaym->whois.nick);
-	char* thumburl;
-	gaim_debug_misc("gaym","Bio line: %s\n",args[5]);
-	char* urlstart=args[5]+3;
+	
+	char* urlstart=args[5];
+	urlstart=strchr(urlstart,':')+1;
 	char* endthumb=strchr(urlstart,'#');
-	thumburl=g_strdup_printf("http://www.gay.com/images/personals/pictures%.*s>",endthumb-urlstart,urlstart);
 	char* bio=endthumb+1;
+	
+	
+	gaim_debug_misc("gaym","endthumb: %x, urlstart: %x\n",endthumb, urlstart);
 	data2->bio = g_strdup(bio);
-	gaim_debug_misc("gaym","With tnail stripped; %s",data->bio);
-	char* infourl = g_strdup_printf("http://www.gay.com/messenger/get-profile.txt?pw=%s&name=%s",gaym->hash_pw,gaym->whois.nick);
-	gaim_url_fetch(thumburl, FALSE, "Mozilla/4.0 (compatible; MSIE 5.0)", FALSE,
-		       gaym_fetch_thumbnail_cb, data);
+	
+	if(endthumb != urlstart)
+	{
+		char* thumburl=g_strdup_printf("http://www.gay.com/images/personals/pictures%.*s>",endthumb-urlstart,urlstart);
+		if(thumburl)	
+		{	
+			gaim_url_fetch(thumburl, FALSE, "Mozilla/4.0 (compatible; MSIE 5.0)", FALSE,
+		       		gaym_fetch_thumbnail_cb, data);
+			g_free(thumburl);
+		}
+	}
 	if(gaym->info_window_needed) {
 		gaym->info_window_needed=0;
-		gaim_url_fetch(infourl, FALSE, "Mozilla/4.0 (compatible; MSIE 5.0)", FALSE, gaym_fetch_info_cb, data2);
+		char* infourl = g_strdup_printf("http://www.gay.com/messenger/get-profile.txt?pw=%s&name=%s",gaym->hash_pw,gaym->whois.nick);
+	
+		if(infourl)
+		{	
+			gaim_url_fetch(infourl, FALSE, "Mozilla/4.0 (compatible; MSIE 5.0)", FALSE, gaym_fetch_info_cb, 	data2);
+			g_free(infourl);
+		}
 	}
 
-	g_free(thumburl);
-	g_free(infourl);
+	
+
 	
 }
 

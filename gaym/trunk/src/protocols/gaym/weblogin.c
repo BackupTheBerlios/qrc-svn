@@ -311,7 +311,8 @@ static void
 gaym_weblogin_step5(gpointer session, const char* text, size_t len) {
 
 	//Get hash from text
-	
+	if(GAIM_CONNECTION_IS_VALID(((GaimUrlSession*)session)->account->gc))
+	{
 	char *pw_hash;
 	char *bio;
 	char *thumbnail;
@@ -385,11 +386,16 @@ gaym_weblogin_step5(gpointer session, const char* text, size_t len) {
 		//		_("Problem parsing password from web. Report a bug."));
 	}
 	((GaimUrlSession*)session)->session_cb(((GaimUrlSession*)session)->account);
+	
+	}
+	g_free(session);
 }
 
 static void
 gaym_weblogin_step4(gpointer session, const char* text, size_t len) {
 
+	if(GAIM_CONNECTION_IS_VALID(((GaimUrlSession*)session)->account->gc))
+	{
 	//The fourth step is to parse a rand=# value out of the message text from 
 	//The previous step.
 	//We then connect to messenger/applet.html  
@@ -402,13 +408,17 @@ gaym_weblogin_step4(gpointer session, const char* text, size_t len) {
 	
 	((GaimUrlSession*)session)->hasFormData=TRUE;
 	gaim_session_fetch(url, FALSE, NULL, FALSE,gaym_weblogin_step5, session);
-	
+	}
+	else
+		g_free(session);
 }
 
 
 static void
 gaym_weblogin_step3(gpointer session, const char* text, size_t len) {
 
+	if(GAIM_CONNECTION_IS_VALID(((GaimUrlSession*)session)->account->gc))
+	{
 	//The third step is to get a nonce needed for getting the applet.
 	//We connect to messenger/frameset.html, using previously set cookie values.
 	//From the returned body, we will need to parse out the rand values.
@@ -417,11 +427,15 @@ gaym_weblogin_step3(gpointer session, const char* text, size_t len) {
 	gaim_connection_update_progress(((GaimUrlSession*)session)->account->gc, buf, 4, 6);
 	((GaimUrlSession*)session)->hasFormData=FALSE;
 	gaim_session_fetch(url, FALSE, NULL, FALSE,gaym_weblogin_step4, session);
-	
+	}
+	else
+		g_free(session);
 }
 static void
 gaym_weblogin_step2(gpointer session, const char* text, size_t len) {
 
+	if(GAIM_CONNECTION_IS_VALID(((GaimUrlSession*)session)->account->gc))
+	{
 	//The second step is to do the actual login.
 	//We connect to misc/dologin.html, using cookies set from step 1
 	//And add a few more cookie values.
@@ -437,11 +451,15 @@ gaym_weblogin_step2(gpointer session, const char* text, size_t len) {
 	gaim_debug(GAIM_DEBUG_MISC, "gaym", "In step 2, trying: %s\n", url);
 	((GaimUrlSession*)session)->hasFormData=TRUE;
 	gaim_session_fetch(url, FALSE, NULL, FALSE,gaym_weblogin_step3, session);
-	
+	}
+	else
+		g_free(session);
 }
 static void
 gaym_weblogin_step1(gpointer session) {
 
+	if(GAIM_CONNECTION_IS_VALID(((GaimUrlSession*)session)->account->gc))
+	{
 	//The first step is to establish the initial sesion
 	//We connect to index.html, and get a few cookie values. 
 	char* url = "http://www.gay.com/index.html";
@@ -449,12 +467,16 @@ gaym_weblogin_step1(gpointer session) {
 	gaim_connection_update_progress(((GaimUrlSession*)session)->account->gc, buf, 2, 6);
 	((GaimUrlSession*)session)->hasFormData=FALSE;
 	gaim_session_fetch(url, FALSE, NULL, FALSE,gaym_weblogin_step2, session);
-	
+	}
+	else
+		g_free(session);
 }
 
 void 
 gaym_get_hash_from_weblogin(GaimAccount* account, void(*callback)(GaimAccount* account)) {
 	
+	if(GAIM_CONNECTION_IS_VALID(account->gc))
+	{
 	GaimUrlSession* session=g_new0(GaimUrlSession, 1);
 	session->session_cb = callback;
 	session->cookies=NULL;
@@ -462,4 +484,5 @@ gaym_get_hash_from_weblogin(GaimAccount* account, void(*callback)(GaimAccount* a
 	session->username=g_strdup(account->username);
 	session->password=g_strdup(account->password);
 	gaym_weblogin_step1(session);
+	}
 }
