@@ -318,6 +318,47 @@ static void gaym_login(GaimAccount *account) {
 
 
 }
+static
+GaimChat* gaym_find_chat_by_ircname(GaimAccount* account, char* name) {
+
+	char *chat_name;
+	GaimChat *chat;
+	GaimPluginProtocolInfo *prpl_info = NULL;
+	GaimBlistNode *node, *group;
+
+	GaimBuddyList* gaimbuddylist = gaim_get_blist();
+
+	g_return_val_if_fail(gaimbuddylist != NULL, NULL);
+	g_return_val_if_fail((name != NULL) && (*name != '\0'), NULL);
+
+	if (!gaim_account_is_connected(account))
+		return NULL;
+
+
+
+	for (group = gaimbuddylist->root; group != NULL; group = group->next) {
+		for (node = group->child; node != NULL; node = node->next) {
+			if (GAIM_BLIST_NODE_IS_CHAT(node)) {
+
+				chat = (GaimChat*)node;
+
+				if (account != chat->account)
+					continue;
+
+				chat_name = g_hash_table_lookup(chat->components,
+											"ircname");
+
+				if (chat->account == account && chat_name != NULL &&
+					name != NULL && !strcmp(chat_name, name)) {
+
+					return chat;
+				}
+			}
+		}
+	}
+
+	return NULL;
+}
 
 static void gaym_get_roomlist_from_text(gpointer proto_data) {
   
@@ -794,7 +835,6 @@ static void gaym_chat_leave (GaimConnection *gc, int id)
 	gaym_cmd_part(gaym, "part", gaim_conversation_get_name(convo), args);
 	serv_got_chat_left(gc, id);
 }
-
 static int gaym_chat_send(GaimConnection *gc, int id, const char *what)
 {
 	struct gaym_conn *gaym = gc->proto_data;
@@ -848,20 +888,19 @@ static void gaym_buddy_free(struct gaym_buddy *ib)
 
 static GaimRoomlist *gaym_roomlist_get_list(GaimConnection *gc)
 {
-	struct gaym_conn *gaym;
-        GaimRoomlistField *f=NULL;
-        GList *fields=NULL;
-	
-	gaym = gc->proto_data;
+		struct gaym_conn *gaym;
+		GaimRoomlistField *f=NULL;
+		GList *fields=NULL;
 
-        if(gaym->roomlist)
-          gaim_roomlist_unref(gaym->roomlist);
-        
+		gaym = gc->proto_data;
+
+		if(gaym->roomlist)
+				gaim_roomlist_unref(gaym->roomlist);
+
         gaym->roomlist = gaim_roomlist_new(gaim_connection_get_account(gc));
   
-        //dgaym->roomlist_filter = "Sac";
         
-  //Add an initial ref so the list is never destroyed.
+  		//Add an initial ref so the list is never destroyed.
         gaim_roomlist_ref(gaym->roomlist);
   
         f = gaim_roomlist_field_new(GAIM_ROOMLIST_FIELD_STRING, "Long Name", "name", TRUE);
@@ -949,7 +988,7 @@ static GaimPluginProtocolInfo prpl_info =
 	NULL,					/* remove_group */
 	NULL,					/* get_cb_real_name */
 	NULL,					/* set_chat_topic */
-	NULL,					/* find_blist_chat */
+	NULL,	/* find_blist_chat */
 	gaym_roomlist_get_list,	/* roomlist_get_list */
 	gaym_roomlist_cancel,	/* roomlist_cancel */
 	NULL,					/* roomlist_expand_category */
@@ -960,11 +999,72 @@ static GaimPluginProtocolInfo prpl_info =
 static
 int gaym_kill_entrance_msgs(GaimConversation* conv, char* name) {
 
+
+	gaim_debug_misc("gaym","Now in kill entrance function\n");
 	if(gaim_prefs_get_bool("/plugins/prpl/gaym/show_entrance_exit_msgs")) 
+    {
+		if(gaim_prefs_get_bool("/plugins/prpl/gaym/hide_bot_entrance_exit_msgs"))
+			if(gaim_conv_chat_get_ignored_user(conv->u.chat, name))
+			{
+				gaim_debug_misc("gaym","%s is ignored!",name);
+				return 1;
+			}
 		return 0;
+	}
 	else
 		return 1;
 
+}
+
+static
+char* gaym_get_generic_name(const char* name, char* subroom) {
+	
+	char* nameptr = name;
+	int root_length=0;
+	
+	if(!name)
+		return name;
+	
+	//If first char isn't a #, then we don't care.
+	if(*nameptr++ != '#')
+		return g_strdup(name);
+
+
+	while(isdigit(*nameptr)) nameptr++;
+
+	//If an equals sign doesn't follow the numbers, it's the wrong form.
+	if(*(nameptr) != '=')
+		return g_strdup(name);
+
+	*subroom=*(nameptr+1);
+
+	root_length=nameptr-name+1;
+
+	return(g_strdup_printf("%.*s*",root_length,name));
+	
+	
+
+}
+static 
+void gaym_fix_room_title(GaimConversation* conv) {
+	
+	char* full_name;
+	char subroom;
+	char* generic_name = gaym_get_generic_name(conv->name, &subroom);
+	
+				
+	gaim_debug_misc("gaym","Fixing conversation title for %s\n",generic_name);
+	
+	GaimBuddy* chat_node = gaym_find_chat_by_ircname(conv->account, generic_name);
+
+	if(!chat_node)
+		return;
+	full_name = g_strdup_printf("%s - (%c)", chat_node->name, subroom);
+	gaim_conversation_set_title(conv, full_name);
+
+	g_free(generic_name);
+	g_free(full_name);
+	
 }
 static
 void gaym_get_photo_info(GaimConversation* conv) {
@@ -1062,11 +1162,16 @@ static GaimPluginPrefFrame *
       "/plugins/prpl/gaym/show_bio_with_join",
   _("Show bioline for users joining the room."));
   gaim_plugin_pref_frame_add(frame, ppref);
-
+  
   ppref = gaim_plugin_pref_new_with_name_and_label(
-		  "/plugins/prpl/gaym/bot_lines",
-  _("Space-seperated list of terms that bots use. <Not yet implemented>"));
+      "/plugins/prpl/gaym/hide_bot_entrance_exit_msgs",
+  _("Don't show entrance/exit messages for detected bots."));
   gaim_plugin_pref_frame_add(frame, ppref);
+
+  //ppref = gaim_plugin_pref_new_with_name_and_label(
+	//	  "/plugins/prpl/gaym/bot_lines",
+  //_("Space-seperated list of terms that bots use. <Not yet implemented>"));
+  //gaim_plugin_pref_frame_add(frame, ppref);
   return frame;
 }
 
@@ -1126,6 +1231,11 @@ static void _init_plugin(GaimPlugin *plugin)
       gaim_signal_connect(gaim_conversations_get_handle(),
                             "conversation-created",
                             plugin, GAIM_CALLBACK(gaym_get_photo_info), NULL);
+
+	  gaim_signal_connect(gaim_conversations_get_handle(),
+	  						"conversation-updated",
+							plugin, GAIM_CALLBACK(gaym_fix_room_title), NULL);
+							
       gaim_signal_connect(gaim_conversations_get_handle(),
                             "chat-buddy-joining",
                             plugin, GAIM_CALLBACK(gaym_kill_entrance_msgs), NULL);
@@ -1139,6 +1249,7 @@ static void _init_plugin(GaimPlugin *plugin)
       gaim_prefs_add_none("/plugins/prpl/gaym");
       gaim_prefs_add_bool("/plugins/prpl/gaym/show_bio_with_join",   TRUE);
       gaim_prefs_add_bool("/plugins/prpl/gaym/show_entrance_exit_msgs",   TRUE);
+      gaim_prefs_add_bool("/plugins/prpl/gaym/hide_bot_entrance_exit_msgs",   TRUE);
       gaim_prefs_add_string("/plugins/prpl/gaym/bot_lines",NULL);
 
         

@@ -599,37 +599,17 @@ gaym_weblogin_step2(gpointer data, const char* text, size_t len) {
 	char url[1024];
 	char* buf = g_strdup_printf(_("Signon: %s"), gaym->session->account->username);
 	gaim_connection_update_progress(gaym->session->account->gc, buf, 3, 6);
-	gaim_debug(GAIM_DEBUG_MISC, "gaym", "From step one, got cookies: %s\n", (gaym->session->cookies));
 	
 	snprintf(url,1024,"http://www.gay.com/misc/dologin.html?__login_haveForm=1&__login_save=1&__login_member=%s&redir=%%2Findex.html&__login_basepage=%%2Fmisc%%2Fdologin.html&__login_password=%s",
 	gaym->session->username, 
 	gaym->session->password);
 	
-	gaim_debug(GAIM_DEBUG_MISC, "gaym", "In step 2, trying: %s\n", url);
 	gaym->session->hasFormData=TRUE;
 	gaim_session_fetch(url, FALSE, NULL, FALSE,gaym_weblogin_step3, gaym, gaym->session);
 	}
 	else
 		g_free(gaym->session);
 }
-/*
-static void
-gaym_weblogin_step1(gpointer session) {
-
-	if(GAIM_CONNECTION_IS_VALID(((GaimUrlSession*)session)->account->gc))
-	{
-	//The first step is to establish the initial sesion
-	//We connect to index.html, and get a few cookie values. 
-	char* url = "http://www.gay.com/index.html";
-	char* buf = g_strdup_printf(_("Signon: %s"), ((GaimUrlSession*)session)->account->username);
-	gaim_connection_update_progress(((GaimUrlSession*)session)->account->gc, buf, 2, 6);
-	((GaimUrlSession*)session)->hasFormData=FALSE;
-	gaim_session_fetch(url, FALSE, NULL, FALSE,gaym_weblogin_step2, session);
-	}
-	else
-		g_free(session);
-}
-*/
 void 
 gaym_get_hash_from_weblogin(GaimAccount* account, void(*callback)(GaimAccount* account)) {
 	
