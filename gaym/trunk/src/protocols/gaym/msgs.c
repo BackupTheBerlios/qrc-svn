@@ -771,9 +771,19 @@ void gaym_msg_part(struct gaym_conn *gaym, const char *name, const char *from, c
 	if (!args || !args[0] || !gc)
 		return;
 
-	convo = gaim_find_conversation_with_account(args[0], gaym->account);
+	//If someone QUITs gay.com, the PART message still has a colon in front of the channel name. 
+	//This COULD create problems in theory, if there was a channel name that began with a colon.
+	//But there's not. 
+	if(args[0][0]==':')
+		convo = gaim_find_conversation_with_account(&(args[0][1]), gaym->account);
+	else
+		convo = gaim_find_conversation_with_account(args[0], gaym->account);
 	if (!convo) {
-		gaim_debug(GAIM_DEBUG_INFO, "gaym", "Got a PART on %s, which doesn't exist -- probably closed\n", args[0]);
+		if(args[0][0]==':')
+			gaim_debug(GAIM_DEBUG_INFO, "gaym", "Got a QUIT PART on %s, which doesn't exist -- probably closed\n", &(args[0][1]));
+		else
+			gaim_debug(GAIM_DEBUG_INFO, "gaym", "Got a PART on %s, which doesn't exist -- probably closed\n", args[0]);	
+		
 		return;
 	}
 

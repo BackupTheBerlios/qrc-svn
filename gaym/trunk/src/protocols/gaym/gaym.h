@@ -86,13 +86,12 @@ struct gaym_buddy {
 
 typedef struct {
 
-char cookies[2048];
-size_t cookie_len;
-void (*session_cb)(GaimAccount*);
-GaimAccount* account;
-char *username;
-char *password;
-gboolean hasFormData;
+	char *cookies;
+	void (*session_cb)(GaimAccount*);
+	GaimAccount* account;
+	char *username;
+	char *password;
+	gboolean hasFormData;
 
 } GaimUrlSession;
 

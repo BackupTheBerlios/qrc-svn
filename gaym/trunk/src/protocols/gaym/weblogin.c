@@ -35,8 +35,7 @@
 
 //This looks for Set-cookie: fields in headers, and adds those cookies 
 //To the session struct.
-//TODO current the cookie field in the session struct is fixed size, because mem 
-//allocation functions were giving me hell. This should be changed, though.
+
 //TODO If a cookie value is re-set, then it will be duplicated, since Set-Cookie
 //field is just appended to already existing cookies. This is not an issue for 
 //the current gay.com implementation, but this should be changed, so that 
@@ -44,33 +43,41 @@
 //JBL 10-16-2004
 static void parse_cookies(const char* webdata, GaimUrlSession *session, size_t len){
  
-	char *next_token;
+	
 	char *haystack=g_malloc0(len*sizeof(char));
 	size_t cookie_size;
 	strncpy(haystack, webdata, len);
-
-	next_token=strtok(haystack, "\r\n");
-	while(next_token) {
-		gaim_debug_misc("gaym","Looking for cookie in %s\n",next_token);
-		if(!strncmp(next_token, "Set-cookie: ", 12)) {
-			cookie_size=strlen(next_token+12);
-			if (session->cookies)
-			{	//session->cookies=realloc(session->cookies,
-				//		session->cookie_len + cookie_size+2);
-				//gaim_debug_misc("gaym","Extending cookie struct by %d\n",cookie_size);
-				//session->cookie_len += cookie_size+2;
-				strncat(session->cookies,"; ",2);
-				strncat(session->cookies,next_token+12,cookie_size);
-			}
+	char *next_token=haystack;
+	char *end_token;
+	char *new_cookie;
+	
+	const char* match="Set-cookie: ";
+	while(next_token=strstr(next_token, match)) {
+		
+		next_token += strlen(match); //We don't want the "Set-cookie: " part!
+		end_token=strstr(next_token,"\r\n"); 
+		
+		if(!end_token)
+			continue;
+		else
+		{
+			
+			cookie_size=end_token-next_token;
+			
+			if(session->cookies)
+				new_cookie=g_strdup_printf("%s; %.*s",session->cookies, cookie_size, next_token);
 			else
+				new_cookie=g_strdup_printf("%.*s",cookie_size, next_token);
+			if(new_cookie)
 			{
-				//session->cookies=malloc(cookie_size*sizeof(char));
-				//session->cookie_len = cookie_size;
-				
-				strncpy(session->cookies,next_token+12,cookie_size);
+				g_free(session->cookies); //g_strdup makes allocates memory, so get rid of the old stuff.
+				session->cookies = new_cookie;
 			}
+			
+			
+			
 		}
-		next_token=strtok('\0',"\r\n");
+		
 	}
 }
 
@@ -312,13 +319,19 @@ gaym_weblogin_step5(gpointer session, const char* text, size_t len) {
 	char *temp2;
 	const char* match;
 	const char* result;
-	match="password\" value=\"";
+	
+	//First, look for password
+	match="password\" value=\""; 
 	temp=strstr(text, match)+strlen(match);
 	temp2=strstr(temp,"\" ");
 	
 	pw_hash=g_strndup(temp,(temp2-temp)*sizeof(char));
 	gaim_debug_misc("gaym","Found hash: %s\n",pw_hash);
 	
+	((struct gaym_conn*)((GaimUrlSession*)session)->account->gc->proto_data)->
+			hash_pw=pw_hash;
+	
+	//Next, loook for bio
 	match="param name=\"bio\" value=\"";
 	temp=strstr(text,match)+strlen(match);
  	temp2=strstr(temp,"%23%01");
@@ -328,31 +341,14 @@ gaym_weblogin_step5(gpointer session, const char* text, size_t len) {
 	((struct gaym_conn*)((GaimUrlSession*)session)->account->gc->proto_data)->
 		thumbnail=g_strdup(result);
 	
-	gaim_debug_misc("gaym","Found tnail: %s\n",result);
-		temp2+=strlen("%23%01");
+	
+	//Parse out non	thumbnail part of bio.
 	temp=strstr(temp2,"\"");
 	
 	bio=g_strndup(temp2,(temp-temp2)*sizeof(char));
 	result=gaim_url_decode(bio);
 	((struct gaym_conn*)((GaimUrlSession*)session)->account->gc->proto_data)->
 		server_bioline=g_strdup(result);
-	
-	gaim_debug_misc("gaym","Got bio string: %s\n",result);
-
-	//Ok, maybe we should set this somewhere else. This looks silly. Hehe.
-	((struct gaym_conn*)((GaimUrlSession*)session)->account->gc->proto_data)->
-		hash_pw=pw_hash;
-	 
-	
-	
-	
-	
-	gaim_debug_misc("gaym","Saved thumbnail string: %s\n",thumbnail);
-	gaim_debug_misc("gaym","Saved bio string: %s\n",bio);
-		
- 
-
-		//bio=gaim_url_decode(bio);
 	
 	
 	//We have established a session. Call session callback.
@@ -432,9 +428,9 @@ gaym_get_hash_from_weblogin(GaimAccount* account, void(*callback)(GaimAccount* a
 	
 	GaimUrlSession* session=g_new0(GaimUrlSession, 1);
 	session->session_cb = callback;
-	session->cookie_len=0;
+	session->cookies=NULL;
 	session->account=account;
-	session->username=strtok(account->username,"@");
-	session->password=strtok(account->password,"\0");
+	session->username=g_strdup(account->username);
+	session->password=g_strdup(account->password);
 	gaym_weblogin_step1(session);
 }
