@@ -62,6 +62,7 @@ struct gaym_conn {
 	char* server_bioline;
 	
 	gboolean blist_updating;
+	gboolean info_window_needed;
 	
 	GString *motd;
 	GString *names;
@@ -140,6 +141,7 @@ void gaym_msg_nick(struct gaym_conn *gaym, const char *name, const char *from, c
 void gaym_msg_nickused(struct gaym_conn *gaym, const char *name, const char *from, char **args);
 void gaym_msg_nochan(struct gaym_conn *gaym, const char *name, const char *from, char **args);
 void gaym_msg_nonick(struct gaym_conn *gaym, const char *name, const char *from, char **args);
+void gaym_msg_no_such_nick(struct gaym_conn *gaym, const char *name, const char *from, char **args);
 void gaym_msg_nochangenick(struct gaym_conn *gaym, const char *name, const char *from, char **args);
 void gaym_msg_nosend(struct gaym_conn *gaym, const char *name, const char *from, char **args);
 void gaym_msg_notice(struct gaym_conn *gaym, const char *name, const char *from, char **args);

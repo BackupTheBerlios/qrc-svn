@@ -401,6 +401,7 @@ static void gaym_get_info(GaimConnection *gc, const char *who)
 	struct gaym_conn *gaym = gc->proto_data;
 	const char *args[1];
 	args[0] = who;
+	gaym->info_window_needed=TRUE;
 	gaym_cmd_whois(gaym, "whois", NULL, args);
 	
 	
@@ -649,7 +650,7 @@ static GaimPluginProtocolInfo prpl_info =
 	OPT_PROTO_CHAT_TOPIC | OPT_PROTO_PASSWORD_OPTIONAL,
 	NULL,					/* user_splits */
 	NULL,					/* protocol_options */
-	NO_BUDDY_ICONS,			/* icon_spec */
+	{"jpg",55,75,55,75},			/* icon_spec */
 	gaym_blist_icon,			/* list_icon */
 	gaym_blist_emblems,		/* list_emblems */
 	NULL,					/* status_text */
@@ -736,6 +737,24 @@ static GaimPluginInfo info =
 	gaym_actions
 };
 
+static void get_photo_info(GaimConversation* conv) {
+	char *buf;
+
+	
+	struct gaym_conn *gaym;
+	
+	GaimConnection *gc = gaim_conversation_get_gc(conv);
+	gaym = (struct gaym_conn*) gc->proto_data;
+
+
+	buf = gaym_format(gaym, "vn", "WHOIS", conv->name);
+	gaym_send(gaym, buf);
+	g_free(buf);
+	gaym->whois.nick = g_strdup(conv->name);
+	
+	
+}
+
 static void _init_plugin(GaimPlugin *plugin)
 {
 	
@@ -757,6 +776,9 @@ static void _init_plugin(GaimPlugin *plugin)
 	option = gaim_account_option_string_new(_("Bio Line"), "bioline", "");
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
+	gaim_signal_connect(gaim_conversations_get_handle(),
+			    "conversation-created",
+			    plugin, GAIM_CALLBACK(get_photo_info), NULL);
 	_gaym_plugin = plugin;
 
 	gaym_register_commands();

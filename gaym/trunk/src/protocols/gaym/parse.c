@@ -92,6 +92,7 @@ static struct _gaym_msg {
 */
 	{ "696", "nc:", gaym_msg_pay_channel },  /* User tried to enter pay channel, rejected
 */
+	{ "701", "nt:", gaym_msg_no_such_nick}, /* Tried to get whois for someone not on */
 	{ "invite", "n:", gaym_msg_invite },	/* Invited			*/
 	{ "join", "c:", gaym_msg_join },	/* Joined a channel		*/
 	{ "kick", "cn:", gaym_msg_kick },	/* KICK				*/

@@ -28,6 +28,7 @@
 #include "util.h"
 #include "debug.h"
 #include "gaym.h"
+#include "imgstore.h"
 
 #include <stdio.h>
 
@@ -129,6 +130,87 @@ void gaym_msg_chanmode(struct gaym_conn *gaym, const char *name, const char *fro
 	return;
 }
 
+struct gaym_fetch_thumbnail_data {
+	GaimConnection *gc;
+	char *who;
+	char *info;
+	char *bio;
+};
+
+static 
+void gaym_fetch_thumbnail_cb(void* user_data, const char* pic_data, size_t len) {
+	struct gaym_fetch_thumbnail_data *d = user_data;
+	//GaimBuddy *b;
+
+	if (GAIM_CONNECTION_IS_VALID(d->gc) && len) {
+		gaim_buddy_icons_set_for_user(gaim_connection_get_account(d->gc), d->who, (void *)pic_data, len);
+		gaim_debug_misc("gaym","Got thumbnail for %s\n",d->who);
+		//b = gaim_find_buddy(gaim_connection_get_account(d->gc), d->who);
+		//if (b)
+		//	gaim_blist_node_set_int((GaimBlistNode*)b, YAHOO_ICON_CHECKSUM_KEY, d->checksum);
+	} else {
+		gaim_debug_error("yahoo", "Fetching buddy icon failed.\n");
+	}
+
+	g_free(d->who);
+	g_free(d);
+		
+}
+
+static 
+void gaym_fetch_photo_cb(void* user_data, const char* info_data, size_t len) {
+	struct gaym_fetch_thumbnail_data *d = user_data;
+	gaim_debug_misc("gaym","In step 2 of info fetch, %.*s\n",len,info_data);			
+	
+	char* info;
+	int id = gaim_imgstore_add(info_data, len, NULL);
+	
+	info = g_strdup_printf("%s<br><img id=%d>",d->bio,id);
+	
+	gaim_notify_userinfo(d->gc, d->who, NULL, "Gay.com Profile",
+			     NULL, info, NULL, NULL);
+	g_free(d);
+	
+}
+static 
+void gaym_fetch_info_cb(void* user_data, const char* info_data, size_t len) {
+	struct gaym_fetch_thumbnail_data *d = user_data;
+	char * picpath;
+	char * endpicpath;
+	char * picurl;
+	char * match="pictures.0.url=";
+	size_t pathlen=0;
+	
+	
+	picpath=strstr(info_data, match)+strlen(match);
+	if(picpath)
+	{	endpicpath=strstr(picpath, "\n");
+		pathlen = endpicpath-picpath;
+	}
+	
+	if(pathlen)
+	{
+		
+		picurl=g_strdup_printf("http://www.gay.com%.*s",pathlen,picpath);
+		if(picurl)
+			gaim_url_fetch(picurl, FALSE, "Mozilla/4.0 (compatible; MSIE 5.0)", FALSE, gaym_fetch_photo_cb, user_data);
+	}
+	else
+	{
+	gaim_notify_userinfo(d->gc, d->who, NULL, "Gay.com Profile",
+				     NULL, d->bio, NULL, NULL);
+	}
+	
+}
+void gaym_msg_no_such_nick(struct gaym_conn *gaym, const char *name, const char *from, char **args) {
+	gaym->info_window_needed=0;
+	char* buf;
+	//gaim_debug_misc("gaym","Args 0: %s 1: %s 2: %s 3: %s\n",args[0],args[1],args[2]);
+	buf = g_strdup_printf("That user is not logged on. Check <a href='http://my.gay.com/%s'>here</a> to see if that user has a profile.",args[1]);
+	gaim_notify_userinfo(gaim_account_get_connection(gaym->account), NULL, NULL, "No such user",
+			     NULL, buf, NULL, NULL);
+	
+}
 void gaym_msg_whois(struct gaym_conn *gaym, const char *name, const char *from, char **args)
 {
 	if (!gaym->whois.nick) {
@@ -162,13 +244,33 @@ void gaym_msg_whois(struct gaym_conn *gaym, const char *name, const char *from, 
 		gaym->whois.identified = 1;
 	}
 	
+	struct gaym_fetch_thumbnail_data *data, *data2;
+	data = g_new0(struct gaym_fetch_thumbnail_data, 1);
+	data2 = g_new0(struct gaym_fetch_thumbnail_data, 1);
+	data->gc = gaim_account_get_connection(gaym->account);
+	data->who = g_strdup(gaym->whois.nick);
+	
+	data2->gc = gaim_account_get_connection(gaym->account);
+	data2->who = g_strdup(gaym->whois.nick);
 	char* thumburl;
+	gaim_debug_misc("gaym","Bio line: %s\n",args[5]);
 	char* urlstart=args[5]+3;
 	char* endthumb=strchr(urlstart,'#');
-	thumburl=g_strdup_printf("<img src='http://www.gay.com/images/personals/pictures%.*s'>",endthumb-urlstart,urlstart);
-	gaim_debug_misc("gaym","HTML string: %s\n",thumburl);
-	//gaim_notify_userinfo(gaym->account->gc, args[1], NULL, "GC Info", NULL, thumburl, NULL, NULL);
+	thumburl=g_strdup_printf("http://www.gay.com/images/personals/pictures%.*s>",endthumb-urlstart,urlstart);
+	char* bio=endthumb+1;
+	data2->bio = g_strdup(bio);
+	gaim_debug_misc("gaym","With tnail stripped; %s",data->bio);
+	char* infourl = g_strdup_printf("http://www.gay.com/messenger/get-profile.txt?pw=%s&name=%s",gaym->hash_pw,gaym->whois.nick);
+	gaim_url_fetch(thumburl, FALSE, "Mozilla/4.0 (compatible; MSIE 5.0)", FALSE,
+		       gaym_fetch_thumbnail_cb, data);
+	if(gaym->info_window_needed) {
+		gaym->info_window_needed=0;
+		gaim_url_fetch(infourl, FALSE, "Mozilla/4.0 (compatible; MSIE 5.0)", FALSE, gaym_fetch_info_cb, data2);
+	}
 
+	g_free(thumburl);
+	g_free(infourl);
+	
 }
 
 //Slated for removal, gay.com doesn't send these.
@@ -579,16 +681,19 @@ static void gaym_buddy_status(char *name, struct gaym_buddy *ib, struct gaym_con
 		serv_got_update(gc, buddy->name, FALSE, 0, 0, 0, 0);
 		ib->online = FALSE;
 		
+		
 	}
 
 	if (!ib->online && ib->flag) {
 		serv_got_update(gc, buddy->name, TRUE, 0, 0, 0, 0);
 		ib->online = TRUE;
 		ib->flag=FALSE;
+
 		
 		
 	}
 	ib->stale = FALSE;
+	ib->flag = FALSE;
 }
 
 void gaym_msg_join(struct gaym_conn *gaym, const char *name, const char *from, char **args)
@@ -603,6 +708,9 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name, const char *from, c
 		g_free(nick);
 		return;
 	}
+	
+	
+	
 
 	if (!gaim_utf8_strcasecmp(nick, gaim_connection_get_display_name(gc))) {
 		/* We are joining a channel for the first time */
@@ -621,6 +729,7 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name, const char *from, c
 	userhost = gaym_mask_userhost(from);
 	gaim_conv_chat_add_user(GAIM_CONV_CHAT(convo), nick, userhost, GAIM_CBFLAGS_NONE, TRUE);
 
+	
 	if ((ib = g_hash_table_lookup(gaym->buddies, nick)) != NULL) {
 		ib->flag = TRUE;
 		gaym_buddy_status(nick, ib, gaym);
