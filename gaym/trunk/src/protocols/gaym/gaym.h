@@ -59,7 +59,8 @@ struct gaym_conn {
 
 	char* thumbnail;
 	char* hash_pw;
-	char* server_bioline;
+	char* server_bioline;    
+	char* roomlist_filter;
 	
 	gboolean blist_updating;
 	gboolean info_window_needed;
@@ -82,6 +83,7 @@ struct gaym_conn {
 	} whois;
 	GaimRoomlist *roomlist;
 
+        GList** node_menu;
 	gboolean quitting;
 };
 
@@ -131,6 +133,8 @@ void gaym_msg_endmotd(struct gaym_conn *gaym, const char *name, const char *from
 void gaym_msg_invite(struct gaym_conn *gaym, const char *name, const char *from, char **args);
 void gaym_msg_inviteonly(struct gaym_conn *gaym, const char *name, const char *from, char **args);
 void gaym_msg_ison(struct gaym_conn *gaym, const char *name, const char *from, char **args);
+void gaym_msg_who(struct gaym_conn *gaym, const char *name, const char *from, char **args);
+void gaym_msg_chanfull(struct gaym_conn *gaym, const char *name, const char *from, char **args);
 void gaym_msg_join(struct gaym_conn *gaym, const char *name, const char *from, char **args);
 void gaym_msg_kick(struct gaym_conn *gaym, const char *name, const char *from, char **args);
 void gaym_msg_list(struct gaym_conn *gaym, const char *name, const char *from, char **args);

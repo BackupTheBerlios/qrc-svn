@@ -144,16 +144,13 @@ int gaym_cmd_invite(struct gaym_conn *gaym, const char *cmd, const char *target,
 
 int gaym_cmd_join(struct gaym_conn *gaym, const char *cmd, const char *target, const char **args)
 {
+
 	char *buf;
 
 	if (!args || !args[0])
-		return 0;
+          return 0;
 
-	if (args[1])
-		buf = gaym_format(gaym, "vcv", "JOIN", args[0], args[1]);
-	else
-		buf = gaym_format(gaym, "cv", "JOIN", args[0]);
-	/* GAYMDIFF: Irc would use "vc" here - which is right? */
+        buf = gaym_format(gaym, "cv", "JOIN", args[0]);
 	
 	gaym_send(gaym, buf);
 	g_free(buf);
@@ -185,7 +182,13 @@ int gaym_cmd_kick(struct gaym_conn *gaym, const char *cmd, const char *target, c
 
 int gaym_cmd_list(struct gaym_conn *gaym, const char *cmd, const char *target, const char **args)
 {
-	gaim_roomlist_show_with_account(gaym->account);
+  
+  
+  if (args[0])
+    gaym->roomlist_filter=g_strdown(g_strdup(args[0]));
+  else
+    gaym->roomlist_filter=NULL;
+  gaim_roomlist_show_with_account(gaym->account);
 
 	return 0;
 }

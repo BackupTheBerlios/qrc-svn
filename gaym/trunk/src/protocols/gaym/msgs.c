@@ -81,7 +81,7 @@ static char* gaym_mask_stats(const char *biostring)
 {
   
   char * start = strchr(biostring,'#');
-  int i;
+  
   if(start)
     start = strchr(start,0x01);
  
@@ -293,7 +293,7 @@ void gaym_msg_whois(struct gaym_conn *gaym, const char *name, const char *from, 
         data2->bio=gaym_mask_bio(args[5]);
         data2->stats=gaym_mask_stats(args[5]);
         
-        gaim_debug_misc("gaym","thumbpath: %s, bio: %s, stats: %s\n",thumbpath,data2->bio,data2->stats);
+        //gaim_debug_misc("gaym","thumbpath: %s, bio: %s, stats: %s\n",thumbpath,data2->bio,data2->stats);
 	char* thumburl=g_strdup_printf("http://www.gay.com/images/personals/pictures%s>",thumbpath);
 	if(thumburl)	
 	{	
@@ -620,8 +620,7 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name, const char *from, c
         gaim_debug_misc("gaym","Join args: 0=%s, 1=%s, 2=%s\n",args[0],args[1],args[2]);
         gaim_debug_misc("gaym","Join from: %s\n",from);
 	gaim_conv_chat_add_user(GAIM_CONV_CHAT(convo), nick, bio, GAIM_CBFLAGS_NONE, TRUE);
-
-	
+       
 	if ((ib = g_hash_table_lookup(gaym->buddies, nick)) != NULL) {
 		ib->flag = TRUE;
 		gaym_buddy_status(nick, ib, gaym);
@@ -743,8 +742,8 @@ void gaym_msg_part(struct gaym_conn *gaym, const char *name, const char *from, c
 	
 	nick = gaym_mask_nick(from);
 	if (!gaim_utf8_strcasecmp(nick, gaim_connection_get_display_name(gc))) {
-		msg = g_strdup_printf(_("You have parted the channel%s%s"),
-                                      (args[1] && *args[1]) ? ": " : "", args[1]);
+                msg = g_strdup_printf(_("You have parted the channel"));
+                                      
 		gaim_conv_chat_write(GAIM_CONV_CHAT(convo), args[0], msg, GAIM_MESSAGE_SYSTEM, time(NULL));
 		g_free(msg);
 		serv_got_chat_left(gc, gaim_conv_chat_get_id(GAIM_CONV_CHAT(convo)));
@@ -886,8 +885,22 @@ void gaym_msg_quit(struct gaym_conn *gaym, const char *name, const char *from, c
 	return;
 }
 
+void gaym_msg_who (struct gaym_conn *gaym, const char *name, const char *from, char **args){
+  
+}
 
+void gaym_msg_chanfull  (struct gaym_conn *gaym, const char *name, const char *from, char **args)
+{
+  GaimConnection *gc = gaim_account_get_connection(gaym->account);
+  char *buf;
 
+  if (!args || !args[1] || !gc)
+    return;
+
+  buf = g_strdup_printf(_("%s is full."), args[1]); 
+  gaim_notify_error(gc, _("Room Full"), _("Room Full"), buf);
+  g_free(buf);
+}
 void gaym_msg_pay_channel (struct gaym_conn *gaym, const char *name, const char *from, char **args)
 {
        GaimConnection *gc = gaim_account_get_connection(gaym->account);

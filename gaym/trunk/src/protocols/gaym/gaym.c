@@ -38,7 +38,6 @@
 #include "gaym.h"
 
 
-
 static const char *gaym_blist_icon(GaimAccount *a, GaimBuddy *b);
 static void gaym_blist_emblems(GaimBuddy *b, char **se, char **sw, char **nw, char **ne);
 static GList *gaym_away_states(GaimConnection *gc);
@@ -206,14 +205,8 @@ static GList *gaym_chat_join_info(GaimConnection *gc)
 	struct proto_chat_entry *pce;
 
 	pce = g_new0(struct proto_chat_entry, 1);
-	pce->label = _("_Channel:");
-	pce->identifier = "channel";
-	m = g_list_append(m, pce);
-
-	pce = g_new0(struct proto_chat_entry, 1);
-	pce->label = _("_Password:");
-	pce->identifier = "password";
-	pce->secret = TRUE;
+	pce->label = _("_Room:");
+	pce->identifier = "name";
 	m = g_list_append(m, pce);
 
 	return m;
@@ -295,6 +288,190 @@ static void gaym_login(GaimAccount *account) {
 
 
 }
+
+static void gaym_get_roomlist_cb(gpointer gc, const char* config_text, size_t len) {
+  
+  int current_level=0;
+  char * list_position=NULL;
+  char * field_end=NULL;
+  const char* match="roomlist=|";
+  size_t field_len=0;
+  char * name=NULL;
+  char * num=NULL;
+  GaimRoomlistRoom *room = NULL;
+  GaimRoomlistRoom *current_parent = NULL;
+  GaimRoomlistRoom *last_room=NULL;
+  
+  int level;
+  struct gaym_conn* gaym=NULL;
+  
+  int num_rooms=0;
+  gaym = (struct gaym_conn*)(((GaimConnection*)gc)->proto_data);
+   
+  
+  if(!config_text)
+  {
+    gaim_debug_misc("gaym","Room list parsing error: No config webpage\n");
+           
+    return;
+  }
+  list_position=strstr(config_text,match);
+  if(!list_position)
+  {
+    gaim_debug_misc("gaym","Room list parsing error: No roomlist found\n");
+           
+    return;
+  }
+  
+  while((list_position=strstr(list_position,"\n|")) && num_rooms < 50)
+  {   
+    //This num_rooms stuff is just to limit the list during debugging.   
+    //num_rooms++;
+    level=0; 
+    list_position+=2;
+    
+    //This is a room
+    if(*list_position=='#')
+    {
+      
+      //First, parse the room number
+      field_end=strchr(list_position,'*');
+      if(!field_end)
+      {
+        gaim_debug_misc("gaym","Room list parsing error: room number not properly terminated\n");
+        return;
+      }
+      field_end++;
+      field_len=field_end-list_position;
+      num=g_strndup(list_position,field_len);
+      
+      list_position=field_end+1;
+      
+      
+      //Next, the +'s indicate the level in the tree
+      while(*list_position=='+')
+      {
+        level++;
+        list_position++;
+      }
+      
+      if(level>current_level) 
+      {
+        current_level=level;
+        current_parent=last_room;
+      }
+      if(level<current_level)      
+      {
+        
+        while(level<current_level)
+        {
+          current_level--;
+          current_parent=current_parent?current_parent->parent:NULL;   
+        }
+      } 
+      
+      
+      //Finally, the readable room name
+      field_end=strstr(list_position,"\\\n");         
+      if(!field_end)
+      {
+        gaim_debug_misc("gaym","Room list parsing error!");
+        return;
+      }
+      field_len=field_end-list_position;
+      name=g_strndup(list_position,field_len);
+      
+     
+      if(gaym->roomlist_filter)
+        current_parent=NULL;
+      list_position=field_end;
+    
+      gaim_debug_misc("gaym","Just before add condition with name=%s and roomlist_filter=%s\n",name,gaym->roomlist_filter);
+      char* lname=g_strdown(g_strdup(name));
+      if(!gaym->roomlist_filter || strstr(lname,gaym->roomlist_filter)!=0)
+      {
+      
+      //Actually create and add the room
+      room = gaim_roomlist_room_new(GAIM_ROOMLIST_ROOMTYPE_ROOM, name, current_parent);
+      gaim_roomlist_room_add_field(gaym->roomlist, room, name);
+      gaim_roomlist_room_add_field(gaym->roomlist, room, num);
+      gaim_roomlist_room_add(gaym->roomlist, room);
+      gaim_debug_misc("gaym","(Ref %x) Added room %s: %s (level %d) (parent %x)\n",room,num,name,current_level,current_parent);
+      g_free(name);
+      g_free(num);
+      if(lname)
+        g_free(lname);
+      }
+    }
+    
+    //This is a category
+    else if(!gaym->roomlist_filter)
+    {
+      
+      //This code is duplicated above. Should probably make a function.
+      while(*list_position=='+')
+      {
+        level++;
+        list_position++;
+      }
+      
+      if(level>current_level) 
+      {
+        current_level=level;
+        current_parent=last_room;
+      }
+      if(level<current_level)      
+      {
+        while(level<current_level)
+        {
+          current_level--;
+          current_parent=current_parent?current_parent->parent:NULL;   
+          gaim_debug_misc("gaym","Changed parent to %x\n",current_parent);
+        }
+      } 
+      //*************end duplicate
+        
+      field_end=strstr(list_position,"\\\n");
+      if(!field_end)
+      {
+        gaim_debug_misc("gaym","Room list parsing error!");
+        return;
+      }
+      field_len=field_end-list_position;
+      name=g_strndup(list_position,field_len);
+      room = gaim_roomlist_room_new(GAIM_ROOMLIST_ROOMTYPE_CATEGORY, name, current_parent);
+      gaim_roomlist_room_add(gaym->roomlist, room);
+    
+      gaim_debug_misc("gaym","(Ref %x) Added categroy %s (level %d) (parent %x)\n",room,name,level,current_parent);
+      g_free(name);
+      list_position=field_end;
+    
+    }
+    else
+      list_position=strstr(list_position,"\\\n");
+    
+    if(*(list_position+2) != '|')
+    {
+      gaim_debug_misc("gaym","list_position: 0(%c) 1(%c) 2(%c) 3(%c)\n",*list_position,*(list_position+1),*(list_position+2),*(list_position+3));
+      gaim_roomlist_unref(gaym->roomlist);
+      gaim_roomlist_unref(gaym->roomlist);
+      gaim_roomlist_set_in_progress(gaym->roomlist, FALSE);
+      gaym->roomlist = NULL;
+      if(gaym->roomlist_filter)
+        g_free(gaym->roomlist_filter);
+      gaym->roomlist_filter=NULL;
+      return;
+    }
+    last_room=room;
+    }
+    
+   
+    
+    
+       
+        
+}
+
 static void gaym_login_cb(gpointer data, gint source, GaimInputCondition cond)
 {
 	GaimConnection *gc = data;
@@ -355,7 +532,8 @@ static void gaym_login_cb(gpointer data, gint source, GaimInputCondition cond)
 		gaim_connection_error(gc, "Error registering with server");
 		return;
 	}
-	g_free(buf);
+        
+        g_free(buf);
 	
 
 	gc->inpa = gaim_input_add(gaym->fd, GAIM_INPUT_READ, gaym_input_cb, gc);
@@ -491,15 +669,54 @@ static void gaym_input_cb(gpointer data, gint source, GaimInputCondition cond)
 static void gaym_chat_join (GaimConnection *gc, GHashTable *data)
 {
 	struct gaym_conn *gaym = gc->proto_data;
-	const char *args[2];
-
-	args[0] = g_hash_table_lookup(data, "channel");
-	args[1] = g_hash_table_lookup(data, "password");
-	gaym_cmd_join(gaym, "join", NULL, args);
+	const char* name[1];
+        char* alias=NULL;
+        
+        
+        GaimChat *c=NULL;
+        
+        GHashTable *chatinfo = NULL; //need a copy, because data gets destroyed in roomlist.c
+        
+        
+        name[0]=g_hash_table_lookup(data,"ircname");
+        
+        if(!name[0])
+          name[0]=g_hash_table_lookup(data,"name");
+        else
+        {
+          
+          
+          alias=g_hash_table_lookup(data,"name");
+          c=gaim_blist_find_chat(gaim_connection_get_account(gc), alias);
+          if(!c)
+          { 
+            chatinfo = g_hash_table_new(g_str_hash, g_str_equal);
+            alias=g_hash_table_lookup(data,"name");
+          
+            g_hash_table_replace(chatinfo, "name", g_strdup(alias));
+            g_hash_table_replace(chatinfo, "ircname", g_strdup(name[0]));
+          
+            c=gaim_chat_new(gaim_connection_get_account(gc), 
+                            alias,
+                            chatinfo);
+            
+              
+            gaim_blist_add_chat(c, NULL, NULL);
+          }
+          
+        }
+        
+        if(!name[0] || *name[0]!='#')
+        {
+          //Trigger a room search in config.txt....  
+          return;
+        }
+      
+	gaym_cmd_join(gaym, NULL, NULL, name);
 }
 
 static char *gaym_get_chat_name(GHashTable *data) {
-	return g_strdup(g_hash_table_lookup(data, "channel"));
+	return g_strdup(g_hash_table_lookup(data, "name"));
 }
 
 static void gaym_chat_invite(GaimConnection *gc, int id, const char *message, const char *name) 
@@ -603,33 +820,34 @@ static void gaym_chat_set_topic(GaimConnection *gc, int id, const char *topic)
 static GaimRoomlist *gaym_roomlist_get_list(GaimConnection *gc)
 {
 	struct gaym_conn *gaym;
-	GList *fields = NULL;
-	GaimRoomlistField *f;
-	char *buf;
-
+        GaimRoomlistField *f=NULL;
+        GList *fields=NULL;
+	
 	gaym = gc->proto_data;
 
-	if (gaym->roomlist)
-		gaim_roomlist_unref(gaym->roomlist);
+        if(gaym->roomlist)
+          gaim_roomlist_unref(gaym->roomlist);
+        
+        gaym->roomlist = gaim_roomlist_new(gaim_connection_get_account(gc));
+  
+        //dgaym->roomlist_filter = "Sac";
+        
+  //Add an initial ref so the list is never destroyed.
+        gaim_roomlist_ref(gaym->roomlist);
+  
+        f = gaim_roomlist_field_new(GAIM_ROOMLIST_FIELD_STRING, "Long Name", "name", TRUE);
+        fields = g_list_append(fields, f);
 
-	gaym->roomlist = gaim_roomlist_new(gaim_connection_get_account(gc));
+        f = gaim_roomlist_field_new(GAIM_ROOMLIST_FIELD_STRING, _("IRC Name"), "ircname", FALSE);
+        fields = g_list_append(fields, f);
 
-	f = gaim_roomlist_field_new(GAIM_ROOMLIST_FIELD_STRING, "", "channel", TRUE);
-	fields = g_list_append(fields, f);
-
-	f = gaim_roomlist_field_new(GAIM_ROOMLIST_FIELD_INT, _("Users"), "users", FALSE);
-	fields = g_list_append(fields, f);
-
-	f = gaim_roomlist_field_new(GAIM_ROOMLIST_FIELD_STRING, _("Topic"), "topic", FALSE);
-	fields = g_list_append(fields, f);
-
-	gaim_roomlist_set_fields(gaym->roomlist, fields);
-
-	buf = gaym_format(gaym, "v", "LIST");
-	gaym_send(gaym, buf);
-	g_free(buf);
-
-	return gaym->roomlist;
+        gaim_roomlist_set_fields(gaym->roomlist, fields);
+        char* roomlisturl=g_strdup_printf("http://www.gay.com/messenger/config.txt?pw=%s",gaym->hash_pw);
+        gaim_url_fetch(roomlisturl, FALSE, "Mozilla/4.0 (compatible; MSIE 5.0)", FALSE, gaym_get_roomlist_cb, gc);
+        g_free(roomlisturl);		
+	
+        gaim_roomlist_set_in_progress(gaym->roomlist, TRUE);
+        return gaym->roomlist;
 }
 
 static void gaym_roomlist_cancel(GaimRoomlist *list)
@@ -733,6 +951,47 @@ void gaym_get_photo_info(GaimConversation* conv) {
 	
 }
 
+static void gaym_join_subroom(GaimBlistNode * node, gpointer data) {
+  
+  }
+static void gaym_add_subchannels(GaimBlistNode *node, GList **menu)
+{
+  
+  char* room,*buf;
+  
+  
+  struct gaym_conn *gaym;
+  GaimChat *chat=(GaimChat*)node;
+  
+  if(node->type != GAIM_BLIST_CHAT_NODE)
+    return;
+  
+  gaym=chat->account->gc->proto_data;
+  
+  room=g_hash_table_lookup(chat->components,"ircname");
+  if(room)
+  {
+    gaym->node_menu=menu;
+    buf = gaym_format(gaym, "vn", "WHOIS", room);
+    gaym_send(gaym, buf);
+  }
+  /*
+  for(i=1; i<4; i++)
+  {
+    alias=((GaimChat*)node)->alias;
+    data = g_strdup_printf("#557=%d",i);
+    label = g_strdup_printf("%s %d",alias,i);
+    GaimBlistNodeAction* act=gaim_blist_node_action_new(label,
+        gaym_join_subroom,
+        &data);
+  
+("gaym","Got blist-node-extended menu signal, menu is %x, act is %x\n",menu,act);
+    *menu=g_list_append(*menu,act);
+  */
+  }
+
+  
+  /*
 static GaimPluginPrefFrame *
     get_plugin_pref_frame(GaimPlugin *plugin)
 {
@@ -752,9 +1011,11 @@ static GaimPluginPrefFrame *
   return frame;
 }
 
+
 static GaimPluginUiInfo prefs_info = {
   get_plugin_pref_frame
 };
+*/
 
 static GaimPluginInfo info =
 {
@@ -806,6 +1067,10 @@ static void _init_plugin(GaimPlugin *plugin)
       gaim_signal_connect(gaim_conversations_get_handle(),
                             "conversation-created",
                             plugin, GAIM_CALLBACK(gaym_get_photo_info), NULL);
+      gaim_signal_connect(gaim_blist_get_handle(),
+                          "blist-node-extended-menu",
+                          plugin, GAIM_CALLBACK(gaym_add_subchannels), NULL);
+     
       gaim_prefs_add_bool("/plugins/prpl/msn/show_bio_with_join",   TRUE);
 
         

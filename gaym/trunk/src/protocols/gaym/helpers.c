@@ -13,7 +13,7 @@ char * return_string_between(const char* startbit, const char* endbit, const cha
     start+=strlen(startbit);
     end = strstr(start,endbit);
 }
-  gaim_debug_misc("gaym","source: %d; start: %d; end: %d\n",source,start,end);
+  //gaim_debug_misc("gaym","source: %d; start: %d; end: %d\n",source,start,end);
   if(start && end)
     return g_strdup_printf("%.*s",end-start,start);
   else 
@@ -27,7 +27,7 @@ char* convert_nick_to_gc(char* nick) {
   for(i=0; i<strlen(out); i++)
     if(out[i]=='.')
       out[i]='|';
-  gaim_debug_misc("gaym","Converted %s to %s\n",nick,out);
+  //gaim_debug_misc("gaym","Converted %s to %s\n",nick,out);
   return out;
   } 
  
@@ -37,6 +37,8 @@ char* convert_nick_to_gc(char* nick) {
     for(i=0; i<strlen(out); i++)
       if(out[i]=='|')
         out[i]='.';
-    gaim_debug_misc("gaym","Converted %s to %s\n",nick,out);
+    //gaim_debug_misc("gaym","Converted %s to %s\n",nick,out);
     return out;
   }  
+
+  

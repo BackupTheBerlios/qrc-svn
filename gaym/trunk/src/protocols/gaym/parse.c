@@ -39,11 +39,6 @@ static char *gaym_recv_convert(struct gaym_conn *gaym, const char *string);
 
 static void gaym_parse_error_cb(struct gaym_conn *gaym, char *input);
 
-static char *gaym_mgaym_colors[16] = {
-	"white", "black", "blue", "dark green", "red", "brown", "purple",
-		"orange", "yellow", "green", "teal", "cyan", "light blue",
-		"pink", "grey", "light grey" };
-
 /*typedef void (*IRCMsgCallback)(struct gaym_conn *gaym, char *from, char *name, char **args);*/
 static struct _gaym_msg {
 	char *name;
@@ -56,7 +51,9 @@ static struct _gaym_msg {
 	{ "311", "nnvvv:", gaym_msg_whois },	/* Whois user			*/
 	{ "312", "nnv:", gaym_msg_whois },	/* Whois server			*/
 	{ "313", "nn:", gaym_msg_whois },	/* Whois gaymop			*/
+        { "315", "nc:", gaym_msg_who},           /* End of WHO list */
 	{ "317", "nnvv", gaym_msg_whois },	/* Whois idle			*/
+        { "352", "nc:", gaym_msg_who},          /* WHO list */
 	{ "353", "nvc:", gaym_msg_names },	/* Names list			*/
 	{ "366", "nc:", gaym_msg_names },	/* End of names			*/
     	{ "376", "n:", gaym_msg_endmotd },	/* End of MOTD			*/
@@ -65,6 +62,7 @@ static struct _gaym_msg {
 	{ "421", "nv:", gaym_msg_unknown },	/* Unknown command		*/
 	{ "422", "nv:", gaym_msg_endmotd },	/* No MOTD available		*/
      	{ "442", "nc:", gaym_msg_notinchan },	/* Not in channel		*/
+        { "471", "nc:", gaym_msg_chanfull }, /* Channel Full */
         { "690", "ncnt:", gaym_msg_richnames_list },  /* Gay.com's RPL for names list */
         { "695", "nc:", gaym_msg_toomany_channels },  /* Too many channels (2) maximum joined */
         { "696", "nc:", gaym_msg_pay_channel },  /* User tried to enter pay channel, rejected */
@@ -93,6 +91,7 @@ static struct _gaym_user_cmd {
 	{ "join", "cv", gaym_cmd_join, N_("join &lt;room1&gt;[,room2][,...] [key1[,key2][,...]]:  Enter one or more channels, optionally providing a channel key for each if needed.") },
 	{ "me", ":", gaym_cmd_ctcp_action, N_("me &lt;action to perform&gt;:  Perform an action.") },
 	{ "msg", "t:", gaym_cmd_privmsg, N_("msg &lt;nick&gt; &lt;message&gt;:  Send a private message to a user (as opposed to a channel).") },
+        { "list", "*", gaym_cmd_list, N_("list [filter]: List all channels, or if filter is specified, list channels containing filter text.") },
 	{ "names", "c", gaym_cmd_names, N_("names [channel]:  List the users currently in a channel.") },
 	{ "nick", "n", gaym_cmd_nick, N_("nick &lt;new nickname&gt;:  Change your nickname.") },
 	{ "part", "c:", gaym_cmd_part, N_("part [room] [message]:  Leave the current channel, or a specified channel, with an optional message.") },
@@ -299,7 +298,7 @@ char *gaym_format(struct gaym_conn *gaym, const char *format, ...)
 	char *tok, *tmp;
 	const char *cur;
 	va_list ap;
-        int i;
+        
 
 	va_start(ap, format);
 	for (cur = format; *cur; cur++) {
