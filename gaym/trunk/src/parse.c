@@ -103,6 +103,10 @@ static struct _gaym_msg {
     "696", "nc:", gaym_msg_pay_channel},        /* User tried to enter pay 
                                                    channel, rejected */
     {
+    "698", "nc:", gaym_msg_create_pay_only},    /* Creating a new room
+                                                   is a feature for paying
+                                                   member */
+    {
     "701", "nt:", gaym_msg_no_such_nick},       /* Tried to get whois for
                                                    someone not on */
     {

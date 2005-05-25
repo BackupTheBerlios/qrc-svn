@@ -346,26 +346,16 @@ static void gaym_login(GaimAccount * account)
 }
 
 static void gaym_get_configtxt_cb(gpointer proto_data,
-                                  const char *config_text, size_t len)
+                                  const gchar * config_text, size_t len)
 {
     struct gaym_conn *gaym = (struct gaym_conn *) proto_data;
 
-    if (!config_text)
+    if (!config_text) {
         return;
+    }
+    // Call Jason's cool function to do away with java madness
 
-    // FIXME
-    //
-    // config.txt is a file that is not utf-8, but is ascii with
-    // \uXXXX characters that is basically utf-8 expressed as ascii
-    //
-    // this is easy for java to figure out, and there is even a
-    // native2ascii command to convert such files back and forth
-    //
-    // I wonder if there is something someone else has done that
-    // can be used
-
-    gaym->configtxt = g_convert(config_text, -1, "UTF-8", "ISO-8859-1",
-                                NULL, NULL, NULL);
+    gaym->configtxt = ascii2native(config_text);
 
     if (!gaym->configtxt) {
         gaim_debug(GAIM_DEBUG_ERROR, "gaym",

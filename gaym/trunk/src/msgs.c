@@ -504,7 +504,7 @@ void gaym_msg_list(struct gaym_conn *gaym, const char *name,
         field_end = strrchr(args[1], '=');
 
         if (!field_start || !field_end) {
-            gaim_debug_misc("gaym",
+            gaim_debug_error("gaym",
                             "Member created room list parsing error");
             return;
         }
@@ -570,7 +570,7 @@ void gaym_msg_list(struct gaym_conn *gaym, const char *name,
         char *num_inst = NULL;
 
         if (!gaym->configtxt) {
-            gaim_debug_misc("gaym",
+            gaim_debug_fatal("gaym",
                             "Room list parsing error: No config webpage\n");
             gaim_roomlist_set_in_progress(gaym->roomlist, FALSE);
             gaim_roomlist_unref(gaym->roomlist);
@@ -581,7 +581,7 @@ void gaym_msg_list(struct gaym_conn *gaym, const char *name,
         list_position = strstr(gaym->configtxt, match);
 
         if (!list_position) {
-            gaim_debug_misc("gaym",
+            gaim_debug_fatal("gaym",
                             "Room list parsing error: No roomlist found\n");
             gaim_roomlist_set_in_progress(gaym->roomlist, FALSE);
             gaim_roomlist_unref(gaym->roomlist);
@@ -600,7 +600,7 @@ void gaym_msg_list(struct gaym_conn *gaym, const char *name,
                 // First, parse the room number
                 field_end = strchr(list_position, '=');
                 if (!field_end) {
-                    gaim_debug_misc("gaym",
+                    gaim_debug_error("gaym",
                                     "Room list parsing error: room number not properly terminated\n");
                     gaim_roomlist_set_in_progress(gaym->roomlist, FALSE);
                     gaim_roomlist_unref(gaym->roomlist);
@@ -636,7 +636,7 @@ void gaym_msg_list(struct gaym_conn *gaym, const char *name,
                 // 
                 field_end = strstr(list_position, "\\\n");
                 if (!field_end) {
-                    gaim_debug_misc("gaym", "Room list parsing error!");
+                    gaim_debug_error("gaym", "Room list parsing error!");
                     gaim_roomlist_set_in_progress(gaym->roomlist, FALSE);
                     gaim_roomlist_unref(gaym->roomlist);
                     gaym->roomlist = NULL;
@@ -673,7 +673,7 @@ void gaym_msg_list(struct gaym_conn *gaym, const char *name,
                     room_inst = 0;
                     for (room_inst = 1; room_inst <= 4; room_inst++) {
                         name_inst =
-                            g_strdup_printf("%s - %i", name, room_inst);
+                            g_strdup_printf("%s:%i", name, room_inst);
                         num_inst = g_strdup_printf("%s%i", num, room_inst);
 
                         room =
@@ -685,10 +685,10 @@ void gaym_msg_list(struct gaym_conn *gaym, const char *name,
                         gaim_roomlist_room_add_field(gaym->roomlist, room,
                                                      num_inst);
                         gaim_roomlist_room_add(gaym->roomlist, room);
-                        gaim_debug_misc("gaym",
-                                        "(Ref %x) Added room %s: %s (level %d) (parent %x)\n",
-                                        room, num, name, current_level,
-                                        room_title);
+                        // gaim_debug_misc("gaym",
+                        //                 "(Ref %x) Added room %s: %s (level %d) (parent %x)\n",
+                        //                 room, num, name, current_level,
+                        //                 room_title);
                         g_free(name_inst);
                         g_free(num_inst);
                         name_inst = NULL;
@@ -724,8 +724,8 @@ void gaym_msg_list(struct gaym_conn *gaym, const char *name,
                         current_level--;
                         current_parent =
                             current_parent ? current_parent->parent : NULL;
-                        gaim_debug_misc("gaym", "Changed parent to %x\n",
-                                        current_parent);
+                        // gaim_debug_misc("gaym", "Changed parent to %x\n",
+                        //                 current_parent);
                     }
                 }
                 // 
@@ -733,7 +733,7 @@ void gaym_msg_list(struct gaym_conn *gaym, const char *name,
                 // 
                 field_end = strstr(list_position, "\\\n");
                 if (!field_end) {
-                    gaim_debug_misc("gaym", "Room list parsing error!");
+                    gaim_debug_error("gaym", "Room list parsing error!");
                     gaim_roomlist_set_in_progress(gaym->roomlist, FALSE);
                     gaim_roomlist_unref(gaym->roomlist);
                     gaym->roomlist = NULL;
@@ -746,9 +746,9 @@ void gaym_msg_list(struct gaym_conn *gaym, const char *name,
                                            name, current_parent);
                 gaim_roomlist_room_add(gaym->roomlist, room);
 
-                gaim_debug_misc("gaym",
-                                "(Ref %x) Added categroy %s (level %d) (parent %x)\n",
-                                room, name, level, current_parent);
+                // gaim_debug_misc("gaym",
+                //                 "(Ref %x) Added categroy %s (level %d) (parent %x)\n",
+                //                 room, name, level, current_parent);
                 g_free(name);
                 list_position = field_end;
             } else {
@@ -1536,6 +1536,22 @@ void gaym_msg_chanfull(struct gaym_conn *gaym, const char *name,
 
         g_free(buf);
     }
+}
+
+void gaym_msg_create_pay_only(struct gaym_conn *gaym, const char *name,
+                        const char *from, char **args)
+{
+    GaimConnection *gc = gaim_account_get_connection(gaym->account);
+    char *buf;
+    if (!args || !args[1] || !gc) {
+        return;
+    }
+    buf = g_strdup_printf(_("%s"), args[2]);
+    gaim_notify_error(gc, _("Pay Only"), _("Pay Only"), buf);
+    // FIXME
+    // by now the chatroom is already in the buddy list...need
+    // to remove it or something
+    g_free(buf);
 }
 
 void gaym_msg_pay_channel(struct gaym_conn *gaym, const char *name,

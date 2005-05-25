@@ -97,7 +97,7 @@ struct gaym_conn {
     GList **node_menu;
     gboolean quitting;
     char *subroom;
-    char *configtxt;
+    gchar *configtxt;
     GaimUrlSession *session;
 
     char *persist_room;
@@ -221,6 +221,8 @@ void gaym_msg_ignore(struct gaym_conn *gaym, const char *name,
 
 void gaym_msg_richnames_list(struct gaym_conn *gaym, const char *name,
                              const char *from, char **args);
+void gaym_msg_create_pay_only(struct gaym_conn *gaym, const char *name,
+                              const char *from, char **args);
 void gaym_msg_pay_channel(struct gaym_conn *gaym, const char *name,
                           const char *from, char **args);
 void gaym_msg_toomany_channels(struct gaym_conn *gaym, const char *name,
