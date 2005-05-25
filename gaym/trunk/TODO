@@ -30,3 +30,43 @@ seems to be implemented :( Might end up being a wish on gaim.sourceforge.net. Or
 4. "Extended" profiles -- get the entire profile "meat" without all of the gay.com advertising and bric-a-brac.
 
 5. Join/part message on/off
+
+
+Some thoughts from deckrider:
+============================
+
+progress bar hang on roomlist...use g_idle_add ()
+
+private photo doesn't show next to buddy when I have been given
+permission to see it
+
+activate link to web page for report user
+
+integrate server buddy, bookmarks, hotlists, im hot lists, ignore lists
+
+activate privacy/block users in gui (ignore lists from above)
+
+make roomlist show "room name:1" similar to yahoo
+
+see what native2ascii does when the native file has "\u00F1" in it
+along with the actual character that that sequence represents.
+
+get rid of signals in prpl (no other prpl needs them, why do we?)
+
+handle all "unknowns" shown in the debug window
+
+user-controllable ignores (eliminate hard-coded ignores)
+
+Make it so users enter free form text to chat and this gets converted
+to a member-created-room style by replacing spaces with underscores
+and appending #_ at the beginning and =1 (or some number) at the end.
+Probably the users should be required to enter ":1" or some number at the
+end or receive an error, since the server doesn't appear to send one at
+at first glance (verify before acting).
+
+Getting these in red, not sure what it is:
+gaim_utf8_strcasecmp: One or both parameters are invalid UTF8
+
+Forms for S|A|L and BioSummary Change bio
+
+
