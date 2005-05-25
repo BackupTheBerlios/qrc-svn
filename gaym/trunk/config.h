@@ -47,28 +47,28 @@
 #define HAVE_UNISTD_H 1
 
 /* Name of package */
-#define PACKAGE "AC_PACKAGE_NAME"
+#define PACKAGE "gaim-gaym"
 
 /* Define to the address where bug reports for this package should be sent. */
 #define PACKAGE_BUGREPORT ""
 
 /* Define to the full name of this package. */
-#define PACKAGE_NAME ""
+#define PACKAGE_NAME "gaim-gaym"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING ""
+#define PACKAGE_STRING "gaim-gaym 0.21+20050513"
 
 /* Define to the one symbol short name of this package. */
-#define PACKAGE_TARNAME ""
+#define PACKAGE_TARNAME "gaim-gaym"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION ""
+#define PACKAGE_VERSION "0.21+20050513"
 
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1
 
 /* Version number of package */
-#define VERSION "AC_PACKAGE_VERSION"
+#define VERSION "0.21+20050513"
 
 /* Define to empty if `const' does not conform to ANSI C. */
 /* #undef const */
