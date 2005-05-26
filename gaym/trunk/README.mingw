@@ -1,3 +1,16 @@
+To install:
+
+   - install gaim from http://gaim.sourceforge.net/win32/index.php
+
+   - probably you need to reboot at this point
+
+   - find the file "libirc.dll" and put "libgaym.dll" in the same
+     directory
+
+   - find the file "irc.png" and put "gaym.png" in the same directory
+
+   - probably you need to reboot at this point
+
 To build from linux:
 
    - This assumes your home directory is /home/deckrider, and your
@@ -31,13 +44,3 @@ To build from linux:
    - make -f Makefile.mingw clean
      (will restore the the source tree to its pristine form)
 
-To install:
-
-   - install gaim from http://gaim.sourceforge.net/win32/index.php
-
-   - find the file "libirc.dll" and put "libgaym.dll" in the same
-     directory
-
-   - find the file "irc.png" and put "gaym.png" in the same directory
-
-   - probably you need to reboot at this point
