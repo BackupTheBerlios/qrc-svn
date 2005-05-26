@@ -12,8 +12,8 @@ install: all
 	mkdir -p $(INSTALL_DIR)
 	$(MAKE) -C $(PIXMAPS) -f Makefile.mingw install
 	$(MAKE) -C $(PRPL) -f Makefile.mingw install
-	cp README.mingw $(INSTALL_DIR)
-	unix2dos $(INSTALL_DIR)/README.mingw
+	cp README.mingw $(INSTALL_DIR)/README.txt
+	unix2dos $(INSTALL_DIR)/README.txt
 
 clean:
 	$(MAKE) -C $(PRPL) -f Makefile.mingw clean
