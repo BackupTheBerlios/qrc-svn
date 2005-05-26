@@ -11,163 +11,167 @@
 # even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 # PARTICULAR PURPOSE.
 
+@SET_MAKE@
 
+SHELL = @SHELL@
 
-SHELL = /bin/sh
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+VPATH = @srcdir@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
 
-srcdir = .
-top_srcdir = .
-
-prefix = /usr/local
-exec_prefix = ${prefix}
-
-bindir = ${exec_prefix}/bin
-sbindir = ${exec_prefix}/sbin
-libexecdir = ${exec_prefix}/libexec
-datadir = ${prefix}/share
-sysconfdir = ${prefix}/etc
-sharedstatedir = ${prefix}/com
-localstatedir = ${prefix}/var
-libdir = ${exec_prefix}/lib
-infodir = ${prefix}/info
-mandir = ${prefix}/man
-includedir = ${prefix}/include
+bindir = @bindir@
+sbindir = @sbindir@
+libexecdir = @libexecdir@
+datadir = @datadir@
+sysconfdir = @sysconfdir@
+sharedstatedir = @sharedstatedir@
+localstatedir = @localstatedir@
+libdir = @libdir@
+infodir = @infodir@
+mandir = @mandir@
+includedir = @includedir@
 oldincludedir = /usr/include
-pkgdatadir = $(datadir)/gaim
-pkglibdir = $(libdir)/gaim
-pkgincludedir = $(includedir)/gaim
+pkgdatadir = $(datadir)/@PACKAGE@
+pkglibdir = $(libdir)/@PACKAGE@
+pkgincludedir = $(includedir)/@PACKAGE@
 top_builddir = .
 
-ACLOCAL = ${SHELL} /home/jason/packages/qrc/chatsort/trunk/missing --run aclocal
-AUTOCONF = ${SHELL} /home/jason/packages/qrc/chatsort/trunk/missing --run autoconf
-AUTOMAKE = ${SHELL} /home/jason/packages/qrc/chatsort/trunk/missing --run automake
-AUTOHEADER = ${SHELL} /home/jason/packages/qrc/chatsort/trunk/missing --run autoheader
+ACLOCAL = @ACLOCAL@
+AUTOCONF = @AUTOCONF@
+AUTOMAKE = @AUTOMAKE@
+AUTOHEADER = @AUTOHEADER@
 
-INSTALL = /bin/install -c
-INSTALL_PROGRAM = ${INSTALL}
-INSTALL_DATA = ${INSTALL} -m 644
-INSTALL_SCRIPT = ${INSTALL}
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+INSTALL_DATA = @INSTALL_DATA@
+INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_HEADER = $(INSTALL_DATA)
-transform = s,x,x,
+transform = @program_transform_name@
 NORMAL_INSTALL = :
 PRE_INSTALL = :
 POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-build_alias = 
-build_triplet = i686-pc-linux-gnu
-host_alias = 
-host_triplet = i686-pc-linux-gnu
-target_alias = 
-target_triplet = i686-pc-linux-gnu
-AMTAR = ${SHELL} /home/jason/packages/qrc/chatsort/trunk/missing --run tar
-AR = ar
+build_alias = @build_alias@
+build_triplet = @build@
+host_alias = @host_alias@
+host_triplet = @host@
+target_alias = @target_alias@
+target_triplet = @target@
+AMTAR = @AMTAR@
+AR = @AR@
 AS = @AS@
-AWK = gawk
-BUILD_INCLUDED_LIBINTL = no
-CATOBJEXT = .gmo
-CC = gcc
-CFLAGS = -g -O2 -Wall -g3
-CXX = g++
-CXXCPP = g++ -E
-DATADIRNAME = share
-DEBUG_CFLAGS = 
-DEPDIR = .deps
+AWK = @AWK@
+BUILD_INCLUDED_LIBINTL = @BUILD_INCLUDED_LIBINTL@
+CATOBJEXT = @CATOBJEXT@
+CC = @CC@
+CFLAGS = @CFLAGS@
+CXX = @CXX@
+CXXCPP = @CXXCPP@
+DATADIRNAME = @DATADIRNAME@
+DEBUG_CFLAGS = @DEBUG_CFLAGS@
+DEPDIR = @DEPDIR@
 DLLTOOL = @DLLTOOL@
-DYNAMIC_PRPLS = 
-ECHO = echo
-EGREP = grep -E
-EVOLUTION_ADDRESSBOOK_CFLAGS = 
-EVOLUTION_ADDRESSBOOK_LIBS = 
-EXEEXT = 
-F77 = g77
+DYNAMIC_PRPLS = @DYNAMIC_PRPLS@
+ECHO = @ECHO@
+EGREP = @EGREP@
+EVOLUTION_ADDRESSBOOK_CFLAGS = @EVOLUTION_ADDRESSBOOK_CFLAGS@
+EVOLUTION_ADDRESSBOOK_LIBS = @EVOLUTION_ADDRESSBOOK_LIBS@
+EXEEXT = @EXEEXT@
+F77 = @F77@
 GCJ = @GCJ@
 GCJFLAGS = @GCJFLAGS@
-GENCAT = gencat
-GLIBC21 = yes
-GLIB_CFLAGS = -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include  
-GLIB_GENMARSHAL = glib-genmarshal
-GLIB_LIBS = -lglib-2.0  
-GLIB_MKENUMS = glib-mkenums
-GMSGFMT = /usr/bin/gmsgfmt
-GNUTLS_CFLAGS = -INONE/include
-GNUTLS_LIBS =  -lgnutls -lgcrypt
-GOBJECT_QUERY = gobject-query
-GTKSPELL_CFLAGS = -DXTHREADS -D_REENTRANT -DXUSE_MTSAFE_API -I/usr/include/gtkspell-2.0 -I/usr/include/gtk-2.0 -I/usr/lib/gtk-2.0/include -I/usr/include/atk-1.0 -I/usr/include/pango-1.0 -I/usr/include/freetype2 -I/usr/include/freetype2/config -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include  
-GTKSPELL_LIBS = -lgtkspell -lenchant -lgtk-x11-2.0 -lgdk-x11-2.0 -latk-1.0 -lgdk_pixbuf-2.0 -lm -lpangoxft-1.0 -lpangox-1.0 -lpango-1.0 -lgobject-2.0 -lgmodule-2.0 -ldl -lglib-2.0  
-GTK_CFLAGS = -DXTHREADS -D_REENTRANT -DXUSE_MTSAFE_API -I/usr/include/gtk-2.0 -I/usr/lib/gtk-2.0/include -I/usr/include/atk-1.0 -I/usr/include/pango-1.0 -I/usr/include/freetype2 -I/usr/include/freetype2/config -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include  
-GTK_LIBS = -lgtk-x11-2.0 -lgdk-x11-2.0 -latk-1.0 -lgdk_pixbuf-2.0 -lm -lpangoxft-1.0 -lpangox-1.0 -lpango-1.0 -lgobject-2.0 -lgmodule-2.0 -ldl -lglib-2.0  
+GENCAT = @GENCAT@
+GLIBC21 = @GLIBC21@
+GLIB_CFLAGS = @GLIB_CFLAGS@
+GLIB_GENMARSHAL = @GLIB_GENMARSHAL@
+GLIB_LIBS = @GLIB_LIBS@
+GLIB_MKENUMS = @GLIB_MKENUMS@
+GMSGFMT = @GMSGFMT@
+GNUTLS_CFLAGS = @GNUTLS_CFLAGS@
+GNUTLS_LIBS = @GNUTLS_LIBS@
+GOBJECT_QUERY = @GOBJECT_QUERY@
+GTKSPELL_CFLAGS = @GTKSPELL_CFLAGS@
+GTKSPELL_LIBS = @GTKSPELL_LIBS@
+GTK_CFLAGS = @GTK_CFLAGS@
+GTK_LIBS = @GTK_LIBS@
+HAVE_ASPRINTF = @HAVE_ASPRINTF@
 HAVE_LIB = @HAVE_LIB@
-INSTALL_STRIP_PROGRAM = ${SHELL} $(install_sh) -c -s
-INSTOBJEXT = .mo
-INTLBISON = bison
-INTLLIBS = 
-INTLOBJS = 
-INTL_LIBTOOL_SUFFIX_PREFIX = 
-KRB4_CFLAGS = 
-KRB4_LDFLAGS = 
-KRB4_LIBS = 
-LDADD = 
+HAVE_POSIX_PRINTF = @HAVE_POSIX_PRINTF@
+HAVE_SNPRINTF = @HAVE_SNPRINTF@
+HAVE_WPRINTF = @HAVE_WPRINTF@
+INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+INSTOBJEXT = @INSTOBJEXT@
+INTLBISON = @INTLBISON@
+INTLLIBS = @INTLLIBS@
+INTLOBJS = @INTLOBJS@
+INTL_LIBTOOL_SUFFIX_PREFIX = @INTL_LIBTOOL_SUFFIX_PREFIX@
+KRB4_CFLAGS = @KRB4_CFLAGS@
+KRB4_LDFLAGS = @KRB4_LDFLAGS@
+KRB4_LIBS = @KRB4_LIBS@
+LDADD = @LDADD@
 LIB = @LIB@
-LIBICONV = 
-LIBINTL = 
-LIBS = -lnsl 
-LIBTOOL = $(SHELL) $(top_builddir)/libtool --silent
-LN_S = ln -s
+LIBICONV = @LIBICONV@
+LIBINTL = @LIBINTL@
+LIBS = @LIBS@
+LIBTOOL = @LIBTOOL@
+LN_S = @LN_S@
 LTLIB = @LTLIB@
-LTLIBICONV = 
-LTLIBINTL = 
-MKINSTALLDIRS = $(top_builddir)/./mkinstalldirs
-NSS_CFLAGS = -I/usr/lib/mozilla/include/nss -I/usr/lib/mozilla/include/nspr  
-NSS_LIBS = -L/usr/lib/mozilla -lnss3 -lsmime3 -lssl3 -lsoftokn3 -lplds4 -lplc4 -lnspr4 -lpthread -ldl  
+LTLIBICONV = @LTLIBICONV@
+LTLIBINTL = @LTLIBINTL@
+MKINSTALLDIRS = @MKINSTALLDIRS@
+NSS_CFLAGS = @NSS_CFLAGS@
+NSS_LIBS = @NSS_LIBS@
 OBJDUMP = @OBJDUMP@
-OBJEXT = o
-PACKAGE = gaim
-PKG_CONFIG = /usr/bin/pkg-config
-POSUB = po
-RANLIB = ranlib
+OBJEXT = @OBJEXT@
+PACKAGE = @PACKAGE@
+PKG_CONFIG = @PKG_CONFIG@
+POSUB = @POSUB@
+RANLIB = @RANLIB@
 RC = @RC@
-SILC_CFLAGS = 
-SILC_LIBS = 
-SM_LIBS = 
-STARTUP_NOTIFICATION_CFLAGS = -I/usr/include/startup-notification-1.0  
-STARTUP_NOTIFICATION_LIBS = -lstartup-notification-1  
-STATIC_LINK_LIBS = 
-STATIC_PRPLS = 
-STRIP = strip
-TCL_CFLAGS = 
-TCL_LIBS = -ldl  -lieee -lm
-TK_LIBS = 
-USE_INCLUDED_LIBINTL = no
-USE_NLS = yes
-VERSION = 1.0.1
-XSS_LIBS =   -lSM -lICE -lX11 -lXext   -lXss
-X_CFLAGS = 
-X_EXTRA_LIBS = 
-X_LIBS = 
-X_PRE_LIBS =  -lSM -lICE
-ZEPHYR_CFLAGS = 
-ZEPHYR_LDFLAGS = 
-ZEPHYR_LIBS = 
-am__include = include
-am__quote = 
-gaimpath = /usr/bin/gaim
-install_sh = /home/jason/packages/qrc/chatsort/trunk/install-sh
+SILC_CFLAGS = @SILC_CFLAGS@
+SILC_LIBS = @SILC_LIBS@
+SM_LIBS = @SM_LIBS@
+STARTUP_NOTIFICATION_CFLAGS = @STARTUP_NOTIFICATION_CFLAGS@
+STARTUP_NOTIFICATION_LIBS = @STARTUP_NOTIFICATION_LIBS@
+STATIC_LINK_LIBS = @STATIC_LINK_LIBS@
+STATIC_PRPLS = @STATIC_PRPLS@
+STRIP = @STRIP@
+TCL_CFLAGS = @TCL_CFLAGS@
+TCL_LIBS = @TCL_LIBS@
+TK_LIBS = @TK_LIBS@
+USE_INCLUDED_LIBINTL = @USE_INCLUDED_LIBINTL@
+USE_NLS = @USE_NLS@
+VERSION = @VERSION@
+XSS_LIBS = @XSS_LIBS@
+X_CFLAGS = @X_CFLAGS@
+X_EXTRA_LIBS = @X_EXTRA_LIBS@
+X_LIBS = @X_LIBS@
+X_PRE_LIBS = @X_PRE_LIBS@
+ZEPHYR_CFLAGS = @ZEPHYR_CFLAGS@
+ZEPHYR_LDFLAGS = @ZEPHYR_LDFLAGS@
+ZEPHYR_LIBS = @ZEPHYR_LIBS@
+am__include = @am__include@
+am__quote = @am__quote@
+gaimpath = @gaimpath@
+install_sh = @install_sh@
 
 EXTRA_DIST = PROTOCOL Makefile.mingw
 
 pkgdir = $(libdir)/gaim
 
-CHATSORTSOURCES = chatsort.c
+CHATSORTSOURCES = roombrowse.c
 
 AM_CFLAGS = $(st)
 
-libchatsort_la_LDFLAGS = -module -avoid-version
+libroombrowse_la_LDFLAGS = -module -avoid-version
 
-pkg_LTLIBRARIES = libchatsort.la
+pkg_LTLIBRARIES = libroombrowse.la
 
-libchatsort_la_SOURCES = $(CHATSORTSOURCES)
+libroombrowse_la_SOURCES = $(CHATSORTSOURCES)
 
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src \
@@ -183,17 +187,17 @@ CONFIG_HEADER = config.h
 CONFIG_CLEAN_FILES =
 LTLIBRARIES = $(pkg_LTLIBRARIES)
 
-libchatsort_la_LIBADD =
-am_libchatsort_la_OBJECTS = chatsort.lo
-libchatsort_la_OBJECTS = $(am_libchatsort_la_OBJECTS)
+libroombrowse_la_LIBADD =
+am_libroombrowse_la_OBJECTS = roombrowse.lo
+libroombrowse_la_OBJECTS = $(am_libroombrowse_la_OBJECTS)
 
-DEFS = -DHAVE_CONFIG_H
+DEFS = @DEFS@
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I.
-CPPFLAGS = 
-LDFLAGS = 
-LIBS = -lnsl 
+CPPFLAGS = @CPPFLAGS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
-DEP_FILES = $(DEPDIR)/chatsort.Plo
+@AMDEP_TRUE@DEP_FILES = $(DEPDIR)/roombrowse.Plo
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
@@ -201,12 +205,12 @@ LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(libchatsort_la_SOURCES)
+DIST_SOURCES = $(libroombrowse_la_SOURCES)
 DIST_COMMON = README ./stamp-h.in AUTHORS COPYING ChangeLog INSTALL \
 	Makefile.am Makefile.in NEWS aclocal.m4 config.guess \
 	config.h.in config.sub configure configure.ac depcomp \
 	install-sh ltmain.sh missing mkinstalldirs
-SOURCES = $(libchatsort_la_SOURCES)
+SOURCES = $(libroombrowse_la_SOURCES)
 
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
@@ -281,8 +285,8 @@ uninstall-pkgLTLIBRARIES:
 
 clean-pkgLTLIBRARIES:
 	-test -z "$(pkg_LTLIBRARIES)" || rm -f $(pkg_LTLIBRARIES)
-libchatsort.la: $(libchatsort_la_OBJECTS) $(libchatsort_la_DEPENDENCIES) 
-	$(LINK) -rpath $(pkgdir) $(libchatsort_la_LDFLAGS) $(libchatsort_la_OBJECTS) $(libchatsort_la_LIBADD) $(LIBS)
+libroombrowse.la: $(libroombrowse_la_OBJECTS) $(libroombrowse_la_DEPENDENCIES) 
+	$(LINK) -rpath $(pkgdir) $(libroombrowse_la_LDFLAGS) $(libroombrowse_la_OBJECTS) $(libroombrowse_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -290,29 +294,29 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-include $(DEPDIR)/chatsort.Plo
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/roombrowse.Plo@am__quote@
 
 distclean-depend:
 	-rm -rf $(DEPDIR)
 
 .c.o:
-	source='$<' object='$@' libtool=no \
-	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' \
-	$(CCDEPMODE) $(depcomp) \
+@AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(COMPILE) -c `test -f $< || echo '$(srcdir)/'`$<
 
 .c.obj:
-	source='$<' object='$@' libtool=no \
-	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' \
-	$(CCDEPMODE) $(depcomp) \
+@AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(COMPILE) -c `cygpath -w $<`
 
 .c.lo:
-	source='$<' object='$@' libtool=yes \
-	depfile='$(DEPDIR)/$*.Plo' tmpdepfile='$(DEPDIR)/$*.TPlo' \
-	$(CCDEPMODE) $(depcomp) \
+@AMDEP_TRUE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Plo' tmpdepfile='$(DEPDIR)/$*.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(LTCOMPILE) -c -o $@ `test -f $< || echo '$(srcdir)/'`$<
-CCDEPMODE = depmode=gcc3
+CCDEPMODE = @CCDEPMODE@
 uninstall-info-am:
 
 tags: TAGS

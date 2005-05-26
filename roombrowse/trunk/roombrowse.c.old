@@ -1,0 +1,553 @@
+/* Puts last 4k of log in new conversations a la Everybuddy (and then
+ * stolen by Trillian "Pro") */
+
+#include "internal.h"
+#include "gtkgaim.h"
+
+#include "conversation.h"
+#include "debug.h"
+#include "log.h"
+#include "prefs.h"
+#include "signals.h"
+#include "util.h"
+#include "version.h"
+
+#include "gtkconv.h"
+#include "gtkimhtml.h"
+#include "gtkplugin.h"
+#include "gtkdialogs.h"
+#include "gtkutils.h"
+
+#include <gdk/gdkkeysyms.h>
+
+#define CHATSORT_PLUGIN_ID "gtk-chatsort"
+#define CHATSORT_USERS_COLUMNS 4
+#define CHATSORT_USERS_ENTRY_COLUMN 3
+
+
+static GtkWidget *
+setup_roombrowse_pane(GaimConversation *conv)
+{
+	GaimPluginProtocolInfo *prpl_info = NULL;
+	GaimGtkConversation *gtkconv;
+	GaimGtkChatPane *gtkchat;
+	GaimConnection *gc;
+	GtkWidget *vpaned, *hpaned;
+	GtkWidget *vbox, *hbox;
+	GtkWidget *lbox, *bbox;
+	GtkWidget *label;
+	GtkWidget *list;
+	GtkWidget *button;
+	GtkWidget *sw;
+	GtkListStore *ls;
+	GtkCellRenderer *rend;
+	GtkTreeViewColumn *col;
+	GList *focus_chain = NULL;
+
+	gtkconv = GAIM_GTK_CONVERSATION(conv);
+	gtkchat = gtkconv->u.chat;
+	gc      = gaim_conversation_get_gc(conv);
+
+	/* Setup the outer pane. */
+	vpaned = gtk_vpaned_new();
+	gtk_widget_show(vpaned);
+
+	/* Setup the top part of the pane. */
+	vbox = gtk_vbox_new(FALSE, 6);
+	gtk_paned_pack1(GTK_PANED(vpaned), vbox, TRUE, TRUE);
+	gtk_widget_show(vbox);
+
+	if (gc != NULL)
+		prpl_info = GAIM_PLUGIN_PROTOCOL_INFO(gc->prpl);
+
+	if (prpl_info->options & OPT_PROTO_CHAT_TOPIC)
+	{
+		hbox = gtk_hbox_new(FALSE, 6);
+		gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
+		gtk_widget_show(hbox);
+
+		label = gtk_label_new(_("Topic:"));
+		gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, FALSE, 0);
+		gtk_widget_show(label);
+
+		gtkchat->topic_text = gtk_entry_new();
+
+		if(prpl_info->set_chat_topic == NULL) {
+			gtk_editable_set_editable(GTK_EDITABLE(gtkchat->topic_text), FALSE);
+		} else {
+			g_signal_connect(GTK_OBJECT(gtkchat->topic_text), "activate",
+					 G_CALLBACK(topic_callback), conv);
+		}
+
+		gtk_box_pack_start(GTK_BOX(hbox), gtkchat->topic_text, TRUE, TRUE, 0);
+		gtk_widget_show(gtkchat->topic_text);
+	}
+
+	/* Setup the horizontal pane. */
+	hpaned = gtk_hpaned_new();
+	gtk_box_pack_start(GTK_BOX(vbox), hpaned, TRUE, TRUE, 0);
+	gtk_widget_show(hpaned);
+
+	/* Setup the scrolled window to put gtkimhtml in. */
+	gtkconv->sw = gtk_scrolled_window_new(NULL, NULL);
+	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(gtkconv->sw),
+				       GTK_POLICY_AUTOMATIC, GTK_POLICY_ALWAYS);
+	gtk_scrolled_window_set_shadow_type(GTK_SCROLLED_WINDOW(gtkconv->sw),
+					    GTK_SHADOW_IN);
+	gtk_paned_pack1(GTK_PANED(hpaned), gtkconv->sw, TRUE, TRUE);
+
+	gtk_widget_set_size_request(gtkconv->sw,
+				    gaim_prefs_get_int("/gaim/gtk/conversations/chat/default_width"),
+				    gaim_prefs_get_int("/gaim/gtk/conversations/chat/default_height"));
+
+	g_signal_connect(G_OBJECT(gtkconv->sw), "size-allocate",
+			 G_CALLBACK(size_allocate_cb), conv);
+
+	gtk_widget_show(gtkconv->sw);
+
+	/* Setup gtkihmtml. */
+	gtkconv->imhtml = gtk_imhtml_new(NULL, NULL);
+	gtk_widget_set_name(gtkconv->imhtml, "gaim_gtkconv_imhtml");
+	gtk_container_add(GTK_CONTAINER(gtkconv->sw), gtkconv->imhtml);
+
+	gtk_imhtml_show_comments(GTK_IMHTML(gtkconv->imhtml),
+				 gaim_prefs_get_bool("/gaim/gtk/conversations/show_timestamps"));
+
+	g_signal_connect_after(G_OBJECT(gtkconv->imhtml), "button_press_event",
+			       G_CALLBACK(entry_stop_rclick_cb), NULL);
+	g_signal_connect(G_OBJECT(gtkconv->imhtml), "key_press_event",
+			 G_CALLBACK(refocus_entry_cb), gtkconv);
+	g_signal_connect(G_OBJECT(gtkconv->imhtml), "key_release_event",
+			 G_CALLBACK(refocus_entry_cb), gtkconv);
+
+	gaim_setup_imhtml(gtkconv->imhtml);
+	//gtk_widget_show(gtkconv->imhtml);
+
+	/* Build the right pane. */
+	lbox = gtk_vbox_new(FALSE, 6);
+	gtk_paned_pack2(GTK_PANED(hpaned), lbox, FALSE, TRUE);
+	gtk_widget_show(lbox);
+
+	/* Setup the label telling how many people are in the room. */
+	gtkchat->count = gtk_label_new(_("0 people in room"));
+	gtk_box_pack_start(GTK_BOX(lbox), gtkchat->count, FALSE, FALSE, 0);
+	gtk_widget_show(gtkchat->count);
+
+	/* Setup the list of users. */
+	sw = gtk_scrolled_window_new(NULL, NULL);
+	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(sw),
+				       GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+	gtk_scrolled_window_set_shadow_type(GTK_SCROLLED_WINDOW(sw), GTK_SHADOW_IN);
+	gtk_box_pack_start(GTK_BOX(lbox), sw, TRUE, TRUE, 0);
+	gtk_widget_show(sw);
+
+	ls = gtk_list_store_new(CHAT_USERS_COLUMNS, GDK_TYPE_PIXBUF, G_TYPE_STRING,
+				G_TYPE_INT);
+	gtk_tree_sortable_set_sort_func(GTK_TREE_SORTABLE(ls), CHAT_USERS_NAME_COLUMN,
+					sort_chat_users, NULL, NULL);
+	gtk_tree_sortable_set_sort_column_id(GTK_TREE_SORTABLE(ls), CHAT_USERS_NAME_COLUMN,
+					     GTK_SORT_ASCENDING);
+
+	list = gtk_tree_view_new_with_model(GTK_TREE_MODEL(ls));
+
+	rend = gtk_cell_renderer_pixbuf_new();
+
+	col = gtk_tree_view_column_new_with_attributes(NULL, rend,
+			"pixbuf", CHAT_USERS_ICON_COLUMN, NULL);
+	gtk_tree_view_column_set_clickable(GTK_TREE_VIEW_COLUMN(col), TRUE);
+
+	gtk_tree_view_append_column(GTK_TREE_VIEW(list), col);
+
+	g_signal_connect(G_OBJECT(list), "button_press_event",
+			 G_CALLBACK(right_click_chat_cb), conv);
+	g_signal_connect(G_OBJECT(list), "popup-menu",
+			 G_CALLBACK(gtkconv_chat_popup_menu_cb), conv);
+
+	rend = gtk_cell_renderer_text_new();
+
+	col = gtk_tree_view_column_new_with_attributes(NULL, rend,
+			"text", CHAT_USERS_NAME_COLUMN, NULL);
+	gtk_tree_view_column_set_clickable(GTK_TREE_VIEW_COLUMN(col), TRUE);
+
+	gtk_tree_view_append_column(GTK_TREE_VIEW(list), col);
+
+	gtk_widget_set_size_request(list, 150, -1);
+
+	gtk_tree_view_set_headers_visible(GTK_TREE_VIEW(list), FALSE);
+	gtk_widget_show(list);
+
+	gtkchat->list = list;
+
+	gtk_container_add(GTK_CONTAINER(sw), list);
+
+	/* Setup the user list toolbar. */
+	bbox = gtk_hbox_new(TRUE, 6);
+	gtk_box_pack_start(GTK_BOX(lbox), bbox, FALSE, FALSE, 0);
+	gtk_widget_show(bbox);
+
+	/* IM */
+	button = gaim_pixbuf_button_from_stock(NULL, GTK_STOCK_REDO,
+					       GAIM_BUTTON_VERTICAL);
+	gtk_button_set_relief(GTK_BUTTON(button), GTK_RELIEF_NONE);
+	gtk_box_pack_start(GTK_BOX(bbox), button, FALSE, FALSE, 0);
+	gtk_tooltips_set_tip(gtkconv->tooltips, button, _("IM the user"), NULL);
+	g_signal_connect(G_OBJECT(button), "clicked",
+			 G_CALLBACK(chat_im_button_cb), conv);
+
+	gtk_widget_show(button);
+
+	/* Ignore */
+	button = gaim_pixbuf_button_from_stock(NULL, GAIM_STOCK_IGNORE,
+					       GAIM_BUTTON_VERTICAL);
+	gtk_button_set_relief(GTK_BUTTON(button), GTK_RELIEF_NONE);
+	gtk_box_pack_start(GTK_BOX(bbox), button, FALSE, FALSE, 0);
+	gtk_tooltips_set_tip(gtkconv->tooltips, button,
+			     _("Ignore the user"), NULL);
+	g_signal_connect(G_OBJECT(button), "clicked",
+			 G_CALLBACK(ignore_cb), conv);
+	gtk_widget_show(button);
+
+	/* Info */
+	button = gaim_pixbuf_button_from_stock(NULL, GAIM_STOCK_INFO,
+					       GAIM_BUTTON_VERTICAL);
+	gtk_button_set_relief(GTK_BUTTON(button), GTK_RELIEF_NONE);
+	gtk_box_pack_start(GTK_BOX(bbox), button, FALSE, FALSE, 0);
+	gtk_tooltips_set_tip(gtkconv->tooltips, button,
+			     _("Get the user's information"), NULL);
+	g_signal_connect(G_OBJECT(button), "clicked",
+			 G_CALLBACK(info_cb), conv);
+
+	gtk_widget_show(button);
+
+	gtkconv->info = button;
+
+	/* Build the toolbar. */
+	vbox = gtk_vbox_new(FALSE, 6);
+	gtk_paned_pack2(GTK_PANED(vpaned), vbox, FALSE, TRUE);
+	gtk_widget_show(vbox);
+
+	gtkconv->toolbar = gtk_imhtmltoolbar_new();
+	gtk_box_pack_start(GTK_BOX(vbox), gtkconv->toolbar, FALSE, FALSE, 0);
+
+	gtkconv->lower_hbox = gtk_hbox_new(FALSE, 6);
+	gtk_box_pack_start(GTK_BOX(vbox), gtkconv->lower_hbox, TRUE, TRUE, 0);
+	gtk_widget_show(gtkconv->lower_hbox);
+
+	vbox = gtk_vbox_new(FALSE, 6);
+	gtk_box_pack_end(GTK_BOX(gtkconv->lower_hbox), vbox, TRUE, TRUE, 0);
+	gtk_widget_show(vbox);
+
+	/* Setup the entry widget.
+	* We never show the horizontal scrollbar because it was causing weird
+	* lockups when typing text just as you type the character that would 
+	* cause both scrollbars to appear.  Definitely seems like a gtk bug.
+	*/
+	sw = gtk_scrolled_window_new(NULL, NULL);
+	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(sw),
+				       GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+	gtk_scrolled_window_set_shadow_type(GTK_SCROLLED_WINDOW(sw),
+					    GTK_SHADOW_IN);
+	gtk_box_pack_start(GTK_BOX(vbox), sw, TRUE, TRUE, 0);
+	gtk_widget_show(sw);
+
+	gtkconv->entry = gtk_imhtml_new(NULL, NULL);
+	gtk_widget_set_name(gtkconv->entry, "gaim_gtkconv_entry");
+	gtk_imhtml_smiley_shortcuts(GTK_IMHTML(gtkconv->entry),
+				    gaim_prefs_get_bool("/gaim/gtk/conversations/smiley_shortcuts"));
+	gtk_imhtml_html_shortcuts(GTK_IMHTML(gtkconv->entry),
+				  gaim_prefs_get_bool("/gaim/gtk/conversations/html_shortcuts"));
+
+	gtk_imhtml_set_protocol_name(GTK_IMHTML(gtkconv->entry),
+				     gaim_account_get_protocol_name(conv->account));
+	gtkconv->entry_buffer =
+			gtk_text_view_get_buffer(GTK_TEXT_VIEW(gtkconv->entry));
+	gaim_setup_imhtml(gtkconv->entry);
+	gtk_imhtml_set_editable(GTK_IMHTML(gtkconv->entry), TRUE);
+	default_formatize(conv);
+	gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(gtkconv->entry),
+				    GTK_WRAP_WORD_CHAR);
+	gtk_widget_set_size_request(gtkconv->entry, -1,
+				    gaim_prefs_get_int("/gaim/gtk/conversations/chat/entry_height"));
+	g_object_set_data(G_OBJECT(gtkconv->entry_buffer), "user_data", conv);
+
+	g_signal_connect(G_OBJECT(gtkconv->entry), "key_press_event",
+			 G_CALLBACK(entry_key_press_cb), conv);
+	g_signal_connect_after(G_OBJECT(gtkconv->entry), "button_press_event",
+			       G_CALLBACK(entry_stop_rclick_cb), NULL);
+	g_signal_connect(G_OBJECT(gtkconv->entry), "size-allocate",
+			 G_CALLBACK(size_allocate_cb), conv);
+
+	if (gaim_prefs_get_bool("/gaim/gtk/conversations/spellcheck"))
+		gaim_gtk_setup_gtkspell(GTK_TEXT_VIEW(gtkconv->entry));
+	gtk_imhtmltoolbar_attach(GTK_IMHTMLTOOLBAR(gtkconv->toolbar),
+				 gtkconv->entry);
+
+	gtk_container_add(GTK_CONTAINER(sw), GTK_WIDGET(gtkconv->entry));
+	gtk_widget_show(gtkconv->entry);
+
+	/* Setup the bottom button box. */
+	gtkconv->bbox = gtk_hbox_new(FALSE, 6);
+	gtk_box_pack_start(GTK_BOX(vbox), gtkconv->bbox, FALSE, FALSE, 0);
+	setup_chat_buttons(conv, gtkconv->bbox);
+
+	/*
+	 * Focus for chat windows should be as follows:
+	* Tab title -> chat topic -> conversation scrollback -> user list ->
+	*   user list buttons -> entry -> buttons at bottom
+	*/
+	focus_chain = g_list_prepend(focus_chain, gtkconv->bbox);
+	focus_chain = g_list_prepend(focus_chain, gtkconv->entry);
+	gtk_container_set_focus_chain(GTK_CONTAINER(vbox), focus_chain);
+
+	return vpaned;
+}
+
+
+
+static void
+roombrowse_gtk_add_conversation(GaimConvWindow *win, GaimConversation *conv)
+{
+	GaimGtkWindow *gtkwin;
+	GaimGtkConversation *gtkconv, *focus_gtkconv;
+	GaimConversation *focus_conv;
+	GtkWidget *pane = NULL;
+	GtkWidget *tab_cont;
+	GtkWidget *tabby, *menu_tabby;
+	GtkWidget *close_image;
+	gboolean new_ui;
+	GaimConversationType conv_type;
+	const char *name;
+
+	name      = gaim_conversation_get_name(conv);
+	conv_type = gaim_conversation_get_type(conv);
+	gtkwin    = GAIM_GTK_WINDOW(win);
+
+	if (conv->ui_data != NULL) {
+		gtkconv = (GaimGtkConversation *)conv->ui_data;
+
+		tab_cont = gtkconv->tab_cont;
+
+		new_ui = FALSE;
+	}
+	else {
+		gtkconv = g_malloc0(sizeof(GaimGtkConversation));
+		conv->ui_data = gtkconv;
+
+		/* Setup some initial variables. */
+		gtkconv->sg       = gtk_size_group_new(GTK_SIZE_GROUP_BOTH);
+		gtkconv->tooltips = gtk_tooltips_new();
+
+		
+		pane = setup_roombrowse_pane(conv);
+		
+
+		if (pane == NULL) {
+			if      (conv_type == GAIM_CONV_CHAT) g_free(gtkconv->u.chat);
+			else if (conv_type == GAIM_CONV_IM)   g_free(gtkconv->u.im);
+
+			g_free(gtkconv);
+			conv->ui_data = NULL;
+
+			return;
+		}
+
+		
+		
+		/* Setup the container for the tab. */
+		gtkconv->tab_cont = tab_cont = gtk_vbox_new(FALSE, 6);
+		gtk_container_set_border_width(GTK_CONTAINER(tab_cont), 6);
+		gtk_container_add(GTK_CONTAINER(tab_cont), pane);
+		gtk_widget_show(pane);
+
+		new_ui = TRUE;
+
+		gtkconv->make_sound = TRUE;
+
+		gtkconv->show_formatting_toolbar = gaim_prefs_get_bool(
+				"/gaim/gtk/conversations/show_formatting_toolbar");
+
+		if (gtkconv->show_formatting_toolbar)
+			gtk_widget_show(gtkconv->toolbar);
+
+		gtkconv->show_timestamps = gaim_prefs_get_bool(
+				"/gaim/gtk/conversations/show_timestamps");
+
+		gtk_imhtml_show_comments(GTK_IMHTML(gtkconv->imhtml),
+					 gtkconv->show_timestamps);
+
+		g_signal_connect_swapped(G_OBJECT(pane), "focus",
+					 G_CALLBACK(gtk_widget_grab_focus),
+					 gtkconv->entry);
+	}
+
+	gtkconv->tabby = tabby = gtk_hbox_new(FALSE, 6);
+	gtkconv->menu_tabby = menu_tabby = gtk_hbox_new(FALSE, 6);
+
+	/* Close button. */
+	gtkconv->close = gtk_button_new();
+	gtk_widget_set_size_request(GTK_WIDGET(gtkconv->close), 16, 16);
+	gtk_button_set_relief(GTK_BUTTON(gtkconv->close), GTK_RELIEF_NONE);
+	close_image = gtk_image_new_from_stock(GTK_STOCK_CLOSE, GTK_ICON_SIZE_MENU);
+	gtk_widget_show(close_image);
+	gtk_container_add(GTK_CONTAINER(gtkconv->close), close_image);
+	gtk_tooltips_set_tip(gtkconv->tooltips, gtkconv->close,
+			     _("Close conversation"), NULL);
+
+	g_signal_connect(G_OBJECT(gtkconv->close), "clicked",
+			 G_CALLBACK(close_conv_cb), conv);
+
+	/*
+	* I love Galeon. They have a fix for that stupid annoying visible
+	* border bug. I love you guys! -- ChipX86
+	*/
+	g_signal_connect(G_OBJECT(gtkconv->close), "state_changed",
+			 G_CALLBACK(tab_close_button_state_changed_cb), NULL);
+
+	/* Status icon. */
+	gtkconv->icon = gtk_image_new();
+	gtkconv->menu_icon = gtk_image_new();
+	update_tab_icon(conv);
+
+	/* Tab label. */
+	gtkconv->tab_label = gtk_label_new(gaim_conversation_get_title(conv));
+	gtkconv->menu_label = gtk_label_new(gaim_conversation_get_title(conv));
+#if 0
+	gtk_misc_set_alignment(GTK_MISC(gtkconv->tab_label), 0.00, 0.5);
+	gtk_misc_set_padding(GTK_MISC(gtkconv->tab_label), 4, 0);
+#endif
+
+	/* Pack it all together. */
+	gtk_box_pack_start(GTK_BOX(tabby), gtkconv->icon, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(menu_tabby), gtkconv->menu_icon,
+			   FALSE, FALSE, 0);
+
+	gtk_widget_show_all(gtkconv->icon);
+	gtk_widget_show_all(gtkconv->menu_icon);
+
+	gtk_box_pack_start(GTK_BOX(tabby), gtkconv->tab_label, TRUE, TRUE, 0);
+	gtk_box_pack_start(GTK_BOX(menu_tabby), gtkconv->menu_label, TRUE, TRUE, 0);
+	gtk_widget_show(gtkconv->tab_label);
+	gtk_widget_show(gtkconv->menu_label);
+	gtk_misc_set_alignment(GTK_MISC(gtkconv->menu_label), 0, 0);
+
+	gtk_box_pack_start(GTK_BOX(tabby), gtkconv->close, FALSE, FALSE, 0);
+	if (gaim_prefs_get_bool("/gaim/gtk/conversations/close_on_tabs"))
+		gtk_widget_show(gtkconv->close);
+
+	gtk_widget_show(tabby);
+	gtk_widget_show(menu_tabby);
+
+	if (gaim_conversation_get_type(conv) == GAIM_CONV_IM)
+		gaim_gtkconv_update_buddy_icon(conv);
+
+	/* Add this pane to the conversation's notebook. */
+	gtk_notebook_append_page_menu(GTK_NOTEBOOK(gtkwin->notebook), tab_cont, tabby, menu_tabby);
+
+	gtk_widget_show(tab_cont);
+
+	if (gaim_conv_window_get_conversation_count(win) == 1) {
+		/* Er, bug in notebooks? Switch to the page manually. */
+		gtk_notebook_set_current_page(GTK_NOTEBOOK(gtkwin->notebook), 0);
+
+		gtk_notebook_set_show_tabs(GTK_NOTEBOOK(gtkwin->notebook),
+					   gaim_prefs_get_bool("/gaim/gtk/conversations/tabs"));
+	}
+	else
+		gtk_notebook_set_show_tabs(GTK_NOTEBOOK(gtkwin->notebook), TRUE);
+
+	focus_conv = g_list_nth_data(gaim_conv_window_get_conversations(win),
+				     gtk_notebook_get_current_page(GTK_NOTEBOOK(gtkwin->notebook)));
+	focus_gtkconv = GAIM_GTK_CONVERSATION(focus_conv);
+	gtk_widget_grab_focus(focus_gtkconv->entry);
+
+	if (!new_ui)
+		g_object_unref(gtkconv->tab_cont);
+
+	if (gaim_conv_window_get_conversation_count(win) == 1)
+		g_timeout_add(0, (GSourceFunc)update_send_as_selection, win);
+}
+
+
+static void roombrowse_menu_cb() {
+	GaimConvWindow *win=gaim_get_first_window_with_type(GAIM_CONV_TYPE_MISC);
+	GaimConversation conv;
+	
+	conv->name="Test browse";
+	conv->type=GAIM_CONV_TYPE_MISC;
+	conv->title="Test browse";
+	roombrowse_gtk_add_conversation(win, &conv);
+	
+}
+static void roombrowse_menu_create(GaimBlistNode *node, GList **menu)
+{
+  
+	char *label,*room;	
+	int i;
+  
+	struct gaym_conn *gaym;
+	GaimChat *chat=(GaimChat*)node;
+  
+	if(node->type != GAIM_BLIST_CHAT_NODE)
+		return;
+  
+	gaym=chat->account->gc->proto_data;
+  
+	room=g_hash_table_lookup(chat->components,"ircname");
+  
+  
+  
+	for(i=1; i<3; i++)
+	{
+    
+		label = g_strdup_printf("%s %d",chat->alias,i);
+		room=g_strdup_printf("%.*s%d",strlen(room)-1,room,i);
+		GaimBlistNodeAction* act=gaim_blist_node_action_new(label,
+				roombrowse_menu_cb,
+				room);
+  
+		*menu=g_list_append(*menu,act);
+    //g_free(label);
+	}
+}
+static gboolean plugin_load(GaimPlugin *plugin)
+{
+	gaim_signal_connect(gaim_blist_get_handle(),
+						"blist_node_extended_menu",
+						plugin, GAIM_CALLBACK(roombrowse_menu_create), NULL);
+
+	
+
+	return TRUE;
+}
+
+static GaimPluginInfo info =
+{
+	GAIM_PLUGIN_MAGIC,
+	GAIM_MAJOR_VERSION,
+	GAIM_MINOR_VERSION,
+	GAIM_PLUGIN_STANDARD,
+	GAIM_GTK_PLUGIN_TYPE,
+	0,
+	NULL,
+	GAIM_PRIORITY_DEFAULT,
+	CHATSORT_PLUGIN_ID,
+	N_("Chatroom Sort options"),
+	VERSION,
+	N_("Changes the sorting options of chatroom lists."),
+	N_("When a new conversation is opened this plugin will insert the last conversation into the current conversation."),
+	"Jason LeBrun <gaim@jasonlebrun.info",
+	GAIM_WEBSITE,
+	plugin_load,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
+static void
+init_plugin(GaimPlugin *plugin)
+{
+}
+
+GAIM_INIT_PLUGIN(history, init_plugin, info)

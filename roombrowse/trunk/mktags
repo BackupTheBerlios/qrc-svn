@@ -1,0 +1,6 @@
+ctags * 	/usr/include/glib-2.0/glib/*.h \
+		/usr/include/gtk-2.0/gtk/*.h \
+		/home/jason/packages/gaim/src/*.c \
+		/home/jason/packages/gaim/src/*.h
+		
+
