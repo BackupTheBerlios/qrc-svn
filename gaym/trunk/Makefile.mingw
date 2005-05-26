@@ -1,0 +1,20 @@
+# Makefile.mingw
+#
+# Description: Top Makefile for win32 (mingw) port of gaym
+#
+
+include Include.mingw
+
+all:
+	$(MAKE) -C $(PRPL) -f Makefile.mingw
+
+install: all
+	mkdir -p $(INSTALL_DIR)
+	$(MAKE) -C $(PIXMAPS) -f Makefile.mingw install
+	$(MAKE) -C $(PRPL) -f Makefile.mingw install
+	cp README.mingw $(INSTALL_DIR)
+	unix2dos $(INSTALL_DIR)/README.mingw
+
+clean:
+	$(MAKE) -C $(PRPL) -f Makefile.mingw clean
+	-rm -r $(INSTALL_DIR)

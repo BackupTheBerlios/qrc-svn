@@ -1,0 +1,101 @@
+#
+# Makefile.mingw
+#
+# Description: Makefile for win32 (mingw) version of libgaym
+
+include ../Include.mingw
+
+
+##
+## TARGET
+##
+
+TARGET = libgaym
+
+##
+## INCLUDE PATHS
+##
+
+INCLUDE_PATHS +=	-I$../ \
+			-I$(GTK_TOP)/include \
+			-I$(GTK_TOP)/include/gtk-2.0 \
+			-I$(GTK_TOP)/include/glib-2.0 \
+			-I$(GTK_TOP)/include/pango-1.0 \
+			-I$(GTK_TOP)/include/atk-1.0 \
+			-I$(GTK_TOP)/lib/glib-2.0/include \
+			-I$(GTK_TOP)/lib/gtk-2.0/include \
+			-I$(GAIM_TOP)/src \
+			-I$(GAIM_TOP)/src/win32 \
+			-I$(GAIM_TOP)
+
+
+LIB_PATHS =		-L$(GTK_TOP)/lib \
+			-L$(GAIM_TOP)/src
+
+
+##
+##  SOURCES, OBJECTS
+##
+
+C_SRC =			cmds.c \
+			dcc_send.c \
+			gaym.c \
+			helpers.c \
+			msgs.c \
+			parse.c \
+			weblogin.c
+
+
+OBJECTS = $(C_SRC:%.c=%.o)
+
+
+##
+## LIBRARIES
+##
+
+LIBS =			-lgtk-win32-2.0 \
+			-lglib-2.0 \
+			-lgdk-win32-2.0 \
+			-lgmodule-2.0 \
+			-lgobject-2.0 \
+			-lws2_32 \
+			-lintl \
+			-lgaim
+
+
+##
+## RULES
+##
+
+# How to make a C file
+
+%.o: %.c
+	$(CC) $(CFLAGS) $(DEFINES) $(INCLUDE_PATHS) -o $@ -c $<
+
+##
+## TARGET DEFINITIONS
+##
+
+.PHONY: all clean
+
+all: $(TARGET).dll
+
+install:
+	cp $(TARGET).dll ../$(INSTALL_DIR)
+
+
+##
+## BUILD DLL
+##
+
+$(TARGET).dll: $(OBJECTS)
+	$(CC) -shared $(OBJECTS) $(LIB_PATHS) $(LIBS) $(DLL_LD_FLAGS) -Wl,--out-implib,$(TARGET).lib -o $(TARGET).dll
+
+##
+## CLEAN RULES
+##
+
+clean:
+	-rm *.o
+	-rm $(TARGET).dll
+	-rm $(TARGET).lib

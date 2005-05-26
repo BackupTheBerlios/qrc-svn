@@ -1,0 +1,43 @@
+To build from linux:
+
+   - This assumes your home directory is /home/deckrider, and your
+     directory to download and unwind gaim and other required software
+     is /home/deckrider/wingaim, and your cross compiler name is
+     i586-mingw32msvc-gcc
+
+   - Follow the instructions for building gaim found at:
+     http://gaim.sourceforge.net/win32/build.php (BUT DO NOT BUILD, just
+     download/unwind all the software to the correct directories)
+
+   - cd /home/deckrider/wingaim/gaim-1.3.0
+
+   - cp config.h.mingw config.h
+
+   - cd ./src
+
+   - make -f Makefile.mingw  gaim.dll gaim.lib CC=i586-mingw32msvc-gcc
+
+   - Now you can build the gaym plugin from its top level source
+     directory (the same directory containing this file):
+
+   - make -f Makefile.mingw \
+     GTK_TOP=/home/deckrider/wingaim/win32-dev/gtk_2_0 \
+     GAIM_TOP=/home/deckrider/wingaim/gaim-1.3.0 \
+     CC=i586-mingw32msvc-gcc
+
+   - make -f Makefile.mingw install
+     (will install necessary windows components to ./gaym-win32-install-dir
+
+   - make -f Makefile.mingw clean
+     (will restore the the source tree to its pristine form)
+
+To install:
+
+   - install gaim from http://gaim.sourceforge.net/win32/index.php
+
+   - find the file "libirc.dll" and put "libgaym.dll" in the same
+     directory
+
+   - find the file "irc.png" and put "gaym.png" in the same directory
+
+   - probably you need to reboot at this point
