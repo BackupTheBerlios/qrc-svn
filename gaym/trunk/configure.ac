@@ -22,4 +22,4 @@ AC_TYPE_SIZE_T
 dnl Checks for library functions.
 AC_CHECK_FUNCS(strdup strerror strstr strtoul)
 
-AC_OUTPUT([Makefile src/Makefile])
+AC_OUTPUT([Makefile src/Makefile pixmaps/Makefile])

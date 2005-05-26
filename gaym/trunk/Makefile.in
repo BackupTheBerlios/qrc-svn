@@ -91,7 +91,8 @@ RC = @RC@
 STRIP = @STRIP@
 VERSION = @VERSION@
 
-SUBDIRS = src
+SUBDIRS = src         pixmaps
+
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = config.h
