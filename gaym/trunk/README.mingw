@@ -18,9 +18,18 @@ To build from linux:
      is /home/deckrider/wingaim, and your cross compiler name is
      i586-mingw32msvc-gcc
 
-   - Follow the instructions for building gaim found at:
-     http://gaim.sourceforge.net/win32/build.php (BUT DO NOT BUILD, just
-     download/unwind all the software to the correct directories)
+   - Download and unwind the following under
+     /home/deckrider/wingaim/win32-dev:
+
+     http://prdownloads.sourceforge.net/gaim/gtk-dev-2.6.7-rev-a.tar.gz
+     http://ftp.gnu.org/gnu/aspell/w32/aspell-dev-0-50-3-3.zip
+     http://gaim.sourceforge.net/win32/gtkspell-2.0.6.tar.gz
+     ftp://ftp.mozilla.org/pub/mozilla.org/security/nss/releases/NSS_3_9_RTM/WIN954.0_OPT.OBJ/nss-3.9.zip
+     ftp://ftp.mozilla.org/pub/mozilla.org/nspr/releases/v4.4.1/WIN954.0_OPT.OBJ/nspr-4.4.1.zip
+     
+   - Download and unwind the following under /home/deckrider/wingaim:
+
+     http://prdownloads.sourceforge.net/gaim/gaim-1.3.0.tar.gz
 
    - cd /home/deckrider/wingaim/gaim-1.3.0
 
@@ -28,7 +37,7 @@ To build from linux:
 
    - cd ./src
 
-   - make -f Makefile.mingw  gaim.dll gaim.lib CC=i586-mingw32msvc-gcc
+   - make -f Makefile.mingw  gaim.dll CC=i586-mingw32msvc-gcc
 
    - Now you can build the gaym plugin from its top level source
      directory (the same directory containing this file):
@@ -39,7 +48,7 @@ To build from linux:
      CC=i586-mingw32msvc-gcc
 
    - make -f Makefile.mingw install
-     (will install necessary windows components to ./gaym-win32-install-dir
+     (will install necessary windows components to ./gaym-win32-install-dir)
 
    - make -f Makefile.mingw clean
      (will restore the the source tree to its pristine form)
