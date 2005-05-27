@@ -215,9 +215,6 @@ void gaym_msg_wallops(struct gaym_conn *gaym, const char *name,
 void gaym_msg_whois(struct gaym_conn *gaym, const char *name,
                     const char *from, char **args);
 
-void gaym_msg_ignore(struct gaym_conn *gaym, const char *name,
-                     const char *from, char **args);
-
 
 void gaym_msg_richnames_list(struct gaym_conn *gaym, const char *name,
                              const char *from, char **args);

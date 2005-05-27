@@ -598,6 +598,35 @@ static void gaym_input_cb(gpointer data, gint source,
     }
 }
 
+static void gaym_add_permit(GaimConnection * gc, const char *name)
+{
+    // no op I think
+}
+
+static void gaym_add_deny(GaimConnection * gc, const char *name)
+{
+    // FIXME: add code here to store this setting on gay.com
+}
+
+static void gaym_rem_permit(GaimConnection * gc, const char *name)
+{
+    // no op I think
+}
+
+static void gaym_rem_deny(GaimConnection * gc, const char *name)
+{
+    // FIXME: add code here to store this setting on gay.com
+}
+
+static void gaym_set_permit_deny(GaimConnection * gc)
+{
+    // NoOp, simply to enable gaim's privacy infrastructure.  It is in
+    // gaim for the case when the server needs to be notified of a
+    // change to the kind of privacy desired: GAIM_PRIVACY_ALLOW_ALL,
+    // GAIM_PRIVACY_DENY_ALL, GAIM_PRIVACY_ALLOW_USERS,
+    // GAIM_PRIVACY_DENY_USERS, or GAIM_PRIVACY_ALLOW_BUDDYLIST.
+}
+
 static void gaym_chat_join(GaimConnection * gc, GHashTable * data)
 {
     struct gaym_conn *gaym = gc->proto_data;
@@ -805,11 +834,11 @@ static GaimPluginProtocolInfo prpl_info = {
     NULL,                       /* add_buddies */
     gaym_remove_buddy,          /* remove_buddy */
     NULL,                       /* remove_buddies */
-    NULL,                       /* add_permit */
-    NULL,                       /* add_deny */
-    NULL,                       /* rem_permit */
-    NULL,                       /* rem_deny */
-    NULL,                       /* set_permit_deny */
+    gaym_add_permit,            /* add_permit */
+    gaym_add_deny,              /* add_deny */
+    gaym_rem_permit,            /* rem_permit */
+    gaym_rem_deny,              /* rem_deny */
+    gaym_set_permit_deny,       /* set_permit_deny */
     NULL,                       /* warn */
     gaym_chat_join,             /* join_chat */
     NULL,                       /* reject_chat */
@@ -840,27 +869,22 @@ static GaimPluginProtocolInfo prpl_info = {
     gaym_dccsend_send_file      /* send_file */
 };
 
-static
-int gaym_kill_entrance_msgs(GaimConversation * conv, char *name)
+static int gaym_filter_join_leave_msgs(GaimConversation * conv, char *name)
 {
-
-
-    gaim_debug_misc("gaym", "Now in kill entrance function\n");
-    if (gaim_prefs_get_bool("/plugins/prpl/gaym/show_entrance_exit_msgs")) {
-        if (gaim_prefs_get_bool
-            ("/plugins/prpl/gaym/hide_bot_entrance_exit_msgs"))
-            if (gaim_conv_chat_get_ignored_user(conv->u.chat, name)) {
-                gaim_debug_misc("gaym", "%s is ignored!", name);
-                return 1;
-            }
-        return 0;
-    } else
+    GaimConnection *gc = gaim_conversation_get_gc(conv);
+    if (!gc) {
         return 1;
+    }
+    if (!gaim_prefs_get_bool("/plugins/prpl/gaym/show_join_leave_msgs")) {
+        return 1;
+    }
+    if (!gaym_privacy_check(gc, name)) {
+        return 1;
+    }
+    return 0;
+ }
 
-}
-
-static
-void gaym_get_photo_info(GaimConversation * conv)
+static void gaym_get_photo_info(GaimConversation * conv)
 {
     char *buf;
     char *name;
@@ -899,20 +923,14 @@ static GaimPluginPrefFrame *get_plugin_pref_frame(GaimPlugin * plugin)
 
     ppref =
         gaim_plugin_pref_new_with_name_and_label
-        ("/plugins/prpl/gaym/show_entrance_exit_msgs",
+        ("/plugins/prpl/gaym/show_join_leave_msgs",
          _("Show entance/exit messages"));
     gaim_plugin_pref_frame_add(frame, ppref);
 
     ppref =
         gaim_plugin_pref_new_with_name_and_label
         ("/plugins/prpl/gaym/show_bio_with_join",
-         _("Show bioline for users joining the room."));
-    gaim_plugin_pref_frame_add(frame, ppref);
-
-    ppref =
-        gaim_plugin_pref_new_with_name_and_label
-        ("/plugins/prpl/gaym/hide_bot_entrance_exit_msgs",
-         _("Don't show entrance/exit messages for detected bots."));
+         _("Show bio when entance messages are shown."));
     gaim_plugin_pref_frame_add(frame, ppref);
 
     // ppref = gaim_plugin_pref_new_with_name_and_label(
@@ -923,11 +941,9 @@ static GaimPluginPrefFrame *get_plugin_pref_frame(GaimPlugin * plugin)
     return frame;
 }
 
-
 static GaimPluginUiInfo prefs_info = {
     get_plugin_pref_frame
 };
-
 
 static GaimPluginInfo info = {
     GAIM_PLUGIN_MAGIC,
@@ -940,9 +956,9 @@ static GaimPluginInfo info = {
     GAIM_PRIORITY_DEFAULT,                                /**< priority       */
 
     "prpl-gaym",                                          /**< id             */
-    "GAYM",                                               /**< name           */
+    "GayM",                                               /**< name           */
     VERSION,                                              /**< version        */
-    N_("GAYM Protocol Plugin"),                           /**  summary        */
+    N_("GayM Protocol Plugin"),                           /**  summary        */
     N_("Gay.com Protocol based on IRC"),                  /**  description    */
     NULL,                                                 /**< author         */
     "http://gaym.sourceforge.org",                        /**< homepage       */
@@ -980,28 +996,26 @@ static void _init_plugin(GaimPlugin * plugin)
     prpl_info.protocol_options =
         g_list_append(prpl_info.protocol_options, option);
 
+    // gaim doesn't support suppressing entrance messages
+    gaim_signal_connect(gaim_conversations_get_handle(),
+                        "chat-buddy-joining", plugin,
+                         GAIM_CALLBACK(gaym_filter_join_leave_msgs), NULL);
+
+    // gaim doesn't support suppressing exit messages
+    gaim_signal_connect(gaim_conversations_get_handle(),
+                        "chat-buddy-leaving", plugin,
+                         GAIM_CALLBACK(gaym_filter_join_leave_msgs), NULL);
+
     // We have to pull thumbnails, since they aren't pushed like with
     // other protocols.
     gaim_signal_connect(gaim_conversations_get_handle(),
-                        "conversation-created",
-                        plugin, GAIM_CALLBACK(gaym_get_photo_info), NULL);
-
-    gaim_signal_connect(gaim_conversations_get_handle(),
-                        "chat-buddy-joining",
-                        plugin, GAIM_CALLBACK(gaym_kill_entrance_msgs),
-                        NULL);
-    gaim_signal_connect(gaim_conversations_get_handle(),
-                        "chat-buddy-leaving", plugin,
-                        GAIM_CALLBACK(gaym_kill_entrance_msgs), NULL);
+                        "conversation-created", plugin,
+                        GAIM_CALLBACK(gaym_get_photo_info), NULL);
 
     gaim_prefs_add_none("/plugins/prpl/gaym");
     gaim_prefs_add_bool("/plugins/prpl/gaym/show_bio_with_join", TRUE);
-    gaim_prefs_add_bool("/plugins/prpl/gaym/show_entrance_exit_msgs",
-                        TRUE);
-    gaim_prefs_add_bool("/plugins/prpl/gaym/hide_bot_entrance_exit_msgs",
-                        TRUE);
-    gaim_prefs_add_string("/plugins/prpl/gaym/bot_lines", NULL);
-
+    gaim_prefs_add_bool("/plugins/prpl/gaym/show_join_leave_msgs", TRUE);
+    // gaim_prefs_add_string("/plugins/prpl/gaym/bot_lines", NULL);
 
     _gaym_plugin = plugin;
 

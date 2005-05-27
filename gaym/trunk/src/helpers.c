@@ -106,4 +106,77 @@ gchar *ascii2native(const gchar * str)
     return outstr;
 }
 
+// shamelessly taken from the yahoo prpl
+gboolean gaym_privacy_check(GaimConnection * gc, const char *nick)
+{
+    // returns TRUE if allowed through, FALSE otherwise
+    GSList *list;
+    gboolean permitted = FALSE;
+
+    switch (gc->account->perm_deny) {
+    case 0:
+        gaim_debug_warning("gaym", "Privacy setting was 0.  If you can "
+                           "reproduce this, please file a bug report.\n");
+        permitted = TRUE;
+        break;
+
+    case GAIM_PRIVACY_ALLOW_ALL:
+        permitted = TRUE;
+        break;
+
+    case GAIM_PRIVACY_DENY_ALL:
+        gaim_debug_info("gaym",
+                        "%s blocked data received from %s (GAIM_PRIVACY_DENY_ALL)\n",
+                        gc->account->username, nick);
+        break;
+
+    case GAIM_PRIVACY_ALLOW_USERS:
+        for (list = gc->account->permit; list != NULL; list = list->next) {
+            if (!gaim_utf8_strcasecmp
+                (nick, gaim_normalize(gc->account, (char *) list->data))) {
+                permitted = TRUE;
+                gaim_debug_info("gaym",
+                                "%s allowed data received from %s (GAIM_PRIVACY_ALLOW_USERS)\n",
+                                gc->account->username, nick);
+                break;
+            }
+        }
+        break;
+
+    case GAIM_PRIVACY_DENY_USERS:
+        /* seeing we're letting everyone through, except the deny list */
+        permitted = TRUE;
+        for (list = gc->account->deny; list != NULL; list = list->next) {
+            if (!gaim_utf8_strcasecmp
+                (nick, gaim_normalize(gc->account, (char *) list->data))) {
+                permitted = FALSE;
+                gaim_debug_info("gaym",
+                                "%s blocked data received from %s (GAIM_PRIVACY_DENY_USERS)\n",
+                                gc->account->username, nick);
+            }
+            break;
+        }
+        break;
+
+    case GAIM_PRIVACY_ALLOW_BUDDYLIST:
+        if (gaim_find_buddy(gc->account, nick) != NULL) {
+            permitted = TRUE;
+        } else {
+            gaim_debug_info("gaym",
+                            "%s blocked data received from %s (GAIM_PRIVACY_ALLOW_BUDDYLIST)\n",
+                            gc->account->username, nick);
+        }
+        break;
+
+    default:
+        gaim_debug_warning("gaym",
+                           "Privacy setting was unknown.  If you can "
+                           "reproduce this, please file a bug report.\n");
+        permitted = FALSE;
+        break;
+    }
+
+    return permitted;
+}
+
 // vim:tabstop=4:shiftwidth=4:expandtab:
