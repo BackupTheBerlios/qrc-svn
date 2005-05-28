@@ -79,6 +79,8 @@ struct gaym_conn {
     GString *motd;
     GString *names;
     char *nameconv;
+    char *traceconv;
+
     struct _whois {
         char *nick;
         char *away;
@@ -208,6 +210,8 @@ void gaym_msg_quit(struct gaym_conn *gaym, const char *name,
                    const char *from, char **args);
 void gaym_msg_topic(struct gaym_conn *gaym, const char *name,
                     const char *from, char **args);
+void gaym_msg_trace(struct gaym_conn *gaym, const char *name,
+                    const char *from, char **args);
 void gaym_msg_unknown(struct gaym_conn *gaym, const char *name,
                       const char *from, char **args);
 void gaym_msg_wallops(struct gaym_conn *gaym, const char *name,
@@ -267,6 +271,8 @@ int gaym_cmd_query(struct gaym_conn *gaym, const char *cmd,
 int gaym_cmd_remove(struct gaym_conn *gaym, const char *cmd,
                     const char *target, const char **args);
 int gaym_cmd_topic(struct gaym_conn *gaym, const char *cmd,
+                   const char *target, const char **args);
+int gaym_cmd_trace(struct gaym_conn *gaym, const char *cmd,
                    const char *target, const char **args);
 int gaym_cmd_wallops(struct gaym_conn *gaym, const char *cmd,
                      const char *target, const char **args);

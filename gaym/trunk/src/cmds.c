@@ -140,6 +140,18 @@ int gaym_cmd_ctcp_action(struct gaym_conn *gaym, const char *cmd,
     return 1;
 }
 
+int gaym_cmd_trace(struct gaym_conn *gaym, const char *cmd,
+		    const char *target, const char **args)
+{
+    char *buf;
+    
+    buf = gaym_format(gaym, "vn", "TRACE", args[0]);
+    gaym_send(gaym, buf);
+    g_free(buf);
+
+    gaym->traceconv = g_strdup(target);
+}
+
 int gaym_cmd_invite(struct gaym_conn *gaym, const char *cmd,
                     const char *target, const char **args)
 {

@@ -1092,6 +1092,21 @@ static void gaym_buddy_status(char *name, struct gaym_buddy *ib,
     ib->flag = FALSE;
 }
 
+void gaym_msg_trace(struct gaym_conn *gaym, const char *name,
+		    const char *from, char **args)
+{
+    char* nameend=strchr(args[3],'[');
+    int namelen = nameend-args[3];
+    gchar* username=g_strndup(args[3], namelen);
+    GaimConversation* conv =
+            gaim_find_conversation_with_account(gaym->traceconv ? gaym->
+                                                traceconv : args[1],
+                                                gaym->account);
+    gaim_conversation_write(conv, "TRACE", args[3],
+                                 GAIM_MESSAGE_SYSTEM | GAIM_MESSAGE_NO_LOG,
+                                 time(NULL));
+    
+}
 void gaym_msg_join(struct gaym_conn *gaym, const char *name,
                    const char *from, char **args)
 {

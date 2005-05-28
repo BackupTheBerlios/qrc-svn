@@ -601,16 +601,21 @@ static void gaym_input_cb(gpointer data, gint source,
 static void gaym_add_permit(GaimConnection * gc, const char *name)
 {
     // no op I think
+    // we shouldn't worry about supporting permit-only
+    // is there some way to explicitly disable it?
 }
 
 static void gaym_add_deny(GaimConnection * gc, const char *name)
 {
+    gaim_debug_misc("gaym","gaym_add_deny stub\n");
     // FIXME: add code here to store this setting on gay.com
+    // Store on gay.com? I'm not sure we can hook into gay.com
+    // privacy features. I could be wrong.
 }
 
 static void gaym_rem_permit(GaimConnection * gc, const char *name)
 {
-    // no op I think
+    // permit shmermit.
 }
 
 static void gaym_rem_deny(GaimConnection * gc, const char *name)
