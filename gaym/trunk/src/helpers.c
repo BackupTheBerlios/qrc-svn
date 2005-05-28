@@ -153,8 +153,8 @@ gboolean gaym_privacy_check(GaimConnection * gc, const char *nick)
                 gaim_debug_info("gaym",
                                 "%s blocked data received from %s (GAIM_PRIVACY_DENY_USERS)\n",
                                 gc->account->username, nick);
+                break;
             }
-            break;
         }
         break;
 
