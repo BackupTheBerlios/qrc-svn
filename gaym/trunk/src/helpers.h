@@ -2,6 +2,8 @@
 #include <glib.h>
 
 #include "privacy.h"
+#include "util.h"
+#include "debug.h"
 
 char *return_string_between(const char *startbit, const char *endbit,
                             const char *source);

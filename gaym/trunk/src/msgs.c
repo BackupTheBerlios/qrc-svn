@@ -69,111 +69,6 @@ char *make_nick_profile_link(char *name)
                            name);
 }
 
-// This needs to now be reworked in light of all the privacy
-// functionality. It should also be configurable instead of hard
-// coded.
-
-/*
-char *gaym_bot_detect(char *bio, GaimConversation * chat, const char
-                      *name)
-{
-    static char *appendStr = " <b><font size=2>** BOT ALERT **</font></b>";
-    static char *badlines[] = {
-        "geocities",
-        "tripod",
-        "angelcities",
-        "icamsonline",
-        "ratefun",
-        "dudepages",
-        "inetmates",
-        "yahooboys",
-        "adainmanlazy",
-        "h0rnydolls",
-        "hornydolls",
-        "gayonlinevideos",
-        "gaystreamingvideos",
-        "gaypornfilms",
-        NULL
-    };
-
-    char *tempbio, *s, *d;
-    gsize searchlimit = 0;
-    gboolean isBot = 0;
-
-    if (bio == NULL)
-        return NULL;
-    else
-        s = bio;
-
-    // Should stop system from ignoring people on your buddy list
-    if ((name != NULL) &&
-        (gaim_find_buddy(gaim_conversation_get_account(chat), name))) {
-        gaim_debug_info("gaym_bot_detect", "User %s is a buddy!\n", name);
-        if (gaim_prefs_get_bool("/plugins/prpl/gaym/show_bio_with_join"))
-            return bio;
-        else
-            return g_strdup("");
-    }
-    // Bots make MODE errors
-    if (g_ascii_strcasecmp(bio, g_strdup_printf("MODE %s -i", name)) == 0)
-        isBot = 1;
-    else {
-        // Bot error - using URL encoding
-        d = tempbio = g_malloc(strlen(bio) + 1);
-
-        while (*s != '\0') {
-            if (*s == '%') {
-                if (((*(s + 1) != 0) &&
-                     (g_ascii_isxdigit(*(s + 1)))) &&
-                    ((*(s + 2) != 0) && (g_ascii_isxdigit(*(s + 2)))))
-                    isBot = 1;
-            } else if (g_ascii_isalnum(*s))
-                *d++ = g_ascii_tolower(*s);
-            s++;
-        }
-        *d = '\0';
-        searchlimit = strlen(tempbio);
-
-        // Bots advertising Web Sites
-        if (!isBot) {
-            char **temp = badlines;
-
-            while (*temp != NULL) {
-                if (g_strstr_len(tempbio, searchlimit, *temp) != NULL) {
-                    isBot = 1;
-                    break;
-                }
-                temp++;
-            }
-        }
-        g_free(tempbio);
-    }
-
-    if (!gaim_prefs_get_bool("/plugins/prpl/gaym/show_bio_with_join")) {
-        g_free(bio);
-        bio = NULL;
-    }
-    if (isBot) {
-
-        if (bio) {
-            tempbio = g_malloc(strlen(bio) + strlen(appendStr) + 1);
-            g_stpcpy(g_stpcpy(tempbio, bio), appendStr);
-            // g_free (bio);
-            bio = tempbio;
-        } else {
-            bio = g_strdup(appendStr);
-        }
-        gaim_debug_info("gaym_bot_detect", "Ignoring [%s]!!!!\n", name);
-        if ((chat != NULL) && (name != NULL)) {
-            gaim_conv_chat_ignore(GAIM_CONV_CHAT(chat), name);
-            gaim_privacy_deny_add(gaim_conversation_get_account(chat),
-                                  name, 0);
-        }
-    }
-    return bio;
-}
-*/
-
 char *gaym_mask_bio(const char *biostring)
 {
     char *start = strchr(biostring, '#');
@@ -1093,19 +988,16 @@ static void gaym_buddy_status(char *name, struct gaym_buddy *ib,
 }
 
 void gaym_msg_trace(struct gaym_conn *gaym, const char *name,
-		    const char *from, char **args)
+                    const char *from, char **args)
 {
-    char* nameend=strchr(args[3],'[');
-    int namelen = nameend-args[3];
-    gchar* username=g_strndup(args[3], namelen);
-    GaimConversation* conv =
-            gaim_find_conversation_with_account(gaym->traceconv ? gaym->
-                                                traceconv : args[1],
-                                                gaym->account);
+    GaimConversation *conv =
+        gaim_find_conversation_with_account(gaym->traceconv ? gaym->
+                                            traceconv : args[1],
+                                            gaym->account);
     gaim_conversation_write(conv, "TRACE", args[3],
-                                 GAIM_MESSAGE_SYSTEM | GAIM_MESSAGE_NO_LOG,
-                                 time(NULL));
-    
+                            GAIM_MESSAGE_SYSTEM | GAIM_MESSAGE_NO_LOG,
+                            time(NULL));
+
 }
 void gaym_msg_join(struct gaym_conn *gaym, const char *name,
                    const char *from, char **args)
@@ -1172,7 +1064,7 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name,
 
     // Make the ignore.png icon appear next to the nick.
     GaimConversationUiOps *ops = gaim_conversation_get_ui_ops(convo);
-    if(!gaym_privacy_check(gc, nick)) {
+    if (!gaym_privacy_check(gc, nick)) {
         gaim_conv_chat_ignore(GAIM_CONV_CHAT(convo), nick);
         ops->chat_update_user((convo), nick);
     }
@@ -1396,7 +1288,6 @@ void gaym_msg_privmsg(struct gaym_conn *gaym, const char *name,
                       const char *from, char **args)
 {
     GaimConversation *convo;
-    GSList *temp;
     char *tmp, *msg;
     int notice = 0;
 
@@ -1664,11 +1555,12 @@ void gaym_msg_richnames_list(struct gaym_conn *gaym, const char *name,
         else
             flags = GAIM_CBFLAGS_OP;
     }
-    gaim_conv_chat_add_user(GAIM_CONV_CHAT(convo), nick, NULL, flags, FALSE);
+    gaim_conv_chat_add_user(GAIM_CONV_CHAT(convo), nick, NULL, flags,
+                            FALSE);
 
     // Make the ignore.png icon appear next to the nick.
     GaimConversationUiOps *ops = gaim_conversation_get_ui_ops(convo);
-    if(!gaym_privacy_check(gc, nick)) {
+    if (!gaym_privacy_check(gc, nick)) {
         gaim_conv_chat_ignore(GAIM_CONV_CHAT(convo), nick);
         ops->chat_update_user((convo), nick);
     }

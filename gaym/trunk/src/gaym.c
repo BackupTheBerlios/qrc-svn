@@ -600,36 +600,99 @@ static void gaym_input_cb(gpointer data, gint source,
 
 static void gaym_add_permit(GaimConnection * gc, const char *name)
 {
-    // no op I think
-    // we shouldn't worry about supporting permit-only
-    // is there some way to explicitly disable it?
+    // 
+    // FIXME: Add code here to synchronize icons.
+    // 
 }
 
 static void gaym_add_deny(GaimConnection * gc, const char *name)
 {
-    gaim_debug_misc("gaym","gaym_add_deny stub\n");
+    // 
+    // FIXME: Add code here to synchronize icons.
+    // 
     // FIXME: add code here to store this setting on gay.com
-    // Store on gay.com? I'm not sure we can hook into gay.com
-    // privacy features. I could be wrong.
+    // 
+    // The way to store it is by doing a GET on www.gay.com to
+    // /messenger/lists.txt?name=NICK_TO_BLOCK&key=BIG_STRING_THAT_WAS_USED_TO_RETRIEVE_CONFIG_TXT&list=ignore&op=add
+    // 
+    // If successful, the following is returned:
+    // 
+    // success=1
+    // status=ok
+    // list=ignore
+    // command=add
 }
 
 static void gaym_rem_permit(GaimConnection * gc, const char *name)
 {
-    // permit shmermit.
+    // 
+    // FIXME: Add code here to synchronize icons.
+    // 
 }
 
 static void gaym_rem_deny(GaimConnection * gc, const char *name)
 {
+    // 
+    // FIXME: Add code here to synchronize icons.
+    // 
     // FIXME: add code here to store this setting on gay.com
+    // 
+    // The way to store it is by doing a GET on www.gay.com to
+    // /messenger/lists.txt?name=NICK_TO_BLOCK&key=BIG_STRING_THAT_WAS_USED_TO_RETRIEVE_CONFIG_TXT&list=ignore&op=remove
+    // 
+    // If successful, the following is returned:
+    // 
+    // success=1
+    // status=ok
+    // list=ignore
+    // command=remove
 }
 
 static void gaym_set_permit_deny(GaimConnection * gc)
 {
-    // NoOp, simply to enable gaim's privacy infrastructure.  It is in
-    // gaim for the case when the server needs to be notified of a
-    // change to the kind of privacy desired: GAIM_PRIVACY_ALLOW_ALL,
-    // GAIM_PRIVACY_DENY_ALL, GAIM_PRIVACY_ALLOW_USERS,
-    // GAIM_PRIVACY_DENY_USERS, or GAIM_PRIVACY_ALLOW_BUDDYLIST.
+    // 
+    // FIXME: Add code here to synchronize icons.
+    // 
+    // GAIM_PRIVACY_ALLOW_ALL,
+    // GAIM_PRIVACY_DENY_ALL,
+    // perhaps this should set the user "invisible"
+    // instead of actually blocking everyone, then
+    // all the other options would return the user
+    // to "visible" status as well as their normal
+    // block/unblock operations
+    // GAIM_PRIVACY_ALLOW_USERS,
+    // GAIM_PRIVACY_DENY_USERS,
+    // GAIM_PRIVACY_ALLOW_BUDDYLIST
+    // 
+
+    GaimAccount *acct = NULL;
+
+    acct = gc->account;
+
+    switch (acct->perm_deny) {
+    case GAIM_PRIVACY_ALLOW_ALL:
+        break;
+    case GAIM_PRIVACY_DENY_ALL:
+        // This causes a crash:
+        //
+        // GSList *rooms = NULL;
+        // for (rooms = gc->buddy_chats; rooms; rooms = rooms->next) {
+        //     printf("ROOM\n");
+        //     GaimConvChat *chatroom = rooms->data;
+        //     GList *members = chatroom->in_room;
+        //     gaim_conv_chat_set_ignored(chatroom, members);
+        // }
+        break;
+    case GAIM_PRIVACY_ALLOW_USERS:
+        break;
+    case GAIM_PRIVACY_DENY_USERS:
+        break;
+    case GAIM_PRIVACY_ALLOW_BUDDYLIST:
+        break;
+    default:
+        // error
+        break;
+    }
 }
 
 static void gaym_chat_join(GaimConnection * gc, GHashTable * data)
@@ -641,7 +704,7 @@ static void gaym_chat_join(GaimConnection * gc, GHashTable * data)
     GaimChat *c = NULL;
 
     GHashTable *chatinfo = NULL;        // need a copy, because data gets
-    // destroyed in roomlist.c
+                                        // destroyed in roomlist.c
 
     args[0] = g_hash_table_lookup(data, "channel");
 
@@ -887,7 +950,7 @@ static int gaym_filter_join_leave_msgs(GaimConversation * conv, char *name)
         return 1;
     }
     return 0;
- }
+}
 
 static void gaym_get_photo_info(GaimConversation * conv)
 {
@@ -1004,12 +1067,12 @@ static void _init_plugin(GaimPlugin * plugin)
     // gaim doesn't support suppressing entrance messages
     gaim_signal_connect(gaim_conversations_get_handle(),
                         "chat-buddy-joining", plugin,
-                         GAIM_CALLBACK(gaym_filter_join_leave_msgs), NULL);
+                        GAIM_CALLBACK(gaym_filter_join_leave_msgs), NULL);
 
     // gaim doesn't support suppressing exit messages
     gaim_signal_connect(gaim_conversations_get_handle(),
                         "chat-buddy-leaving", plugin,
-                         GAIM_CALLBACK(gaym_filter_join_leave_msgs), NULL);
+                        GAIM_CALLBACK(gaym_filter_join_leave_msgs), NULL);
 
     // We have to pull thumbnails, since they aren't pushed like with
     // other protocols.
