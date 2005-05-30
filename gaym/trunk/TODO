@@ -1,73 +1,103 @@
-These are in no particular order --- edit/add as you see fit!
+When these are DONE, please move to the very bottom of the list.
 
-PROTOCOL FEATURES
+TODO
+====
 
-1. The "Room List" operation should parse the /messenger/config.txt file from gay.com. We need to hide as much as possible 
-the "real" channel names (Like #557 is Sacramento). As the room list is generated, it should automatically display the 
-multiple rooms associated with a locale, so that the user can select one. The user should have the option of adding EITHER 
-the #xxx=* room, OR a particular #xxx=x room, to the buddy list. 
+- activate privacy/block users in gui (almost DONE, but icons in chat
+  need to be synchronized)
 
-2. gay.com buddy list integration. An option to "auto-add" NOTIFY buddies.
+- add gaym_bot_check(), patterned similar to gaym_privacy_check() that
+  takes a list of strings/patterns the user can enter in GayM
+  preferences and then looks to see if a match is found in the nick's
+  bio.  If there is, returns TRUE (or FALSE?), if not, then the
+  opposite.
 
-3. chatclient buddy list import option built in.
+- "Tools | Account Actions | Change Bio" should not obliterate the
+  "^AS|A|L" but only the bio string.  Currently, the S|A|L gets
+  obliterated which means no one else can see it.
 
-4. Split-phase operation notifiers. For example.... if you click to join a 
-channel, there may be a delay if, for example, 
-the buddy list is updating. This is NOT acceptable from a UI standpoint, since feedback should occur as soon as possible. 
-So, we need to incorporate notification dialogs for these operations, to give the user instant feedback. 
+- Make it so users enter free form text to chat and this gets converted
+  to a member-created-room style by replacing spaces with underscores
+  and appending #_ at the beginning and =1 (or some number) at the end.
+  Probably the users should be required to enter ":1" or some number at
+  the end or receive an error, since the server doesn't appear to send
+  one at at first glance (verify before acting).
 
+- Connect link to web page for report user to Warn button in Gaim
 
-NON PROTOCOL FEATURES (Probably a "gaym++" plugin that provides these features.)
+- integrate server buddy, bookmarks, hotlists, im hot lists, ignore
+  lists (below is two version of this)
 
-1. Bio Line display in chat window.
+- gay.com buddy list integration. An option to "auto-add" NOTIFY
+  buddies (really, we already have the complete list in config.txt
+  without waiting for NOTIFY).
 
-2. Thumbnail in "chat" windows for selected user. Again -- this will need to be a separate plugin, since it will require 
-gtk-specific code (most likely)
+- Synchronize buddy list with server.  This is easy to do.  Already, we
+  have the server's view of the list in config.txt.  Adding a new buddy
+  to the server is basically an http GET.  Some thought however needs to
+  be given to user interface design, in terms of whether we should sync
+  to the server's buddies, and/or bookmarks, and/or hotlist.
 
-3. Room namelist sorting -- another non-proto option. I'm not even sure if a plugin can affect this, based on the way it 
-seems to be implemented :( Might end up being a wish on gaim.sourceforge.net. Or I'll just write a damned patch myself.
+- Bio Line display in chat window. (I think this can be done using
+  TOPIC when the user's name is clicked.  I think yahoo may do something
+  so its not editable, which would help us here.  So this could be a
+  PROTOCOL PLUGIN)
 
-4. "Extended" profiles -- get the entire profile "meat" without all of the gay.com advertising and bric-a-brac.
+- The "Room List" operation should parse the /messenger/config.txt file
+  from gay.com. We need to hide as much as possible the "real" channel
+  names (Like #557 is Sacramento). As the room list is generated, it
+  should automatically display the multiple rooms associated with a
+  locale, so that the user can select one. The user should have the
+  option of adding EITHER the #xxx=* room, OR a particular #xxx=x room,
+  to the buddy list. 
 
-5. Join/part message on/off
+- Split-phase operation notifiers. For example.... if you click to join
+  a channel, there may be a delay if, for example, the buddy list is
+  updating. This is NOT acceptable from a UI standpoint, since feedback
+  should occur as soon as possible.  So, we need to incorporate
+  notification dialogs for these operations, to give the user instant
+  feedback. 
 
+- Thumbnail in "chat" windows for selected user. Again -- this will need
+  to be a separate plugin, since it will require gtk-specific code (most
+  likely)
 
-Some thoughts from deckrider:
-============================
+- Room namelist sorting -- another non-proto option. I'm not even sure
+  if a plugin can affect this, based on the way it seems to be
+  implemented :( Might end up being a wish on gaim.sourceforge.net. Or
+  I'll just write a damned patch myself.
 
-progress bar hang on roomlist...use g_idle_add ()
+- "Extended" profiles -- get the entire profile "meat" without all of
+  the gay.com advertising and bric-a-brac.
 
-private photo doesn't show next to buddy when I have been given
-permission to see it
+- Progress bar hang on roomlist...use g_idle_add ()
 
-activate link to web page for report user
+- Private photo doesn't show next to buddy when I have been given
+  permission to see it
 
-integrate server buddy, bookmarks, hotlists, im hot lists, ignore lists
+- check if there is another way to retrieve thumbnails without the extra
+  signal connect
 
-activate privacy/block users in gui (ignore lists from above)
+- there seem to be a lot of NOTIFYs that gaym ignores ... might be nice
+  to use them instead of polling (or in addition to)
 
-make roomlist show "room name:1" similar to yahoo
+- handle all "unknowns" shown in the debug window
 
-see what native2ascii does when the native file has "\u00F1" in it
-along with the actual character that that sequence represents.
+- Getting these in red, not sure what it is: gaim_utf8_strcasecmp: One
+  or both parameters are invalid UTF8  (still valid?)
 
-get rid of signals in prpl (no other prpl needs them, why do we?)
+- Need a better way to coordinate VERSION between configure.ac an win32
+  builds (which do not currently use autoconf).  Perhaps win32 can
+  eventually use autoconf/automake, but I don't yet know how
+  cross-compiler builds would work with this.
 
-handle all "unknowns" shown in the debug window
+DONE
+====
 
-user-controllable ignores (eliminate hard-coded ignores)
+- Join/part message on/off
 
-Make it so users enter free form text to chat and this gets converted
-to a member-created-room style by replacing spaces with underscores
-and appending #_ at the beginning and =1 (or some number) at the end.
-Probably the users should be required to enter ":1" or some number at the
-end or receive an error, since the server doesn't appear to send one at
-at first glance (verify before acting).
+- make roomlist show "room name:1" similar to yahoo
 
-Getting these in red, not sure what it is:
-gaim_utf8_strcasecmp: One or both parameters are invalid UTF8
+- see what native2ascii does when the native file has "\u00F1" in it
+  along with the actual character that that sequence represents.
 
-Forms for S|A|L and BioSummary Change bio
-
-Need a better way to coordinate VERSION between configure.ac an
-win32 builds (which do not currently use autoconf)
