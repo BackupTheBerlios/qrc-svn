@@ -12,6 +12,8 @@ AC_SUBST(REQUIRED_GAIM)
 AC_CONFIG_SRCDIR([src/gaym.h])
 AC_CONFIG_HEADER([config.h])
 
+AC_DEFINE(GAIM_PLUGINS, 1, [Define if plugins are enabled.])
+
 # Checks for programs.
 AC_PROG_CC
 AC_DISABLE_STATIC
