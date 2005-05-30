@@ -1,16 +1,34 @@
-EXTRA_DIST = PROTOCOL Makefile.mingw
+EXTRA_DIST = \
+	TODO \
+	Makefile.mingw
 
-pkgdir = $(GAIM_LIBDIR)/gaim
+pkgdir = \
+	$(GAIM_LIBDIR)/gaim
 
-GAYMSOURCES = weblogin.c gaym.c parse.c cmds.c msgs.c gaym.h dcc_send.c helpers.c
+GAYMSOURCES = \
+	cmds.c \
+	dcc_send.c \
+	gaym.c \
+	gaym.h \
+	helpers.c \
+	helpers.h \
+	msgs.c \
+	parse.c \
+	weblogin.c 
 
-AM_CFLAGS = $(st)
+AM_CFLAGS = \
+	$(st)
 
-libgaym_la_LDFLAGS = -module -avoid-version $(GAIM_LIBS)
+libgaym_la_LDFLAGS = \
+	-module \
+	-avoid-version \
+	$(GAIM_LIBS)
 
-pkg_LTLIBRARIES = libgaym.la
+pkg_LTLIBRARIES = \
+	libgaym.la
 
-libgaym_la_SOURCES = $(GAYMSOURCES)
+libgaym_la_SOURCES = \
+	$(GAYMSOURCES)
 
 AM_CPPFLAGS = \
 	$(GAIM_CFLAGS) \

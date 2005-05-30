@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT([gaim-gaym], [0.21+20050513])
+AC_INIT([gaym],[1.0.0-svn])
 AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
 AM_CONFIG_HEADER(config.h)
 
@@ -43,4 +43,5 @@ AC_TYPE_SIZE_T
 dnl Checks for library functions.
 AC_CHECK_FUNCS(strdup strerror strstr strtoul)
 
-AC_OUTPUT([Makefile src/Makefile pixmaps/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile pixmaps/Makefile])
+AC_OUTPUT

@@ -1,5 +1,9 @@
-EXTRA_DIST = gaym.png
+EXTRA_DIST = \
+	gaym.png \
+	Makefile.mingw
 
-gaymstatuspixdir = $(GAIM_DATADIR)/pixmaps/gaim/status/default
+gaymstatuspixdir = \
+	$(GAIM_DATADIR)/pixmaps/gaim/status/default
 
-gaymstatuspix_DATA = $(EXTRA_DIST)
+gaymstatuspix_DATA = \
+	gaym.png
