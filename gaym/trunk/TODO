@@ -69,4 +69,5 @@ gaim_utf8_strcasecmp: One or both parameters are invalid UTF8
 
 Forms for S|A|L and BioSummary Change bio
 
-
+Need a better way to coordinate VERSION between configure.ac an
+win32 builds (which do not currently use autoconf)

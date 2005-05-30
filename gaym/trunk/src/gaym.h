@@ -23,6 +23,8 @@
 #ifndef _GAIM_GAYM_H
 #define _GAIM_GAYM_H
 
+#include "internal.h"
+
 #include <glib.h>
 
 #include "roomlist.h"

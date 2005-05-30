@@ -1,5 +1,4 @@
 EXTRA_DIST = \
-	TODO \
 	Makefile.mingw
 
 pkgdir = \

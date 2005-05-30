@@ -1,3 +1,5 @@
+#include "internal.h"
+
 #include "helpers.h"
 
 void gaym_convert_nick_to_gaycom(char *name)

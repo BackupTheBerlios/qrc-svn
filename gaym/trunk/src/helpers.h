@@ -1,3 +1,5 @@
+#include "internal.h"
+
 #include <string.h>
 #include <glib.h>
 

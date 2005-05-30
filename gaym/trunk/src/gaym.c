@@ -1029,7 +1029,7 @@ static GaimPluginInfo info = {
     N_("GayM Protocol Plugin"),                           /**  summary        */
     N_("Gay.com Protocol based on IRC"),                  /**  description    */
     NULL,                                                 /**< author         */
-    "http://gaym.sourceforge.org",                        /**< homepage       */
+    "http://qrc.berlios.de/",                             /**< homepage       */
 
     NULL,                                                 /**< load           */
     NULL,                                                 /**< unload         */

@@ -1,30 +1,31 @@
-dnl Process this file with autoconf to produce a configure script.
-AC_INIT([gaym],[1.0.0-svn])
-AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
-AM_CONFIG_HEADER(config.h)
+#                                               -*- Autoconf -*-
+# Process this file with autoconf to produce a configure script.
+
+AC_PREREQ([2.59])
+AC_INIT([gaim-gaym],[0.33.0+svn],[gaymplugin@yahoogroups.com])
+AC_CANONICAL_SYSTEM
+AM_INIT_AUTOMAKE
 
 REQUIRED_GAIM="gaim >= 1.2 gaim < 2.0"
 AC_SUBST(REQUIRED_GAIM)
 
-dnl Checks for header files.
-AC_HEADER_STDC
+AC_CONFIG_SRCDIR([src/gaym.h])
+AC_CONFIG_HEADER([config.h])
+
+# Checks for programs.
+AC_PROG_CC
 AC_DISABLE_STATIC
-AM_DISABLE_STATIC
+AM_PROG_LIBTOOL
+LIBTOOL="$LIBTOOL --silent"
+AC_PROG_INSTALL
 
-AC_PROG_LIBTOOL
-AC_DEFINE(GAIM_PLUGINS, 1, [Define if plugins are enabled.])
-
-dnl gaim required at the indicated version
-dnl set location of gaim headers, data, and libs
+# Checks for libraries.
 PKG_CHECK_MODULES([GAIM], [$REQUIRED_GAIM],
 	[
 	AC_SUBST(GAIM_CFLAGS)
 	AC_SUBST(GAIM_LIBS)
 	]
 )
-
-dnl hack because PKG_CHECK_MODULES only sets CFLAGS and LIBS
-dnl this sets GAIM_DATADIR and GAIM_LIBDIR
 AC_ARG_VAR([GAIM_DATADIR], [datadir of GAIM, overriding pkg-config])dnl
 AC_ARG_VAR([GAIM_LIBDIR], [libdir of GAIM, overriding pkg-config])dnl
 AC_CACHE_CHECK([for GAIM][_DATADIR], [pkg_cv_][GAIM][_DATADIR],
@@ -36,12 +37,29 @@ GAIM[]_LIBDIR=$pkg_cv_[]GAIM[]_LIBDIR
 AC_SUBST(GAIM_DATADIR)
 AC_SUBST(GAIM_LIBDIR)
 
-dnl Checks for typedefs, structures, and compiler characteristics.
+# Checks for header files.
+AC_HEADER_STDC
+AC_CHECK_HEADERS([stdlib.h string.h])
+
+# Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_TYPE_SIZE_T
 
-dnl Checks for library functions.
-AC_CHECK_FUNCS(strdup strerror strstr strtoul)
+# Checks for library functions.
+AC_CHECK_FUNCS([gethostname inet_ntoa memmove strcasecmp strchr strdup strerror strpbrk strrchr strstr strtoul])
 
-AC_CONFIG_FILES([Makefile src/Makefile pixmaps/Makefile])
+if test "x$GCC" = "xyes"; then
+	CFLAGS="$CFLAGS -Wall -g3"
+fi
+AC_SUBST(CFLAGS)
+
+AC_CONFIG_FILES([Makefile
+                 pixmaps/Makefile
+                 src/Makefile])
 AC_OUTPUT
+
+echo
+echo $PACKAGE $VERSION will be installed in $GAIM_LIBDIR/gaim
+echo
+echo configure complete, now type \'make\'
+echo

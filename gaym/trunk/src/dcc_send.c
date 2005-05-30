@@ -22,6 +22,7 @@
  */
 
 #include "internal.h"
+
 #include "gaym.h"
 #include "debug.h"
 #include "ft.h"
