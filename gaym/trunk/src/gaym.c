@@ -600,16 +600,11 @@ static void gaym_input_cb(gpointer data, gint source,
 
 static void gaym_add_permit(GaimConnection * gc, const char *name)
 {
-    // 
-    // FIXME: Add code here to synchronize icons.
-    // 
+    gaym_privacy_change(gc);
 }
 
 static void gaym_add_deny(GaimConnection * gc, const char *name)
 {
-    // 
-    // FIXME: Add code here to synchronize icons.
-    // 
     // FIXME: add code here to store this setting on gay.com
     // 
     // The way to store it is by doing a GET on www.gay.com to
@@ -621,20 +616,17 @@ static void gaym_add_deny(GaimConnection * gc, const char *name)
     // status=ok
     // list=ignore
     // command=add
+
+    gaym_privacy_change(gc);
 }
 
 static void gaym_rem_permit(GaimConnection * gc, const char *name)
 {
-    // 
-    // FIXME: Add code here to synchronize icons.
-    // 
+    gaym_privacy_change(gc);
 }
 
 static void gaym_rem_deny(GaimConnection * gc, const char *name)
 {
-    // 
-    // FIXME: Add code here to synchronize icons.
-    // 
     // FIXME: add code here to store this setting on gay.com
     // 
     // The way to store it is by doing a GET on www.gay.com to
@@ -646,53 +638,13 @@ static void gaym_rem_deny(GaimConnection * gc, const char *name)
     // status=ok
     // list=ignore
     // command=remove
+
+    gaym_privacy_change(gc);
 }
 
 static void gaym_set_permit_deny(GaimConnection * gc)
 {
-    // 
-    // FIXME: Add code here to synchronize icons.
-    // 
-    // GAIM_PRIVACY_ALLOW_ALL,
-    // GAIM_PRIVACY_DENY_ALL,
-    // perhaps this should set the user "invisible"
-    // instead of actually blocking everyone, then
-    // all the other options would return the user
-    // to "visible" status as well as their normal
-    // block/unblock operations
-    // GAIM_PRIVACY_ALLOW_USERS,
-    // GAIM_PRIVACY_DENY_USERS,
-    // GAIM_PRIVACY_ALLOW_BUDDYLIST
-    // 
-
-    GaimAccount *acct = NULL;
-
-    acct = gc->account;
-
-    switch (acct->perm_deny) {
-    case GAIM_PRIVACY_ALLOW_ALL:
-        break;
-    case GAIM_PRIVACY_DENY_ALL:
-        // This causes a crash:
-        //
-        // GSList *rooms = NULL;
-        // for (rooms = gc->buddy_chats; rooms; rooms = rooms->next) {
-        //     printf("ROOM\n");
-        //     GaimConvChat *chatroom = rooms->data;
-        //     GList *members = chatroom->in_room;
-        //     gaim_conv_chat_set_ignored(chatroom, members);
-        // }
-        break;
-    case GAIM_PRIVACY_ALLOW_USERS:
-        break;
-    case GAIM_PRIVACY_DENY_USERS:
-        break;
-    case GAIM_PRIVACY_ALLOW_BUDDYLIST:
-        break;
-    default:
-        // error
-        break;
-    }
+    gaym_privacy_change(gc);
 }
 
 static void gaym_chat_join(GaimConnection * gc, GHashTable * data)
@@ -704,7 +656,7 @@ static void gaym_chat_join(GaimConnection * gc, GHashTable * data)
     GaimChat *c = NULL;
 
     GHashTable *chatinfo = NULL;        // need a copy, because data gets
-                                        // destroyed in roomlist.c
+    // destroyed in roomlist.c
 
     args[0] = g_hash_table_lookup(data, "channel");
 

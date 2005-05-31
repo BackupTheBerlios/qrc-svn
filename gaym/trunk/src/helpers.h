@@ -18,4 +18,6 @@ gchar *ascii2native(const gchar * str);
 
 gboolean gaym_privacy_check(GaimConnection * gc, const char *nick);
 
+void gaym_privacy_change(GaimConnection * gc);
+
 // vim:tabstop=4:shiftwidth=4:expandtab:

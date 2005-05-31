@@ -181,4 +181,27 @@ gboolean gaym_privacy_check(GaimConnection * gc, const char *nick)
     return permitted;
 }
 
+void gaym_privacy_change(GaimConnection * gc)
+{
+    GSList *rooms = NULL;
+    for (rooms = gc->buddy_chats; rooms; rooms = rooms->next) {
+        GaimConversation *convo = rooms->data;
+        GaimConvChat *chat = gaim_conversation_get_chat_data(convo);
+        GList *people = NULL;
+        for (people = chat->in_room; people; people = people->next) {
+            GaimConvChatBuddy *buddy = people->data;
+            GaimConversationUiOps *ops =
+                gaim_conversation_get_ui_ops(convo);
+            if (gaym_privacy_check(gc, buddy->name)) {
+                gaim_conv_chat_unignore(GAIM_CONV_CHAT(convo),
+                                        buddy->name);
+                ops->chat_update_user((convo), buddy->name);
+            } else {
+                gaim_conv_chat_ignore(GAIM_CONV_CHAT(convo), buddy->name);
+                ops->chat_update_user((convo), buddy->name);
+            }
+        }
+    }
+}
+
 // vim:tabstop=4:shiftwidth=4:expandtab:
