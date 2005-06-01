@@ -3,9 +3,6 @@ When these are DONE, please move to the very bottom of the list.
 TODO
 ====
 
-- activate privacy/block users in gui (almost DONE, but icons in chat
-  need to be synchronized)
-
 - add gaym_bot_check(), patterned similar to gaym_privacy_check() that
   takes a list of strings/patterns the user can enter in GayM
   preferences and then looks to see if a match is found in the nick's
@@ -93,6 +90,8 @@ TODO
 
 DONE
 ====
+
+- activate privacy/block users in gui
 
 - Join/part message on/off
 
