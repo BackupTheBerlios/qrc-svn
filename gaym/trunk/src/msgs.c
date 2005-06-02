@@ -402,8 +402,8 @@ void gaym_msg_list(struct gaym_conn *gaym, const char *name,
                              "Member created room list parsing error");
             return;
         }
-
         field_start++;
+        field_end = field_end + 2;
 
         field_len = field_end - field_start;
 
@@ -418,6 +418,8 @@ void gaym_msg_list(struct gaym_conn *gaym, const char *name,
                 field_name[i] = ' ';
             }
         }
+        // replace '=' with ':'
+        field_name[i-2] = ':';
 
         room = gaim_roomlist_room_new(GAIM_ROOMLIST_ROOMTYPE_ROOM,
                                       field_name,
