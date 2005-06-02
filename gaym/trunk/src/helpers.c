@@ -178,11 +178,35 @@ gboolean gaym_privacy_check(GaimConnection * gc, const char *nick)
         break;
     }
 
+    // don't block/ignore self
+    if (!gaim_utf8_strcasecmp(gc->account->username, nick)) {
+        permitted = TRUE;
+        gaim_debug_info("gaym", "declining to block/ignore self\n");
+        return permitted;
+    }
+
     return permitted;
 }
 
-void gaym_privacy_change(GaimConnection * gc)
+// if name is NULL, then we reset all names, otherwise
+// only the name provided
+
+void gaym_privacy_change(GaimConnection * gc, const char *name)
 {
+    // don't allow adding self to permit/deny lists
+
+    if (name) {
+        if (!gaim_utf8_strcasecmp(gc->account->username, name)) {
+            gaim_privacy_deny_remove(gc->account, gc->account->username,
+                                     TRUE);
+            gaim_privacy_permit_remove(gc->account, gc->account->username,
+                                       TRUE);
+            gaim_debug_info("gaym",
+                             "declining to add self to permit/deny list\n");
+            return;
+        }
+    }
+
     GSList *rooms = NULL;
     for (rooms = gc->buddy_chats; rooms; rooms = rooms->next) {
         GaimConversation *convo = rooms->data;
@@ -192,12 +216,25 @@ void gaym_privacy_change(GaimConnection * gc)
             GaimConvChatBuddy *buddy = people->data;
             GaimConversationUiOps *ops =
                 gaim_conversation_get_ui_ops(convo);
-            if (gaym_privacy_check(gc, buddy->name)) {
-                gaim_conv_chat_unignore(GAIM_CONV_CHAT(convo),
-                                        buddy->name);
-                ops->chat_update_user((convo), buddy->name);
+            if (name) {
+                if (!gaim_utf8_strcasecmp(name, buddy->name)) {
+                    if (gaym_privacy_check(gc, buddy->name)) {
+                        gaim_conv_chat_unignore(GAIM_CONV_CHAT(convo),
+                                                buddy->name);
+                    } else {
+                        gaim_conv_chat_ignore(GAIM_CONV_CHAT(convo),
+                                              buddy->name);
+                    }
+                    ops->chat_update_user((convo), buddy->name);
+                }
             } else {
-                gaim_conv_chat_ignore(GAIM_CONV_CHAT(convo), buddy->name);
+                if (gaym_privacy_check(gc, buddy->name)) {
+                    gaim_conv_chat_unignore(GAIM_CONV_CHAT(convo),
+                                            buddy->name);
+                } else {
+                    gaim_conv_chat_ignore(GAIM_CONV_CHAT(convo),
+                                          buddy->name);
+                }
                 ops->chat_update_user((convo), buddy->name);
             }
         }

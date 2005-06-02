@@ -222,11 +222,13 @@ static void gaym_set_info(GaimConnection * gc, const char *info)
         return;
     }
 }
+
 static void gaym_show_set_info(GaimPluginAction * action)
 {
     GaimConnection *gc = (GaimConnection *) action->context;
     gaim_account_request_change_user_info(gaim_connection_get_account(gc));
 }
+
 static GList *gaym_actions(GaimPlugin * plugin, gpointer context)
 {
     GList *list = NULL;
@@ -600,7 +602,7 @@ static void gaym_input_cb(gpointer data, gint source,
 
 static void gaym_add_permit(GaimConnection * gc, const char *name)
 {
-    gaym_privacy_change(gc);
+    gaym_privacy_change(gc, name);
 }
 
 static void gaym_add_deny(GaimConnection * gc, const char *name)
@@ -617,12 +619,12 @@ static void gaym_add_deny(GaimConnection * gc, const char *name)
     // list=ignore
     // command=add
 
-    gaym_privacy_change(gc);
+    gaym_privacy_change(gc, name);
 }
 
 static void gaym_rem_permit(GaimConnection * gc, const char *name)
 {
-    gaym_privacy_change(gc);
+    gaym_privacy_change(gc, name);
 }
 
 static void gaym_rem_deny(GaimConnection * gc, const char *name)
@@ -639,12 +641,12 @@ static void gaym_rem_deny(GaimConnection * gc, const char *name)
     // list=ignore
     // command=remove
 
-    gaym_privacy_change(gc);
+    gaym_privacy_change(gc, name);
 }
 
 static void gaym_set_permit_deny(GaimConnection * gc)
 {
-    gaym_privacy_change(gc);
+    gaym_privacy_change(gc, NULL);
 }
 
 static void gaym_chat_join(GaimConnection * gc, GHashTable * data)
@@ -944,13 +946,13 @@ static GaimPluginPrefFrame *get_plugin_pref_frame(GaimPlugin * plugin)
     ppref =
         gaim_plugin_pref_new_with_name_and_label
         ("/plugins/prpl/gaym/show_join_leave_msgs",
-         _("Show entance/exit messages"));
+         _("Show entrance/exit messages"));
     gaim_plugin_pref_frame_add(frame, ppref);
 
     ppref =
         gaim_plugin_pref_new_with_name_and_label
         ("/plugins/prpl/gaym/show_bio_with_join",
-         _("Show bio when entance messages are shown."));
+         _("Show bio when entrance messages are shown"));
     gaim_plugin_pref_frame_add(frame, ppref);
 
     // ppref = gaim_plugin_pref_new_with_name_and_label(
@@ -1010,7 +1012,6 @@ static void _init_plugin(GaimPlugin * plugin)
         gaim_account_option_int_new(_("Port"), "port", IRC_DEFAULT_PORT);
     prpl_info.protocol_options =
         g_list_append(prpl_info.protocol_options, option);
-
 
     option = gaim_account_option_string_new(_("Bio Line"), "bioline", "");
     prpl_info.protocol_options =
