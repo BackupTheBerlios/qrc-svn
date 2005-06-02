@@ -602,6 +602,10 @@ static void gaym_input_cb(gpointer data, gint source,
 
 static void gaym_add_permit(GaimConnection * gc, const char *name)
 {
+    if(!name || name[0] == NULL) {
+        gaim_privacy_permit_remove(gc->account, name, TRUE);
+        return;
+    }
     gaym_privacy_change(gc, name);
 }
 
@@ -619,6 +623,10 @@ static void gaym_add_deny(GaimConnection * gc, const char *name)
     // list=ignore
     // command=add
 
+    if(!name || name[0] == NULL) {
+        gaim_privacy_deny_remove(gc->account, name, TRUE);
+        return;
+    }
     gaym_privacy_change(gc, name);
 }
 
