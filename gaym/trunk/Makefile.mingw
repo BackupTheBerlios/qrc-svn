@@ -3,18 +3,15 @@
 # Description: Top Makefile for win32 (mingw) port of gaym
 #
 
-include Include.mingw
-
 all:
-	$(MAKE) -C $(PRPL) -f Makefile.mingw
+	$(MAKE) -C src -f Makefile.mingw
 
 install: all
-	mkdir -p $(INSTALL_DIR)
-	$(MAKE) -C $(PIXMAPS) -f Makefile.mingw install
-	$(MAKE) -C $(PRPL) -f Makefile.mingw install
-	cp README.mingw $(INSTALL_DIR)/README.txt
-	unix2dos $(INSTALL_DIR)/README.txt
+	$(MAKENSIS) \
+		-DGAYM_VERSION="$(GAYM_VERSION)" \
+		-DGAIM_VERSION="$(GAIM_VERSION)" \
+		-DGAIM_TOP="$(GAIM_TOP)" nsis/gaim-gaym.nsi
 
 clean:
-	$(MAKE) -C $(PRPL) -f Makefile.mingw clean
-	-rm -r $(INSTALL_DIR)
+	$(MAKE) -C src -f Makefile.mingw clean
+	-rm *.exe

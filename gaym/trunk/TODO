@@ -86,10 +86,10 @@ TODO
   eventually use autoconf/automake, but I don't yet know how
   cross-compiler builds would work with this.
 
-- Add windows installer package
-
 DONE
 ====
+
+- Add windows installer package
 
 - Connect link to web page for report user to Warn button in Gaim
 

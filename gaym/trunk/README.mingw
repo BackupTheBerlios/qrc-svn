@@ -15,8 +15,8 @@ To build from linux:
 
    - This assumes your home directory is /home/deckrider, and your
      directory to download and unwind gaim and other required software
-     is /home/deckrider/wingaim, and your cross compiler name is
-     i586-mingw32msvc-gcc
+     is /home/deckrider/wingaim, your cross compiler name is
+     i586-mingw32msvc-gcc, and you have nsis installed.
 
    - Download and unwind the following under
      /home/deckrider/wingaim/win32-dev:
@@ -40,15 +40,16 @@ To build from linux:
    - make -f Makefile.mingw  gaim.dll CC=i586-mingw32msvc-gcc
 
    - Now you can build the gaym plugin from its top level source
-     directory (the same directory containing this file):
+     directory (the same directory containing this file).  This
+     requires that you have nsis to build the windows installer:
 
-   - make -f Makefile.mingw \
-     GTK_TOP=/home/deckrider/wingaim/win32-dev/gtk_2_0 \
-     GAIM_TOP=/home/deckrider/wingaim/gaim-1.3.0 \
-     CC=i586-mingw32msvc-gcc
-
-   - make -f Makefile.mingw install
-     (will install necessary windows components to ./gaym-win32-install-dir)
+   - make -f Makefile.mingw install \
+     GAYM_VERSION="0.33.0+2005-06-03" \
+     GAIM_VERSION="1.3.0" \
+     GAIM_TOP="/home/deckrider/wingaim/gaim-1.3.0" \
+     CC=i586-mingw32msvc-gcc \
+     MAKENSIS=makensis \
+     GTK_TOP="/home/deckrider/wingaim/win32-dev/gtk_2_0"
 
    - make -f Makefile.mingw clean
      (will restore the the source tree to its pristine form)

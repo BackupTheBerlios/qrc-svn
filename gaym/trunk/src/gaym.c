@@ -778,12 +778,12 @@ static int gaym_chat_send(GaimConnection * gc, int id, const char *what)
 }
 
 // According to http://www.gay.com/members/join/ the member name is:
-//
-//   - Up to 30 characters
-//   - Must begin with a letter
-//   - Can contain only letters, numbers, and underscores ( _ )
-//   - Cannot contain special characters, spaces, periods, or hyphens (-)
-//
+// 
+// - Up to 30 characters
+// - Must begin with a letter
+// - Can contain only letters, numbers, and underscores ( _ )
+// - Cannot contain special characters, spaces, periods, or hyphens (-)
+// 
 // However, in testing as well as observing existing members, the
 // the member name may in fact contain periods and hyphens.
 

@@ -3,8 +3,6 @@
 #
 # Description: Makefile for win32 (mingw) version of libgaym
 
-include ../Include.mingw
-
 # Compiler Options
 
 CFLAGS =
@@ -104,9 +102,6 @@ LIBS =			-lgtk-win32-2.0 \
 .PHONY: all clean
 
 all: $(TARGET).dll
-
-install:
-	cp $(TARGET).dll ../$(INSTALL_DIR)
 
 
 ##
