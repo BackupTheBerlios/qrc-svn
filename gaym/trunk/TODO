@@ -20,8 +20,6 @@ TODO
   the end or receive an error, since the server doesn't appear to send
   one at at first glance (verify before acting).
 
-- Connect link to web page for report user to Warn button in Gaim
-
 - integrate server buddy, bookmarks, hotlists, im hot lists, ignore
   lists (below is two version of this)
 
@@ -46,7 +44,7 @@ TODO
   should automatically display the multiple rooms associated with a
   locale, so that the user can select one. The user should have the
   option of adding EITHER the #xxx=* room, OR a particular #xxx=x room,
-  to the buddy list. 
+  to the buddy list.   (I think this is somewhat done, but not sure)
 
 - Split-phase operation notifiers. For example.... if you click to join
   a channel, there may be a delay if, for example, the buddy list is
@@ -88,8 +86,12 @@ TODO
   eventually use autoconf/automake, but I don't yet know how
   cross-compiler builds would work with this.
 
+- Add windows installer package
+
 DONE
 ====
+
+- Connect link to web page for report user to Warn button in Gaim
 
 - activate privacy/block users in gui
 
