@@ -777,22 +777,45 @@ static int gaym_chat_send(GaimConnection * gc, int id, const char *what)
     return 0;
 }
 
+// According to http://www.gay.com/members/join/ the member name is:
+//
+//   - Up to 30 characters
+//   - Must begin with a letter
+//   - Can contain only letters, numbers, and underscores ( _ )
+//   - Cannot contain special characters, spaces, periods, or hyphens (-)
+//
+// However, in testing as well as observing existing members, the
+// the member name may in fact contain periods and hyphens.
+
 const char *gaym_normalize(const GaimAccount * acct, const char *nick)
 {
     if (!nick) {
         return NULL;
     }
     char *retval = g_new0(char, 31);    // max 30, plus one for the NULL
+    char *firstchar =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     char *allowed =
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz0123456789\0";
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_.-\0";
     int i = 0;
     int j = 0;
     int k = 0;
     for (i = 0; nick[i]; i++) {
-        for (j = 0; allowed[j]; j++) {
-            if ((k < 31) && (nick[i] == allowed[j])) {
-                retval[k] = nick[i];
-                k++;
+        if (k == 0) {
+            for (j = 0; firstchar[j]; j++) {
+                if ((k == 0) && (nick[i] == firstchar[j])) {
+                    retval[k] = nick[i];
+                    k++;
+                    break;
+                }
+            }
+        } else {
+            for (j = 0; allowed[j]; j++) {
+                if ((k < 31) && (nick[i] == allowed[j])) {
+                    retval[k] = nick[i];
+                    k++;
+                    break;
+                }
             }
         }
     }
