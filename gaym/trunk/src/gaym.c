@@ -602,11 +602,13 @@ static void gaym_input_cb(gpointer data, gint source,
 
 static void gaym_add_permit(GaimConnection * gc, const char *name)
 {
-    if(!name || name[0] == NULL) {
-        gaim_privacy_permit_remove(gc->account, name, TRUE);
+    gaim_privacy_permit_remove(gc->account, name, TRUE);
+    const char *normalized = gaim_normalize(gc->account, name);
+    if (!normalized[0]) {
         return;
     }
-    gaym_privacy_change(gc, name);
+    gaim_privacy_permit_add(gc->account, normalized, TRUE);
+    gaym_privacy_change(gc, normalized);
 }
 
 static void gaym_add_deny(GaimConnection * gc, const char *name)
@@ -623,11 +625,13 @@ static void gaym_add_deny(GaimConnection * gc, const char *name)
     // list=ignore
     // command=add
 
-    if(!name || name[0] == NULL) {
-        gaim_privacy_deny_remove(gc->account, name, TRUE);
+    gaim_privacy_deny_remove(gc->account, name, TRUE);
+    const char *normalized = gaim_normalize(gc->account, name);
+    if (!normalized[0]) {
         return;
     }
-    gaym_privacy_change(gc, name);
+    gaim_privacy_deny_add(gc->account, normalized, TRUE);
+    gaym_privacy_change(gc, normalized);
 }
 
 static void gaym_rem_permit(GaimConnection * gc, const char *name)
@@ -760,6 +764,28 @@ static int gaym_chat_send(GaimConnection * gc, int id, const char *what)
     return 0;
 }
 
+const char *gaym_normalize(const GaimAccount * acct, const char *nick)
+{
+    if (!nick) {
+        return NULL;
+    }
+    char *retval = g_new0(char, 31);    // max 30, plus one for the NULL
+    char *allowed =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz0123456789\0";
+    int i = 0;
+    int j = 0;
+    int k = 0;
+    for (i = 0; nick[i]; i++) {
+        for (j = 0; allowed[j]; j++) {
+            if ((k < 31) && (nick[i] == allowed[j])) {
+                retval[k] = nick[i];
+                k++;
+            }
+        }
+    }
+    return retval;
+}
+
 static guint gaym_nick_hash(const char *nick)
 {
     char *lc;
@@ -886,7 +912,7 @@ static GaimPluginProtocolInfo prpl_info = {
     NULL,                       /* rename_group */
     NULL,                       /* buddy_free */
     NULL,                       /* convo_closed */
-    NULL,                       /* normalize */
+    gaym_normalize,             /* normalize */
     NULL,                       /* set_buddy_icon */
     NULL,                       /* remove_group */
     NULL,                       /* get_cb_real_name */
