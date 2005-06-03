@@ -661,6 +661,19 @@ static void gaym_set_permit_deny(GaimConnection * gc)
     gaym_privacy_change(gc, NULL);
 }
 
+static void gaym_warn(GaimConnection * gc, const char *who,
+                      gboolean anonymous)
+{
+    void *handle = NULL;
+    struct gaym_conn *gaym = gc->proto_data;
+    char *buf =
+        g_strdup_printf
+        ("http://%s/members/report/form.html?area=chat&room=&report=%s",
+         gaym->server, who);
+    gaim_notify_uri(handle, buf);
+    g_free(buf);
+}
+
 static void gaym_chat_join(GaimConnection * gc, GHashTable * data)
 {
     struct gaym_conn *gaym = gc->proto_data;
@@ -895,7 +908,7 @@ static GaimPluginProtocolInfo prpl_info = {
     gaym_rem_permit,            /* rem_permit */
     gaym_rem_deny,              /* rem_deny */
     gaym_set_permit_deny,       /* set_permit_deny */
-    NULL,                       /* warn */
+    gaym_warn,                  /* warn */
     gaym_chat_join,             /* join_chat */
     NULL,                       /* reject_chat */
     gaym_get_chat_name,         /* get_chat_name */
