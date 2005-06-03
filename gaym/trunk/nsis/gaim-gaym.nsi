@@ -12,8 +12,6 @@ Name "Gaim-GayM ${GAYM_VERSION}"
 !define GAYM_DLL            "libgaym.dll"
 !define GAYM_PNG            "gaym.png"
 !define GAYM_UNINSTALL_LNK  "Gaim-GayM Uninstall.lnk"
-!define GAIM_MACRO_DEFAULT_STRING "Gaim-GayM"
-
 
 !include "MUI.nsh"
 
@@ -30,15 +28,15 @@ SetCompressor lzma
 ; Translations
 !include "locale\english.nsh"
 
-;-------------------------------
 ; Gaim Plugin installer helper stuff
+
 !addincludedir "${GAIM_TOP}\src\win32\nsis"
 !include "gaim-plugin.nsh"
 
 ; Modern UI Configuration
 
-;!define MUI_ICON .\nsis\install.ico
-;!define MUI_UNICON .\nsis\install.ico
+!define MUI_ICON "pixmaps\gaym.ico"
+!define MUI_UNICON "pixmaps\gaym.ico"
 !define MUI_HEADERIMAGE
 !define MUI_HEADERIMAGE_BITMAP "pixmaps\gaym.bmp"
 
