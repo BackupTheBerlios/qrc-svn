@@ -60,21 +60,12 @@ autoheader --force || exit;
 echo;
 echo "Running automake...."
 echo;
-automake --force-missing --add-missing;
+automake --force-missing --add-missing || exit;
 
 echo;
 echo "Running autoconf...."
 echo;
 autoconf --force || exit;
-
-#
-# Apparently, running automake a second time like this fixes 
-# distcheck for automake 1.5 and doesn't break it for 1.4.
-#
-echo;
-echo "Running automake again...."
-echo;
-automake || exit;
 
 echo;
 echo "Finished generating configuration files for GayM."

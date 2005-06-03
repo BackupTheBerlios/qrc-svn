@@ -4,7 +4,7 @@
 AC_PREREQ([2.59])
 AC_INIT([gaim-gaym],[0.33.0+svn],[gaymplugin@yahoogroups.com])
 AC_CANONICAL_SYSTEM
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([1.9.5])
 
 REQUIRED_GAIM="gaim >= 1.2 gaim < 2.0"
 AC_SUBST(REQUIRED_GAIM)
@@ -17,7 +17,7 @@ AC_DEFINE(GAIM_PLUGINS, 1, [Define if plugins are enabled.])
 # Checks for programs.
 AC_PROG_CC
 AC_DISABLE_STATIC
-AM_PROG_LIBTOOL
+AC_PROG_LIBTOOL
 LIBTOOL="$LIBTOOL --silent"
 AC_PROG_INSTALL
 
