@@ -17,7 +17,7 @@ Name "Gaim-GayM ${GAYM_VERSION}"
 CRCCheck On
 
 ;Output File Name
-OutFile "..\gaim-gaym-${GAYM_VERSION}.exe"
+OutFile "..\gaim-${GAIM_VERSION}-gaym-${GAYM_VERSION}.exe"
 
 ShowInstDetails show
 ShowUnInstDetails show
