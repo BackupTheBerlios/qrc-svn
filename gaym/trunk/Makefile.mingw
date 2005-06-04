@@ -10,7 +10,7 @@ install: all
 	$(MAKENSIS) \
 		-DGAYM_VERSION="$(GAYM_VERSION)" \
 		-DGAIM_VERSION="$(GAIM_VERSION)" \
-		-DGAIM_TOP="$(GAIM_TOP)" nsis/gaim-gaym.nsi
+		-DGAIM_TOP="$(GAIM_TOP)" nsis/installer.nsi
 
 clean:
 	$(MAKE) -C src -f Makefile.mingw clean

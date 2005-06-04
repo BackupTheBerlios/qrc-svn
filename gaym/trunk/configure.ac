@@ -58,7 +58,6 @@ AC_SUBST(CFLAGS)
 AC_CONFIG_FILES([Makefile
                  nsis/Makefile
 		 nsis/locale/Makefile
-		 nsis/pixmaps/Makefile
                  pixmaps/Makefile
                  src/Makefile])
 AC_OUTPUT

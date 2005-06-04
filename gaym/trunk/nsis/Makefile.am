@@ -1,6 +1,5 @@
 EXTRA_DIST = \
-	gaim-gaym.nsi
+	installer.nsi
 
 SUBDIRS = \
-	locale \
-	pixmaps
+	locale

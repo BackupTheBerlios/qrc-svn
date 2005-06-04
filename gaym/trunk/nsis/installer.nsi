@@ -1,6 +1,4 @@
 ; NSIS Script For Gaim-GayM Plugin
-; Author Don Seiler
-; Based on the Gaim-BNET installer by Daniel Atallah
 ; Uses NSIS v2.0
 
 Name "Gaim-GayM ${GAYM_VERSION}"
@@ -34,12 +32,7 @@ SetCompressor lzma
 !include "gaim-plugin.nsh"
 
 ; Modern UI Configuration
-
-!define MUI_ICON "pixmaps\gaym.ico"
-!define MUI_UNICON "pixmaps\gaym.ico"
 !define MUI_HEADERIMAGE
-!define MUI_HEADERIMAGE_BITMAP "pixmaps\gaym.bmp"
-
 
 ; Pages
 !define MUI_WELCOMEPAGE_TITLE $(WELCOME_TITLE)
@@ -52,6 +45,7 @@ SetCompressor lzma
 !define MUI_DIRECTORYPAGE_TEXT_DESTINATION $(DIR_INNERTEXT)
 !insertmacro MUI_PAGE_DIRECTORY
 
+!define MUI_FINISHPAGE_NOAUTOCLOSE
 !insertmacro MUI_PAGE_INSTFILES
 
 !define MUI_FINISHPAGE_TITLE $(FINISH_TITLE)
