@@ -794,7 +794,7 @@ const char *gaym_normalize(const GaimAccount * acct, const char *nick)
     }
     char *retval = g_new0(char, 31);    // max 30, plus one for the NULL
     char *firstchar =
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz\0";
     char *allowed =
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_.-\0";
     int i = 0;
