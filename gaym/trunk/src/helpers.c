@@ -202,7 +202,7 @@ void gaym_privacy_change(GaimConnection * gc, const char *name)
             gaim_privacy_permit_remove(gc->account, gc->account->username,
                                        TRUE);
             gaim_debug_info("gaym",
-                             "declining to add self to permit/deny list\n");
+                            "declining to add self to permit/deny list\n");
             return;
         }
     }
@@ -239,6 +239,67 @@ void gaym_privacy_change(GaimConnection * gc, const char *name)
             }
         }
     }
+}
+
+// According to http://www.gay.com/members/join/ the member name is:
+// 
+// - Up to 30 characters
+// - Must begin with a letter
+// - Can contain only letters, numbers, and underscores ( _ )
+// - Cannot contain special characters, spaces, periods, or hyphens (-)
+// 
+// However, in testing as well as observing existing members, the
+// the member name may in fact contain periods and hyphens.
+
+gboolean gaym_nick_check(const char *nick)
+{
+    gboolean retval = FALSE;
+
+    if (!nick) {
+        return retval;
+    }
+
+    char *firstchar =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz\0";
+    char *allowed =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_.-\0";
+    int i = 0;
+    int j = 0;
+
+    // first character validation is different from the remaining
+    // characters
+    for (i = 0; firstchar[i]; i++) {
+        if (nick[0] == firstchar[i]) {
+            retval = TRUE;
+            break;
+        }
+    }
+    if (!retval) {
+        return retval;
+    }
+    // validate remaining characters (but not the first character)
+    for (i = 1; nick[i]; i++) {
+        retval = FALSE;
+        for (j = 0; allowed[j]; j++) {
+            if (nick[i] == allowed[j]) {
+                retval = TRUE;
+                break;
+            }
+        }
+        if (!retval) {
+            break;
+        }
+    }
+    if (!retval) {
+        return retval;
+    }
+    // validate length
+    if (i > 30) {
+        retval = FALSE;
+        return retval;
+    }
+    // its valid!
+    return retval;
 }
 
 // vim:tabstop=4:shiftwidth=4:expandtab:

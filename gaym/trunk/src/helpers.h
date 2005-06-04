@@ -20,4 +20,6 @@ gboolean gaym_privacy_check(GaimConnection * gc, const char *nick);
 
 void gaym_privacy_change(GaimConnection * gc, const char *name);
 
+gboolean gaym_nick_check(const char *nick);
+
 // vim:tabstop=4:shiftwidth=4:expandtab:
