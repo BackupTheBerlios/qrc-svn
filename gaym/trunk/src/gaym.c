@@ -35,6 +35,7 @@
 #include "util.h"
 #include "version.h"
 #include "helpers.h"
+#include "request.h"
 
 
 
@@ -229,12 +230,39 @@ static void gaym_show_set_info(GaimPluginAction * action)
     gaim_account_request_change_user_info(gaim_connection_get_account(gc));
 }
 
+static void spam_filters_ok_cb(GaimConnection * gc, const char *entry)
+{
+    gchar **filters = g_strsplit(entry, "\n", -1);
+    int i = 0;
+    for (i = 0; filters[i]; i++) {
+        // deckrider FIXME:  Actually do something here
+        gaim_debug_misc("gaym", "Spam Filter Line = %s\n", filters[i]);
+    }
+    g_strfreev(filters);
+}
+
+static void gaym_show_set_spam(GaimPluginAction * action)
+{
+    GaimConnection *gc = (GaimConnection *) action->context;
+    gaim_request_input(gc,
+                       _("Spam Filters"),
+                       _("Enter phrases to block/ignore"),
+                       _("Enter phrases below, each phrase beginning on a new line.  If any one of these phrases is found in a member's profile, that member will be automatically blocked/ignored."),
+                       _("This is only eye candy.  Hope to have it working soon."),
+                       TRUE, FALSE, NULL, _("Save"),
+                       GAIM_CALLBACK(spam_filters_ok_cb), _("Cancel"),
+                       NULL, gc);
+}
+
 static GList *gaym_actions(GaimPlugin * plugin, gpointer context)
 {
     GList *list = NULL;
     GaimPluginAction *act = NULL;
 
     act = gaim_plugin_action_new(_("Change Bio"), gaym_show_set_info);
+    list = g_list_append(list, act);
+
+    act = gaim_plugin_action_new(_("Spam Filters"), gaym_show_set_spam);
     list = g_list_append(list, act);
 
     return list;
