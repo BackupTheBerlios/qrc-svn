@@ -24,7 +24,6 @@
  */
 
 #include "internal.h"
-
 #include "accountopt.h"
 #include "blist.h"
 #include "conversation.h"
@@ -34,11 +33,10 @@
 #include "plugin.h"
 #include "util.h"
 #include "version.h"
-#include "helpers.h"
 #include "request.h"
+#include "privacy.h"
 
-
-
+#include "helpers.h"
 #include "gaym.h"
 
 char *gaym_mask_bio(const char *biostring);
@@ -1112,3 +1110,7 @@ static void _init_plugin(GaimPlugin * plugin)
 }
 
 GAIM_INIT_PLUGIN(gaym, _init_plugin, info);
+
+/**
+ * vim:tabstop=4:shiftwidth=4:expandtab:
+ */

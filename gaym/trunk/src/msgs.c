@@ -1568,4 +1568,6 @@ void gaym_msg_richnames_list(struct gaym_conn *gaym, const char *name,
     }
 }
 
-// vim:tabstop=4:shiftwidth=4:expandtab:
+/**
+ * vim:tabstop=4:shiftwidth=4:expandtab:
+ */

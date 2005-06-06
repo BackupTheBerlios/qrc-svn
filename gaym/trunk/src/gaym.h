@@ -295,4 +295,6 @@ void gaim_session_fetch(const char *url, gboolean full,
 
 #endif                          /* _GAIM_GAYM_H */
 
-// vim:tabstop=4:shiftwidth=4:expandtab:
+/**
+ * vim:tabstop=4:shiftwidth=4:expandtab:
+ */

@@ -606,3 +606,7 @@ static void gaym_do_mode(struct gaym_conn *gaym, const char *target,
 
     return;
 }
+
+/**
+ * vim:tabstop=4:shiftwidth=4:expandtab:
+ */

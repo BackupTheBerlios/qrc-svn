@@ -705,4 +705,6 @@ gaym_get_hash_from_weblogin(GaimAccount * account,
     }
 }
 
-// vim:tabstop=4:shiftwidth=4:expandtab:
+/**
+ * vim:tabstop=4:shiftwidth=4:expandtab:
+ */

@@ -194,7 +194,7 @@ static struct _gaym_user_cmd {
             ("umode &lt;+|-&gt;&lt;A-Za-z&gt;:  Set or unset a user mode.")},
     {
     "trace", "n", gaym_cmd_trace,
-	    N_("trace &lt;nick&gt;: Get trace information on a user.")}, 
+            N_("trace &lt;nick&gt;: Get trace information on a user.")}, 
 
     {
     "whois", "n", gaym_cmd_whois,
@@ -553,4 +553,6 @@ static void gaym_parse_error_cb(struct gaym_conn *gaym, char *input)
                input);
 }
 
-// vim:tabstop=4:shiftwidth=4:expandtab:
+/**
+ * vim:tabstop=4:shiftwidth=4:expandtab:
+ */

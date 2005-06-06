@@ -344,4 +344,6 @@ void gaym_dccsend_send_file(GaimConnection * gc, const char *who,
         gaim_xfer_request(xfer);
 }
 
-// vim:tabstop=4:shiftwidth=4:expandtab:
+/**
+ * vim:tabstop=4:shiftwidth=4:expandtab:
+ */
