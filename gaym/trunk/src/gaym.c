@@ -149,8 +149,6 @@ static void gaym_buddy_append(char *name, struct gaym_buddy *ib,
 
 }
 
-
-
 static void gaym_ison_one(struct gaym_conn *gaym, struct gaym_buddy *ib)
 {
     char *buf;
@@ -162,7 +160,6 @@ static void gaym_ison_one(struct gaym_conn *gaym, struct gaym_buddy *ib)
     gaym_send(gaym, buf);
     g_free(buf);
 }
-
 
 static const char *gaym_blist_icon(GaimAccount * a, GaimBuddy * b)
 {
@@ -230,39 +227,12 @@ static void gaym_show_set_info(GaimPluginAction * action)
     gaim_account_request_change_user_info(gaim_connection_get_account(gc));
 }
 
-static void spam_filters_ok_cb(GaimConnection * gc, const char *entry)
-{
-    gchar **filters = g_strsplit(entry, "\n", -1);
-    int i = 0;
-    for (i = 0; filters[i]; i++) {
-        // deckrider FIXME:  Actually do something here
-        gaim_debug_misc("gaym", "Spam Filter Line = %s\n", filters[i]);
-    }
-    g_strfreev(filters);
-}
-
-static void gaym_show_set_spam(GaimPluginAction * action)
-{
-    GaimConnection *gc = (GaimConnection *) action->context;
-    gaim_request_input(gc,
-                       _("Spam Filters"),
-                       _("Enter phrases to block/ignore"),
-                       _("Enter phrases below, each phrase beginning on a new line.  If any one of these phrases is found in a member's profile, that member will be automatically blocked/ignored."),
-                       _("This is only eye candy.  Hope to have it working soon."),
-                       TRUE, FALSE, NULL, _("Save"),
-                       GAIM_CALLBACK(spam_filters_ok_cb), _("Cancel"),
-                       NULL, gc);
-}
-
 static GList *gaym_actions(GaimPlugin * plugin, gpointer context)
 {
     GList *list = NULL;
     GaimPluginAction *act = NULL;
 
     act = gaim_plugin_action_new(_("Change Bio"), gaym_show_set_info);
-    list = g_list_append(list, act);
-
-    act = gaim_plugin_action_new(_("Spam Filters"), gaym_show_set_spam);
     list = g_list_append(list, act);
 
     return list;
@@ -353,12 +323,16 @@ static void gaym_login(GaimAccount * account)
     gaym->account = account;
 
 
-    // gaim_connection_set_display_name(gc, userparts[0]);
+    /**
+     * gaim_connection_set_display_name(gc, userparts[0]);
+     */
     gaim_connection_set_display_name(gc, username);
     gaym->server =
         g_strdup(gaim_account_get_string
                  (account, "server", "www.gay.com"));
-    // gaym->server = "www.gay.com";
+    /**
+     * gaym->server = "www.gay.com";
+     */
     gaym->buddies =
         g_hash_table_new_full((GHashFunc) gaym_nick_hash,
                               (GEqualFunc) gaym_nick_equal, NULL,
@@ -383,8 +357,9 @@ static void gaym_get_configtxt_cb(gpointer proto_data,
     if (!config_text) {
         return;
     }
-    // Call Jason's cool function to do away with java madness
-
+    /**
+     * Call Jason's cool function to do away with java madness
+     */
     gaym->configtxt = ascii2native(config_text);
 
     if (!gaym->configtxt) {
@@ -413,8 +388,6 @@ static void gaym_login_cb(gpointer data, gint source,
             gaim_connection_error(gc, _("Couldn't connect to host"));
             return;
         }
-
-
 
         if (!g_list_find(connections, gc)) {
             close(source);
@@ -525,9 +498,11 @@ static int gaym_im_send(GaimConnection * gc, const char *who,
     if (flags & GAIM_CONV_IM_AUTO_RESP) {
         awaymsg = g_strdup_printf("<Auto-response> %s", what);
         args[1] = awaymsg;
-        // Prevent memory leak
-        // g_free(what);
-        // what=args[1];
+        /**
+         * Prevent memory leak
+         * g_free(what);
+         * what=args[1];
+         */
 
     } else
         args[1] = what;
@@ -549,8 +524,10 @@ static void gaym_get_info(GaimConnection * gc, const char *who)
 static void gaym_set_away(GaimConnection * gc, const char *state,
                           const char *msg)
 {
-    // struct gaym_conn *gaym = gc->proto_data;
-    // const char *args[1];
+    /**
+     * struct gaym_conn *gaym = gc->proto_data;
+     * const char *args[1];
+     */
 
     if (gc->away) {
         g_free(gc->away);
@@ -560,8 +537,10 @@ static void gaym_set_away(GaimConnection * gc, const char *state,
     if (msg)
         gc->away = g_strdup(msg);
 
-    // args[0] = msg;
-    // gaym_cmd_away(gaym, "away", NULL, args);
+    /**
+     * args[0] = msg;
+     * gaym_cmd_away(gaym, "away", NULL, args);
+     */
 }
 
 static void gaym_add_buddy(GaimConnection * gc, GaimBuddy * buddy,
@@ -572,9 +551,11 @@ static void gaym_add_buddy(GaimConnection * gc, GaimBuddy * buddy,
     ib->name = g_strdup(buddy->name);
     g_hash_table_insert(gaym->buddies, ib->name, ib);
     gaim_debug_misc("gaym", "Add buddy: %s\n", buddy->name);
-    /* if the timer isn't set, this is during signon, so we don't want to
-       flood ourself off with ISON's, so we don't, but after that we want
-       to know when someone's online asap */
+    /**
+     * if the timer isn't set, this is during signon, so we don't want to
+     * flood ourself off with ISON's, so we don't, but after that we want
+     * to know when someone's online asap
+     */
     if (gaym->timer)
         gaym_ison_one(gaym, ib);
 }
@@ -641,17 +622,21 @@ static void gaym_add_permit(GaimConnection * gc, const char *name)
 
 static void gaym_add_deny(GaimConnection * gc, const char *name)
 {
-    // FIXME: add code here to store this setting on gay.com
-    // 
-    // The way to store it is by doing a GET on www.gay.com to
-    // /messenger/lists.txt?name=NICK_TO_BLOCK&key=BIG_STRING_THAT_WAS_USED_TO_RETRIEVE_CONFIG_TXT&list=ignore&op=add
-    // 
-    // If successful, the following is returned:
-    // 
-    // success=1
-    // status=ok
-    // list=ignore
-    // command=add
+    /**
+     * FIXME: add code here to store this setting on gay.com
+     * 
+     * The way to store it is by doing a GET on www.gay.com to
+     * /messenger/lists.txt?name=NICK_TO_BLOCK
+     * &key=BIG_STRING_THAT_WAS_USED_TO_RETRIEVE_CONFIG_TXT
+     * &list=ignore&op=add
+     * 
+     * If successful, the following is returned:
+     * 
+     * success=1
+     * status=ok
+     * list=ignore
+     * command=add
+     */
 
     if (!gaym_nick_check(name)) {
         gaim_privacy_deny_remove(gc->account, name, TRUE);
@@ -669,17 +654,21 @@ static void gaym_rem_permit(GaimConnection * gc, const char *name)
 
 static void gaym_rem_deny(GaimConnection * gc, const char *name)
 {
-    // FIXME: add code here to store this setting on gay.com
-    // 
-    // The way to store it is by doing a GET on www.gay.com to
-    // /messenger/lists.txt?name=NICK_TO_BLOCK&key=BIG_STRING_THAT_WAS_USED_TO_RETRIEVE_CONFIG_TXT&list=ignore&op=remove
-    // 
-    // If successful, the following is returned:
-    // 
-    // success=1
-    // status=ok
-    // list=ignore
-    // command=remove
+    /**
+     * FIXME: add code here to store this setting on gay.com
+     * 
+     * The way to store it is by doing a GET on www.gay.com to
+     * /messenger/lists.txt?name=NICK_TO_BLOCK
+     * &key=BIG_STRING_THAT_WAS_USED_TO_RETRIEVE_CONFIG_TXT
+     * &list=ignore&op=remove
+     * 
+     * If successful, the following is returned:
+     * 
+     * success=1
+     * status=ok
+     * list=ignore
+     * command=remove
+     */
 
     gaym_privacy_change(gc, name);
 }
@@ -710,8 +699,11 @@ static void gaym_chat_join(GaimConnection * gc, GHashTable * data)
 
     GaimChat *c = NULL;
 
-    GHashTable *chatinfo = NULL;        // need a copy, because data gets
-    // destroyed in roomlist.c
+    /**
+     * need a copy, because data gets
+     * destroyed in roomlist.c
+     */
+    GHashTable *chatinfo = NULL;
 
     args[0] = g_hash_table_lookup(data, "channel");
 
@@ -731,7 +723,9 @@ static void gaym_chat_join(GaimConnection * gc, GHashTable * data)
     }
 
     if (!args[0] || *args[0] != '#') {
-        // Trigger a room search in config.txt....
+        /**
+         * Trigger a room search in config.txt....
+         */
         return;
     }
 
@@ -760,7 +754,6 @@ static void gaym_chat_invite(GaimConnection * gc, int id,
     gaym_cmd_invite(gaym, "invite", gaim_conversation_get_name(convo),
                     args);
 }
-
 
 static void gaym_chat_leave(GaimConnection * gc, int id)
 {
@@ -853,9 +846,11 @@ static GaimRoomlist *gaym_roomlist_get_list(GaimConnection * gc)
 
     gaim_roomlist_set_fields(gaym->roomlist, fields);
 
-    // Member created rooms are retrieved through the IRC protocol
-    // and after the last response is recieved from that request
-    // the static rooms are added
+    /**
+     * Member created rooms are retrieved through the IRC protocol
+     * and after the last response is recieved from that request
+     * the static rooms are added
+     */
 
     buf = gaym_format(gaym, "v", "LIST #_*");
     gaym_send(gaym, buf);
@@ -990,10 +985,9 @@ static GaimPluginPrefFrame *get_plugin_pref_frame(GaimPlugin * plugin)
     GaimPluginPrefFrame *frame;
     GaimPluginPref *ppref;
 
-    gaim_debug_misc("gaym", "get pref frame...\n");
     frame = gaim_plugin_pref_frame_new();
 
-    ppref = gaim_plugin_pref_new_with_label(_("Conversations"));
+    ppref = gaim_plugin_pref_new_with_label(_("Chat Rooms"));
     gaim_plugin_pref_frame_add(frame, ppref);
 
     ppref =
@@ -1008,11 +1002,26 @@ static GaimPluginPrefFrame *get_plugin_pref_frame(GaimPlugin * plugin)
          _("Show bio when entrance messages are shown"));
     gaim_plugin_pref_frame_add(frame, ppref);
 
-    // ppref = gaim_plugin_pref_new_with_name_and_label(
-    // "/plugins/prpl/gaym/bot_lines",
-    // _("Space-seperated list of terms that bots use. <Not yet
-    // implemented>"));
-    // gaim_plugin_pref_frame_add(frame, ppref);
+    /**
+     * Note that gaim's gtkpluginpref.c does not support
+     * GAIM_PREF_STRING_LIST, so we have to put the spam
+     * string list in a single string with separators
+     */
+
+    ppref = gaim_plugin_pref_new_with_label(_("Spam Bio Phrase Filter"));
+    gaim_plugin_pref_frame_add(frame, ppref);
+
+    ppref =
+        gaim_plugin_pref_new_with_name_and_label
+        ("/plugins/prpl/gaym/spam_filter_sep", _("Spam Phrase Separator"));
+    gaim_plugin_pref_set_max_length(ppref, 1);
+    gaim_plugin_pref_frame_add(frame, ppref);
+
+    ppref =
+        gaim_plugin_pref_new_with_name_and_label
+        ("/plugins/prpl/gaym/spam_filter_str", _("Spam Phrases"));
+    gaim_plugin_pref_frame_add(frame, ppref);
+
     return frame;
 }
 
@@ -1034,7 +1043,7 @@ static GaimPluginInfo info = {
     "GayM",                                               /**< name           */
     VERSION,                                              /**< version        */
     N_("GayM Protocol Plugin"),                           /**  summary        */
-    N_("Gay.com Protocol based on IRC"),                  /**  description    */
+    N_("Gay.com Messaging based on IRC"),                 /**  description    */
     NULL,                                                 /**< author         */
     "http://qrc.berlios.de/",                             /**< homepage       */
 
@@ -1047,8 +1056,6 @@ static GaimPluginInfo info = {
     &prefs_info,
     gaym_actions
 };
-
-
 
 static void _init_plugin(GaimPlugin * plugin)
 {
@@ -1070,18 +1077,24 @@ static void _init_plugin(GaimPlugin * plugin)
     prpl_info.protocol_options =
         g_list_append(prpl_info.protocol_options, option);
 
-    // gaim doesn't support suppressing entrance messages
+    /**
+     * gaim doesn't support suppressing entrance messages
+     */
     gaim_signal_connect(gaim_conversations_get_handle(),
                         "chat-buddy-joining", plugin,
                         GAIM_CALLBACK(gaym_filter_join_leave_msgs), NULL);
 
-    // gaim doesn't support suppressing exit messages
+    /**
+     * gaim doesn't support suppressing exit messages
+     */
     gaim_signal_connect(gaim_conversations_get_handle(),
                         "chat-buddy-leaving", plugin,
                         GAIM_CALLBACK(gaym_filter_join_leave_msgs), NULL);
 
-    // We have to pull thumbnails, since they aren't pushed like with
-    // other protocols.
+    /**
+     * We have to pull thumbnails, since they aren't pushed like with
+     * other protocols.
+     */
     gaim_signal_connect(gaim_conversations_get_handle(),
                         "conversation-created", plugin,
                         GAIM_CALLBACK(gaym_get_photo_info), NULL);
@@ -1089,7 +1102,9 @@ static void _init_plugin(GaimPlugin * plugin)
     gaim_prefs_add_none("/plugins/prpl/gaym");
     gaim_prefs_add_bool("/plugins/prpl/gaym/show_bio_with_join", TRUE);
     gaim_prefs_add_bool("/plugins/prpl/gaym/show_join_leave_msgs", TRUE);
-    // gaim_prefs_add_string("/plugins/prpl/gaym/bot_lines", NULL);
+    gaim_prefs_add_string("/plugins/prpl/gaym/spam_filter_sep", "|");
+    gaim_prefs_add_string("/plugins/prpl/gaym/spam_filter_str",
+                          "This doesn't work yet");
 
     _gaym_plugin = plugin;
 
@@ -1097,5 +1112,3 @@ static void _init_plugin(GaimPlugin * plugin)
 }
 
 GAIM_INIT_PLUGIN(gaym, _init_plugin, info);
-
-// vim:tabstop=4:shiftwidth=4:expandtab:
