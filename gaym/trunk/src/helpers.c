@@ -21,6 +21,7 @@
  */
 #include "internal.h"
 #include "debug.h"
+#include "prefs.h"
 #include "privacy.h"
 #include "util.h"
 
@@ -337,6 +338,33 @@ gboolean gaym_nick_check(const char *nick)
     /**
      * its valid!
      */
+    return retval;
+}
+
+gboolean gaym_im_check(GaimConnection * gc, const char *nick)
+{
+    gboolean retval = TRUE;
+
+    /* not good, but don't do anything */
+    if (!gc || !nick) {
+        return retval;
+    }
+
+    /* user wants to allow anyone */
+    if (!gaim_prefs_get_bool("/plugins/prpl/gaym/only_buddies_can_im")) {
+        return retval;
+    }
+
+    /* there is already an open conversation, so it must be allowed */
+    if (gaim_find_conversation_with_account(nick, gc->account)) {
+        return retval;
+    }
+
+    /* nick is not on the account's buddy list */
+    if (!gaim_find_buddy(gc->account, nick)) {
+        retval = FALSE;
+    }
+
     return retval;
 }
 

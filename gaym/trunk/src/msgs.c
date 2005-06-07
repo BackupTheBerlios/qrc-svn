@@ -419,7 +419,7 @@ void gaym_msg_list(struct gaym_conn *gaym, const char *name,
             }
         }
         // replace '=' with ':'
-        field_name[i-2] = ':';
+        field_name[i - 2] = ':';
 
         room = gaim_roomlist_room_new(GAIM_ROOMLIST_ROOMTYPE_ROOM,
                                       field_name,
@@ -1301,14 +1301,14 @@ void gaym_msg_privmsg(struct gaym_conn *gaym, const char *name,
         return;
     }
 
-    if (!gaym_privacy_check(gc, nick)) {
-        g_free(nick);
-        return;
-    }
-
     convert_nick_from_gaycom(args[1]);
     convert_nick_from_gaycom(args[0]);
     convert_nick_from_gaycom(nick);
+
+    if (!gaym_privacy_check(gc, nick) || !gaym_im_check(gc, nick)) {
+        g_free(nick);
+        return;
+    }
 
     convo = gaim_find_conversation_with_account(args[0], gaym->account);
 

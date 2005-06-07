@@ -60,7 +60,7 @@ gboolean gaym_privacy_check(GaimConnection * gc, const char *nick);
  * Respond to notification that the account's privacy settings have
  * changed.
  *
- * @param account The account.
+ * @param         The connection.
  * @param name    The user that was changed (added/removed from the
  *                permit/deny lists).  If the privacy type has changed
  *                this must be NULL so that all users are reset and
@@ -84,6 +84,16 @@ void gaym_privacy_change(GaimConnection * gc, const char *name);
  * @param nick The string to check.
  */
 gboolean gaym_nick_check(const char *nick);
+
+/**
+ * Check if the plugin's settings allow or block an IM.
+ *
+ * @param gc   The connection.
+ * @param nick The user sending the IM.
+ *
+ * @return TRUE if the user is allowed, or @c FALSE otherwise.
+ */
+gboolean gaym_im_check(GaimConnection * gc, const char *nick);
 
 #endif                          /* _GAIM_GAYM_HELPERS_H_ */
 

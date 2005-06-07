@@ -1000,24 +1000,10 @@ static GaimPluginPrefFrame *get_plugin_pref_frame(GaimPlugin * plugin)
          _("Show bio when entrance messages are shown"));
     gaim_plugin_pref_frame_add(frame, ppref);
 
-    /**
-     * Note that gaim's gtkpluginpref.c does not support
-     * GAIM_PREF_STRING_LIST, so we have to put the spam
-     * string list in a single string with separators
-     */
-
-    ppref = gaim_plugin_pref_new_with_label(_("Spam Bio Phrase Filter"));
-    gaim_plugin_pref_frame_add(frame, ppref);
-
     ppref =
         gaim_plugin_pref_new_with_name_and_label
-        ("/plugins/prpl/gaym/spam_filter_sep", _("Spam Phrase Separator"));
-    gaim_plugin_pref_set_max_length(ppref, 1);
-    gaim_plugin_pref_frame_add(frame, ppref);
-
-    ppref =
-        gaim_plugin_pref_new_with_name_and_label
-        ("/plugins/prpl/gaym/spam_filter_str", _("Spam Phrases"));
+        ("/plugins/prpl/gaym/only_buddies_can_im",
+         _("Only buddies may open an IM session to me"));
     gaim_plugin_pref_frame_add(frame, ppref);
 
     return frame;
@@ -1100,9 +1086,7 @@ static void _init_plugin(GaimPlugin * plugin)
     gaim_prefs_add_none("/plugins/prpl/gaym");
     gaim_prefs_add_bool("/plugins/prpl/gaym/show_bio_with_join", TRUE);
     gaim_prefs_add_bool("/plugins/prpl/gaym/show_join_leave_msgs", TRUE);
-    gaim_prefs_add_string("/plugins/prpl/gaym/spam_filter_sep", "|");
-    gaim_prefs_add_string("/plugins/prpl/gaym/spam_filter_str",
-                          "This doesn't work yet");
+    gaim_prefs_add_bool("/plugins/prpl/gaym/only_buddies_can_im", FALSE);
 
     _gaym_plugin = plugin;
 
