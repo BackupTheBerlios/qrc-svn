@@ -2,14 +2,14 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.59])
-AC_INIT([gaim-gaym],[0.33.0+svn],[gaymplugin@yahoogroups.com])
+AC_INIT([qrc],[0.33.0+svn],[gaymplugin@yahoogroups.com])
 AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE([1.9.5])
 
 REQUIRED_GAIM="gaim >= 1.2 gaim < 2.0"
 AC_SUBST(REQUIRED_GAIM)
 
-AC_CONFIG_SRCDIR([src/gaym.h])
+AC_CONFIG_SRCDIR([gaym/gaym.h])
 AC_CONFIG_HEADER([config.h])
 
 AC_DEFINE(GAIM_PLUGINS, 1, [Define if plugins are enabled.])
@@ -59,7 +59,7 @@ AC_CONFIG_FILES([Makefile
                  nsis/Makefile
 		 nsis/locale/Makefile
                  pixmaps/Makefile
-                 src/Makefile])
+                 gaym/Makefile])
 AC_OUTPUT
 
 echo

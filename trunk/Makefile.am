@@ -5,5 +5,5 @@ EXTRA_DIST = \
 
 SUBDIRS = \
 	nsis \
-	src \
+	gaym \
         pixmaps
