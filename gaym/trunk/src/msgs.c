@@ -21,20 +21,21 @@
 */
 
 #include "internal.h"
-
 #include "conversation.h"
 #include "blist.h"
 #include "notify.h"
 #include "util.h"
 #include "debug.h"
-#include "gaym.h"
 #include "imgstore.h"
-#include "helpers.h"
 #include "request.h"
 #include "privacy.h"
 #include "prefs.h"
 
 #include <stdio.h>
+
+#include "helpers.h"
+#include "gaympriv.h"
+#include "gaym.h"
 
 // begin forward declarations
 

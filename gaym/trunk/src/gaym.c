@@ -37,6 +37,7 @@
 #include "privacy.h"
 
 #include "helpers.h"
+#include "gaympriv.h"
 #include "gaym.h"
 
 char *gaym_mask_bio(const char *biostring);
@@ -937,21 +938,6 @@ static GaimPluginProtocolInfo prpl_info = {
     gaym_dccsend_send_file      /* send_file */
 };
 
-static int gaym_filter_join_leave_msgs(GaimConversation * conv, char *name)
-{
-    GaimConnection *gc = gaim_conversation_get_gc(conv);
-    if (!gc) {
-        return 1;
-    }
-    if (!gaim_prefs_get_bool("/plugins/prpl/gaym/show_join_leave_msgs")) {
-        return 1;
-    }
-    if (!gaym_privacy_check(gc, name)) {
-        return 1;
-    }
-    return 0;
-}
-
 static void gaym_get_photo_info(GaimConversation * conv)
 {
     char *buf;
@@ -1069,14 +1055,14 @@ static void _init_plugin(GaimPlugin * plugin)
      */
     gaim_signal_connect(gaim_conversations_get_handle(),
                         "chat-buddy-joining", plugin,
-                        GAIM_CALLBACK(gaym_filter_join_leave_msgs), NULL);
+                        GAIM_CALLBACK(gaym_ignore_joining_leaving), NULL);
 
     /**
      * gaim doesn't support suppressing exit messages
      */
     gaim_signal_connect(gaim_conversations_get_handle(),
                         "chat-buddy-leaving", plugin,
-                        GAIM_CALLBACK(gaym_filter_join_leave_msgs), NULL);
+                        GAIM_CALLBACK(gaym_ignore_joining_leaving), NULL);
 
     /**
      * We have to pull thumbnails, since they aren't pushed like with

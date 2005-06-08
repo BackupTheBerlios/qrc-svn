@@ -63,6 +63,7 @@ LIB_PATHS =		-L$(GTK_TOP)/lib \
 C_SRC =			cmds.c \
 			dcc_send.c \
 			gaym.c \
+			gaympriv.c \
 			helpers.c \
 			msgs.c \
 			parse.c \

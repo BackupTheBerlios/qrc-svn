@@ -24,8 +24,6 @@
 #ifndef _GAIM_GAYM_HELPERS_H_
 #define _GAIM_GAYM_HELPERS_H_
 
-#include "connection.h"
-
 #include <glib.h>
 
 char *return_string_between(const char *startbit, const char *endbit,
@@ -46,29 +44,6 @@ void convert_nick_from_gaycom(char *);
 gchar *ascii2native(const gchar * str);
 
 /**
- * Check if the account's privacy settings allow or block the user
- * (shamelessly taken from the yahoo prpl).
- *
- * @param gc   The connection.
- * @param nick The user to check.
- *
- * @return TRUE if the user is allowed, or @c FALSE otherwise.
- */
-gboolean gaym_privacy_check(GaimConnection * gc, const char *nick);
-
-/**
- * Respond to notification that the account's privacy settings have
- * changed.
- *
- * @param         The connection.
- * @param name    The user that was changed (added/removed from the
- *                permit/deny lists).  If the privacy type has changed
- *                this must be NULL so that all users are reset and
- *                checked.
- */
-void gaym_privacy_change(GaimConnection * gc, const char *name);
-
-/**
  * Check if the string could be a valid user name.
  *
  * According to http://www.gay.com/members/join/ the member name is:
@@ -84,16 +59,6 @@ void gaym_privacy_change(GaimConnection * gc, const char *name);
  * @param nick The string to check.
  */
 gboolean gaym_nick_check(const char *nick);
-
-/**
- * Check if the plugin's settings allow or block an IM.
- *
- * @param gc   The connection.
- * @param nick The user sending the IM.
- *
- * @return TRUE if the user is allowed, or @c FALSE otherwise.
- */
-gboolean gaym_im_check(GaimConnection * gc, const char *nick);
 
 #endif                          /* _GAIM_GAYM_HELPERS_H_ */
 
