@@ -1,7 +1,7 @@
 ;;
 ;;  english.nsh
 ;;
-;;  Default language strings for the Windows gaim-gaym NSIS installer.
+;;  Default language strings for the Windows gaim-qrc NSIS installer.
 ;;  Windows Code page: 1252
 ;;
 

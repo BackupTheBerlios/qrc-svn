@@ -1,10 +1,10 @@
 # Makefile.mingw
 #
-# Description: Top Makefile for win32 (mingw) port of gaym
+# Description: Top Makefile for win32 (mingw) port of qrc
 #
 
 all:
-	$(MAKE) -C src -f Makefile.mingw
+	$(MAKE) -C gaym -f Makefile.mingw
 
 install: all
 	$(MAKENSIS) \

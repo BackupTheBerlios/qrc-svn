@@ -4,9 +4,9 @@
 Name "Gaim-GayM ${GAYM_VERSION}"
 
 ; Registry keys:
-!define GAYM_REG_KEY        "SOFTWARE\gaim-gaym"
-!define GAYM_UNINSTALL_KEY  "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\gaim-gaym"
-!define GAYM_UNINST_EXE     "gaim-gaym-uninst.exe"
+!define GAYM_REG_KEY        "SOFTWARE\gaim-qrc"
+!define GAYM_UNINSTALL_KEY  "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\gaim-qrc"
+!define GAYM_UNINST_EXE     "gaim-qrc-uninst.exe"
 !define GAYM_DLL            "libgaym.dll"
 !define GAYM_PNG            "gaym.png"
 !define GAYM_UNINSTALL_LNK  "Gaim-GayM Uninstall.lnk"
@@ -17,7 +17,7 @@ Name "Gaim-GayM ${GAYM_VERSION}"
 CRCCheck On
 
 ;Output File Name
-OutFile "..\gaim-${GAIM_VERSION}-gaym-${GAYM_VERSION}.exe"
+OutFile "..\gaim-${GAIM_VERSION}-qrc-${GAYM_VERSION}.exe"
 
 ShowInstDetails show
 ShowUnInstDetails show
@@ -54,7 +54,7 @@ SetCompressor lzma
 
 ; MUI Config
 
-!define MUI_CUSTOMFUNCTION_GUIINIT gaym_checkGaimVersion
+!define MUI_CUSTOMFUNCTION_GUIINIT qrc_checkGaimVersion
 !define MUI_ABORTWARNING
 !define MUI_UNINSTALLER
 !define MUI_PROGRESSBAR smooth
@@ -172,7 +172,7 @@ Section "Install"
     SetOutPath "$INSTDIR\plugins"
     SetCompress Auto
     SetOverwrite on
-    File "..\src\${GAYM_DLL}"
+    File "..\gaym\${GAYM_DLL}"
     
     SetOutPath "$INSTDIR\pixmaps\gaim\status\default"
     File "..\pixmaps\${GAYM_PNG}"
@@ -242,14 +242,14 @@ Function .onVerifyInstDir
   Good1:
 FunctionEnd
 
-Function gaym_checkGaimVersion
+Function qrc_checkGaimVersion
   Push $R0
 
   Push ${GAIM_VERSION}
   Call CheckGaimVersion
   Pop $R0
 
-  StrCmp $R0 ${GAIM_VERSION_OK} gaym_checkGaimVersion_OK
+  StrCmp $R0 ${GAIM_VERSION_OK} qrc_checkGaimVersion_OK
   StrCmp $R0 ${GAIM_VERSION_INCOMPATIBLE} +1 +6
     Call GetGaimVersion
     IfErrors +3
@@ -259,7 +259,7 @@ Function gaym_checkGaimVersion
     MessageBox MB_OK|MB_ICONSTOP "$(NO_GAIM_VERSION)"
     Quit
 
-  gaym_checkGaimVersion_OK:
+  qrc_checkGaimVersion_OK:
   Pop $R0
 FunctionEnd
 
