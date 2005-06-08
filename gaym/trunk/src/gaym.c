@@ -1000,6 +1000,9 @@ static GaimPluginPrefFrame *get_plugin_pref_frame(GaimPlugin * plugin)
          _("Show bio when entrance messages are shown"));
     gaim_plugin_pref_frame_add(frame, ppref);
 
+    ppref = gaim_plugin_pref_new_with_label(_("Instant Messages"));
+    gaim_plugin_pref_frame_add(frame, ppref);
+
     ppref =
         gaim_plugin_pref_new_with_name_and_label
         ("/plugins/prpl/gaym/only_buddies_can_im",
