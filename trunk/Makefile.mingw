@@ -13,5 +13,5 @@ install: all
 		-DGAIM_TOP="$(GAIM_TOP)" nsis/installer.nsi
 
 clean:
-	$(MAKE) -C src -f Makefile.mingw clean
+	$(MAKE) -C gaym -f Makefile.mingw clean
 	-rm *.exe

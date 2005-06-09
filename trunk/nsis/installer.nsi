@@ -172,10 +172,10 @@ Section "Install"
     SetOutPath "$INSTDIR\plugins"
     SetCompress Auto
     SetOverwrite on
-    File "..\gaym\${GAYM_DLL}"
+    File "..\gaym\src\${GAYM_DLL}"
     
     SetOutPath "$INSTDIR\pixmaps\gaim\status\default"
-    File "..\pixmaps\${GAYM_PNG}"
+    File "..\gaym\pixmaps\${GAYM_PNG}"
     
     StrCmp $R0 "NONE" done
     CreateShortCut "$SMPROGRAMS\Gaim\${GAYM_UNINSTALL_LNK}" "$INSTDIR\${GAYM_UNINST_EXE}"
