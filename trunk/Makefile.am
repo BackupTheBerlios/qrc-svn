@@ -1,3 +1,9 @@
+DIST_SUBDIRS = \
+	chatsort \
+	gaym \
+	privacy \
+	roombrowse
+
 EXTRA_DIST = \
 	Makefile.mingw \
 	README.mingw \
@@ -5,5 +11,6 @@ EXTRA_DIST = \
 
 SUBDIRS = \
 	nsis \
-	gaym \
-        pixmaps
+        pixmaps \
+	$ENABLED_PLUGINS
+

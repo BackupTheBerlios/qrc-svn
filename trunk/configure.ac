@@ -55,13 +55,30 @@ if test "x$GCC" = "xyes"; then
 fi
 AC_SUBST(CFLAGS)
 
+ENABLED_PLUGINS=""
+
+AC_ARG_ENABLE([chatsort],AC_HELP_STRING([--disable-chatsort],[don't build the chatsort plugin]),,[ENABLED_PLUGINS="$ENABLED_PLUGINS chatsort"])
+
+AC_ARG_ENABLE([gaym],AC_HELP_STRING([--disable-gaym],[don't build the gaym plugin]),,[ENABLED_PLUGINS="$ENABLED_PLUGINS gaym"])
+
+AC_ARG_ENABLE([privacy],AC_HELP_STRING([--enable-privacy],[build the privacy plugin]),[ENABLED_PLUGINS="$ENABLED_PLUGINS privacy"],)
+
+AC_ARG_ENABLE([roombrowse],AC_HELP_STRING([--enable-roombrowse],[build the roombrowse plugin]),[ENABLED_PLUGINS="$ENABLED_PLUGINS roombrowse"],)
+
+AC_SUBST(ENABLED_PLUGINS)
+
 AC_CONFIG_FILES([Makefile
+                 chatsort/Makefile
+                 gaym/Makefile
                  nsis/Makefile
 		 nsis/locale/Makefile
                  pixmaps/Makefile
-                 gaym/Makefile])
+                 privacy/Makefile
+                 roombrowse/Makefile])
 AC_OUTPUT
 
+echo
+echo The following plugins will be built: $ENABLED_PLUGINS
 echo
 echo $PACKAGE $VERSION will be installed in $GAIM_LIBDIR/gaim
 echo
