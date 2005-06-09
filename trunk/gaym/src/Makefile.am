@@ -1,6 +1,3 @@
-EXTRA_DIST = \
-	Makefile.mingw
-
 pkgdir = \
 	$(GAIM_LIBDIR)/gaim
 
@@ -32,5 +29,5 @@ libgaym_la_SOURCES = \
 	$(GAYMSOURCES)
 
 AM_CPPFLAGS = \
-	$(GAIM_CFLAGS) \
-	$(DEBUG_CFLAGS)
+	$(DEBUG_CFLAGS) \
+	$(GAIM_CFLAGS)

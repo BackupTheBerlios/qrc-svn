@@ -17,6 +17,7 @@ AC_DEFINE(GAIM_PLUGINS, 1, [Define if plugins are enabled.])
 # Checks for programs.
 AC_PROG_CC
 AC_DISABLE_STATIC
+AC_LIBTOOL_WIN32_DLL
 AC_PROG_LIBTOOL
 LIBTOOL="$LIBTOOL --silent"
 AC_PROG_INSTALL
@@ -75,7 +76,7 @@ if test "$want_roombrowse" != "yes" ; then
 	want_roombrowse="no"
 fi
 
-if test "$want_chatsort" = "yes" -o "$want_roombrowse" = "yes" ; then
+#if test "$want_chatsort" = "yes" -o "$want_roombrowse" = "yes" ; then
 
 AM_PATH_GTK_2_0(2.0.0,,AC_MSG_ERROR([
 *** GTK+ 2.0 is required to build the roombrowse and chatsort QRC
@@ -85,7 +86,7 @@ AM_PATH_GTK_2_0(2.0.0,,AC_MSG_ERROR([
 AC_SUBST(GTK_LIBS)
 AC_SUBST(GTK_CFLAGS)
 
-fi
+#fi
 
 # Checks for header files.
 AC_HEADER_STDC
@@ -97,6 +98,15 @@ AC_TYPE_SIZE_T
 
 # Checks for library functions.
 AC_CHECK_FUNCS([gethostname inet_ntoa memmove strcasecmp strchr strdup strerror strpbrk strrchr strstr strtoul])
+
+case "$host" in
+	*-*-mingw*)
+	CFLAGS="$CFLAGS -O2 -Wall -mno-cygwin -mms-bitfields"
+	LIBS="$LIBS -no-undefined -Wl,--enable-auto-image-base -lws2_32"
+	;;
+	*)
+	;;
+esac
 
 if test "x$GCC" = "xyes"; then
 	CFLAGS="$CFLAGS -Wall -g3"

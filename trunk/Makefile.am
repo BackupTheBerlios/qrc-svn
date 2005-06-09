@@ -15,7 +15,6 @@ MAYBE_ROOMBROWSE = roombrowse
 endif
 
 EXTRA_DIST = \
-	Makefile.mingw \
 	README.mingw \
 	TODO
 

@@ -1,6 +1,3 @@
-EXTRA_DIST = \
-	Makefile.mingw
-
 pkgdir = \
 	$(GAIM_LIBDIR)/gaim
 
@@ -13,8 +10,8 @@ AM_CFLAGS = \
 libroombrowse_la_LDFLAGS = \
 	-module \
 	-avoid-version \
-	$(GAIM_LIBS) \
-	$(GTK_LIBS)
+	$(GTK_LIBS) \
+	$(GAIM_LIBS)
 
 pkg_LTLIBRARIES = \
 	libroombrowse.la
@@ -23,6 +20,6 @@ libroombrowse_la_SOURCES = \
 	$(GAYMSOURCES)
 
 AM_CPPFLAGS = \
-	$(GAIM_CFLAGS) \
+	$(DEBUG_CFLAGS) \
 	$(GTK_CFLAGS) \
-	$(DEBUG_CFLAGS)
+	$(GAIM_CFLAGS)
