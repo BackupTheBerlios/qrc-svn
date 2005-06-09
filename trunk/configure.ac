@@ -9,7 +9,7 @@ AM_INIT_AUTOMAKE([1.9.5])
 REQUIRED_GAIM="gaim >= 1.2 gaim < 2.0"
 AC_SUBST(REQUIRED_GAIM)
 
-AC_CONFIG_SRCDIR([gaym/gaym.h])
+AC_CONFIG_SRCDIR([gaym/src/gaym.h])
 AC_CONFIG_HEADER([config.h])
 
 AC_DEFINE(GAIM_PLUGINS, 1, [Define if plugins are enabled.])
@@ -57,22 +57,23 @@ AC_SUBST(CFLAGS)
 
 ENABLED_PLUGINS=""
 
-AC_ARG_ENABLE([chatsort],AC_HELP_STRING([--disable-chatsort],[don't build the chatsort plugin]),,[ENABLED_PLUGINS="$ENABLED_PLUGINS chatsort"])
+AC_ARG_ENABLE([chatsort],AC_HELP_STRING([--enable-chatsort],[build the chatsort plugin @<:@default=no@:>@]),[ENABLED_PLUGINS="$ENABLED_PLUGINS chatsort"],)
 
-AC_ARG_ENABLE([gaym],AC_HELP_STRING([--disable-gaym],[don't build the gaym plugin]),,[ENABLED_PLUGINS="$ENABLED_PLUGINS gaym"])
+AC_ARG_ENABLE([gaym],AC_HELP_STRING([--enable-gaym],[build the gaym plugin @<:@default=yes@:>@]),,[ENABLED_PLUGINS="$ENABLED_PLUGINS gaym"])
 
-AC_ARG_ENABLE([privacy],AC_HELP_STRING([--enable-privacy],[build the privacy plugin]),[ENABLED_PLUGINS="$ENABLED_PLUGINS privacy"],)
+AC_ARG_ENABLE([privacy],AC_HELP_STRING([--enable-privacy],[build the privacy plugin @<:@default=no@:>@]),[ENABLED_PLUGINS="$ENABLED_PLUGINS privacy"],)
 
-AC_ARG_ENABLE([roombrowse],AC_HELP_STRING([--enable-roombrowse],[build the roombrowse plugin]),[ENABLED_PLUGINS="$ENABLED_PLUGINS roombrowse"],)
+AC_ARG_ENABLE([roombrowse],AC_HELP_STRING([--enable-roombrowse],[build the roombrowse plugin @<:@default=no@:>@]),[ENABLED_PLUGINS="$ENABLED_PLUGINS roombrowse"],)
 
 AC_SUBST(ENABLED_PLUGINS)
 
 AC_CONFIG_FILES([Makefile
                  chatsort/Makefile
                  gaym/Makefile
+                 gaym/pixmaps/Makefile
+                 gaym/src/Makefile
                  nsis/Makefile
 		 nsis/locale/Makefile
-                 pixmaps/Makefile
                  privacy/Makefile
                  roombrowse/Makefile])
 AC_OUTPUT

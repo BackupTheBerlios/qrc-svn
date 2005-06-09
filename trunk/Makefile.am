@@ -1,4 +1,5 @@
 DIST_SUBDIRS = \
+	nsis \
 	chatsort \
 	gaym \
 	privacy \
@@ -11,6 +12,5 @@ EXTRA_DIST = \
 
 SUBDIRS = \
 	nsis \
-        pixmaps \
-	$ENABLED_PLUGINS
+	$(ENABLED_PLUGINS)
 

@@ -8,27 +8,27 @@
 #
 (libtoolize --version) < /dev/null > /dev/null 2>&1 || {
 	echo;
-	echo "You must have libtool installed to compile GayM.";
+	echo "You must have libtool installed to compile the QRC Plugins.";
 	echo;
 	exit;
 }
 
 (automake --version) < /dev/null > /dev/null 2>&1 || {
 	echo;
-	echo "You must have automake installed to compile GayM.";
+	echo "You must have automake installed to compile the QRC plugins.";
 	echo;
 	exit;
 }
 
 (autoconf --version) < /dev/null > /dev/null 2>&1 || {
 	echo;
-	echo "You must have autoconf installed to compile GayM.";
+	echo "You must have autoconf installed to compile the QRC plugins.";
 	echo;
 	exit;
 }
 
 echo;
-echo "Generating configuration files for GayM, please wait...."
+echo "Generating configuration files for the QRC plugins, please wait...."
 
 echo;
 echo "Running libtoolize, please ignore non-fatal messages...."
@@ -68,7 +68,7 @@ echo;
 autoconf --force || exit;
 
 echo;
-echo "Finished generating configuration files for GayM."
+echo "Finished generating configuration files for the QRC plugins."
 echo "Now you may run './configure'."
 echo;
 
