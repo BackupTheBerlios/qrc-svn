@@ -1,9 +1,18 @@
-DIST_SUBDIRS = \
-	nsis \
-	chatsort \
-	gaym \
-	privacy \
-	roombrowse
+if COND_CHATSORT
+MAYBE_CHATSORT = chatsort
+endif
+
+if COND_GAYM
+MAYBE_GAYM = gaym
+endif
+
+if COND_PRIVACY
+MAYBE_PRIVACY = privacy
+endif
+
+if COND_ROOMBROWSE
+MAYBE_ROOMBROWSE = roombrowse
+endif
 
 EXTRA_DIST = \
 	Makefile.mingw \
@@ -12,5 +21,7 @@ EXTRA_DIST = \
 
 SUBDIRS = \
 	nsis \
-	$(ENABLED_PLUGINS)
-
+	$(MAYBE_CHATSORT) \
+	$(MAYBE_GAYM) \
+	$(MAYBE_PRIVACY) \
+	$(MAYBE_ROOMBROWSE)

@@ -13,7 +13,8 @@ AM_CFLAGS = \
 libchatsort_la_LDFLAGS = \
 	-module \
 	-avoid-version \
-	$(GAIM_LIBS)
+	$(GAIM_LIBS) \
+	$(GTK_LIBS)
 
 pkg_LTLIBRARIES = \
 	libchatsort.la
@@ -23,4 +24,5 @@ libchatsort_la_SOURCES = \
 
 AM_CPPFLAGS = \
 	$(GAIM_CFLAGS) \
+	$(GTK_CFLAGS) \
 	$(DEBUG_CFLAGS)

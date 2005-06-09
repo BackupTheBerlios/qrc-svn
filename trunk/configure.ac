@@ -20,6 +20,7 @@ AC_DISABLE_STATIC
 AC_PROG_LIBTOOL
 LIBTOOL="$LIBTOOL --silent"
 AC_PROG_INSTALL
+AC_PROG_RANLIB
 
 # Checks for libraries.
 PKG_CHECK_MODULES([GAIM], [$REQUIRED_GAIM],
@@ -39,6 +40,54 @@ GAIM[]_LIBDIR=$pkg_cv_[]GAIM[]_LIBDIR
 AC_SUBST(GAIM_DATADIR)
 AC_SUBST(GAIM_LIBDIR)
 
+AM_PATH_GLIB_2_0(2.0.0,,AC_MSG_ERROR([
+*** GLib 2.0 is required to build the QRC plugins; please make sure you
+*** have the GLib development headers installed. The latest version of
+*** GLib is always available at http://www.gtk.org/.]))
+AC_SUBST(GLIB_LIBS)
+AC_SUBST(GLIB_CFLAGS)
+
+AC_ARG_ENABLE([chatsort],AC_HELP_STRING([--enable-chatsort],[build the chatsort plugin @<:@default=no@:>@]),[want_chatsort="yes"],)
+
+AC_ARG_ENABLE([gaym],AC_HELP_STRING([--enable-gaym],[build the gaym plugin @<:@default=yes@:>@]),,[want_gaym="yes"])
+
+AC_ARG_ENABLE([privacy],AC_HELP_STRING([--enable-privacy],[build the privacy plugin @<:@default=no@:>@]),[want_privacy="yes"],)
+
+AC_ARG_ENABLE([roombrowse],AC_HELP_STRING([--enable-roombrowse],[build the roombrowse plugin @<:@default=no@:>@]),[want_roombrowse="yes"],)
+
+AM_CONDITIONAL([COND_CHATSORT], [test "$want_chatsort" = "yes"])
+AM_CONDITIONAL([COND_GAYM], [test "$want_gaym" = "yes"])
+AM_CONDITIONAL([COND_PRIVACY], [test "$want_privacy" = "yes"])
+AM_CONDITIONAL([COND_ROOMBROWSE], [test "$want_roombrowse" = "yes"])
+
+if test "$want_chatsort" != "yes" ; then
+	want_chatsort="no"
+fi
+
+if test "$want_gaym" != "yes" ; then
+	want_gaym="no"
+fi
+
+if test "$want_privacy" != "yes" ; then
+	want_privacy="no"
+fi
+
+if test "$want_roombrowse" != "yes" ; then
+	want_roombrowse="no"
+fi
+
+if test "$want_chatsort" = "yes" -o "$want_roombrowse" = "yes" ; then
+
+AM_PATH_GTK_2_0(2.0.0,,AC_MSG_ERROR([
+*** GTK+ 2.0 is required to build the roombrowse and chatsort QRC
+*** plugins; please make sure you have the GTK+ development headers
+*** installed. The latest version of GTK+ is always available at
+*** http://www.gtk.org/.]))
+AC_SUBST(GTK_LIBS)
+AC_SUBST(GTK_CFLAGS)
+
+fi
+
 # Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS([stdlib.h string.h])
@@ -55,17 +104,6 @@ if test "x$GCC" = "xyes"; then
 fi
 AC_SUBST(CFLAGS)
 
-ENABLED_PLUGINS=""
-
-AC_ARG_ENABLE([chatsort],AC_HELP_STRING([--enable-chatsort],[build the chatsort plugin @<:@default=no@:>@]),[ENABLED_PLUGINS="$ENABLED_PLUGINS chatsort"],)
-
-AC_ARG_ENABLE([gaym],AC_HELP_STRING([--enable-gaym],[build the gaym plugin @<:@default=yes@:>@]),,[ENABLED_PLUGINS="$ENABLED_PLUGINS gaym"])
-
-AC_ARG_ENABLE([privacy],AC_HELP_STRING([--enable-privacy],[build the privacy plugin @<:@default=no@:>@]),[ENABLED_PLUGINS="$ENABLED_PLUGINS privacy"],)
-
-AC_ARG_ENABLE([roombrowse],AC_HELP_STRING([--enable-roombrowse],[build the roombrowse plugin @<:@default=no@:>@]),[ENABLED_PLUGINS="$ENABLED_PLUGINS roombrowse"],)
-
-AC_SUBST(ENABLED_PLUGINS)
 
 AC_CONFIG_FILES([Makefile
                  chatsort/Makefile
@@ -79,9 +117,14 @@ AC_CONFIG_FILES([Makefile
 AC_OUTPUT
 
 echo
-echo The following plugins will be built: $ENABLED_PLUGINS
+echo $PACKAGE $VERSION
 echo
-echo $PACKAGE $VERSION will be installed in $GAIM_LIBDIR/gaim
+echo Build chatsort plugin............ : $want_chatsort
+echo Build gaym plugin................ : $want_gaym
+echo Build privacy plugin............. : $want_privacy
+echo Build roombrowse plugin.......... : $want_roombrowse
+echo
+echo Installation directory........... : $GAIM_LIBDIR/gaim
 echo
 echo configure complete, now type \'make\'
 echo
