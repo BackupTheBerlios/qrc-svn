@@ -1,15 +1,15 @@
-; NSIS Script For Gaim-GayM Plugin
+; NSIS Script for the Gaim-QRC Plugins
 ; Uses NSIS v2.0
 
-Name "Gaim-GayM ${GAYM_VERSION}"
+Name "Gaim-QRC ${QRC_VERSION}"
 
 ; Registry keys:
-!define GAYM_REG_KEY        "SOFTWARE\gaim-qrc"
-!define GAYM_UNINSTALL_KEY  "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\gaim-qrc"
-!define GAYM_UNINST_EXE     "gaim-qrc-uninst.exe"
-!define GAYM_DLL            "libgaym.dll"
-!define GAYM_PNG            "gaym.png"
-!define GAYM_UNINSTALL_LNK  "Gaim-GayM Uninstall.lnk"
+!define QRC_REG_KEY        "SOFTWARE\gaim-qrc"
+!define QRC_UNINSTALL_KEY  "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\gaim-qrc"
+!define QRC_UNINST_EXE     "gaim-qrc-uninst.exe"
+!define GAYM_DLL           "libgaym.dll"
+!define GAYM_PNG           "gaym.png"
+!define QRC_UNINSTALL_LNK  "Gaim-QRC Uninstall.lnk"
 
 !include "MUI.nsh"
 
@@ -17,7 +17,7 @@ Name "Gaim-GayM ${GAYM_VERSION}"
 CRCCheck On
 
 ;Output File Name
-OutFile "..\gaim-${GAIM_VERSION}-qrc-${GAYM_VERSION}.exe"
+OutFile "..\gaim-${GAIM_VERSION}-qrc-${QRC_VERSION}.exe"
 
 ShowInstDetails show
 ShowUnInstDetails show
@@ -78,15 +78,15 @@ Section -SecUninstallOldPlugin
   StrCmp $R0 "HKCU" rights_hkcu done
 
   rights_hkcu:
-      ReadRegStr $R1 HKCU "${GAYM_REG_KEY}" ""
-      ReadRegStr $R2 HKCU "${GAYM_REG_KEY}" "Version"
-      ReadRegStr $R3 HKCU "${GAYM_UNINSTALL_KEY}" "UninstallString"
+      ReadRegStr $R1 HKCU "${QRC_REG_KEY}" ""
+      ReadRegStr $R2 HKCU "${QRC_REG_KEY}" "Version"
+      ReadRegStr $R3 HKCU "${QRC_UNINSTALL_KEY}" "UninstallString"
       Goto try_uninstall
 
   rights_hklm:
-      ReadRegStr $R1 HKLM "${GAYM_REG_KEY}" ""
-      ReadRegStr $R2 HKLM "${GAYM_REG_KEY}" "Version"
-      ReadRegStr $R3 HKLM "${GAYM_UNINSTALL_KEY}" "UninstallString"
+      ReadRegStr $R1 HKLM "${QRC_REG_KEY}" ""
+      ReadRegStr $R2 HKLM "${QRC_REG_KEY}" "Version"
+      ReadRegStr $R3 HKLM "${QRC_UNINSTALL_KEY}" "UninstallString"
 
   ; If previous version exists .. remove
   try_uninstall:
@@ -97,33 +97,33 @@ Section -SecUninstallOldPlugin
           SetOverwrite on
           ; Need to copy uninstaller outside of the install dir
           ClearErrors
-          CopyFiles /SILENT $R3 "$TEMP\${GAYM_UNINST_EXE}"
+          CopyFiles /SILENT $R3 "$TEMP\${QRC_UNINST_EXE}"
           SetOverwrite off
           IfErrors uninstall_problem
             ; Ready to uninstall..
             ClearErrors
-            ExecWait '"$TEMP\${GAYM_UNINST_EXE}" /S _?=$R1'
+            ExecWait '"$TEMP\${QRC_UNINST_EXE}" /S _?=$R1'
             IfErrors exec_error
-              Delete "$TEMP\${GAYM_UNINST_EXE}"
+              Delete "$TEMP\${QRC_UNINST_EXE}"
               Goto done
 
             exec_error:
-              Delete "$TEMP\${GAYM_UNINST_EXE}"
+              Delete "$TEMP\${QRC_UNINST_EXE}"
               Goto uninstall_problem
 
         uninstall_problem:
             ; Just delete the plugin and uninstaller, and remove Registry key
-             MessageBox MB_YESNO $(GAYM_PROMPT_WIPEOUT) IDYES do_wipeout IDNO cancel_install
+             MessageBox MB_YESNO $(QRC_PROMPT_WIPEOUT) IDYES do_wipeout IDNO cancel_install
           cancel_install:
             Quit
 
           do_wipeout:
             StrCmp $R0 "HKLM" del_lm_reg del_cu_reg
             del_cu_reg:
-              DeleteRegKey HKCU ${GAYM_REG_KEY}
+              DeleteRegKey HKCU ${QRC_REG_KEY}
               Goto uninstall_prob_cont
             del_lm_reg:
-              DeleteRegKey HKLM ${GAYM_REG_KEY}
+              DeleteRegKey HKLM ${QRC_REG_KEY}
 
             uninstall_prob_cont:
               ; plugin DLL
@@ -146,23 +146,23 @@ Section "Install"
 
   instrights_hklm:
     ; Write the version registry keys:
-    WriteRegStr HKLM ${GAYM_REG_KEY} "" "$INSTDIR"
-    WriteRegStr HKLM ${GAYM_REG_KEY} "Version" "${GAYM_VERSION}"
+    WriteRegStr HKLM ${QRC_REG_KEY} "" "$INSTDIR"
+    WriteRegStr HKLM ${QRC_REG_KEY} "Version" "${QRC_VERSION}"
 
     ; Write the uninstall keys for Windows
-    WriteRegStr HKLM ${GAYM_UNINSTALL_KEY} "DisplayName" "$(GAYM_UNINSTALL_DESC)"
-    WriteRegStr HKLM ${GAYM_UNINSTALL_KEY} "UninstallString" "$INSTDIR\${GAYM_UNINST_EXE}"
+    WriteRegStr HKLM ${QRC_UNINSTALL_KEY} "DisplayName" "$(QRC_UNINSTALL_DESC)"
+    WriteRegStr HKLM ${QRC_UNINSTALL_KEY} "UninstallString" "$INSTDIR\${QRC_UNINST_EXE}"
     SetShellVarContext "all"
     Goto install_files
 
   instrights_hkcu:
     ; Write the version registry keys:
-    WriteRegStr HKCU ${GAYM_REG_KEY} "" "$INSTDIR"
-    WriteRegStr HKCU ${GAYM_REG_KEY} "Version" "${GAYM_VERSION}"
+    WriteRegStr HKCU ${QRC_REG_KEY} "" "$INSTDIR"
+    WriteRegStr HKCU ${QRC_REG_KEY} "Version" "${QRC_VERSION}"
 
     ; Write the uninstall keys for Windows
-    WriteRegStr HKCU ${GAYM_UNINSTALL_KEY} "DisplayName" "$(GAYM_UNINSTALL_DESC)"
-    WriteRegStr HKCU ${GAYM_UNINSTALL_KEY} "UninstallString" "$INSTDIR\${GAYM_UNINST_EXE}"
+    WriteRegStr HKCU ${QRC_UNINSTALL_KEY} "DisplayName" "$(QRC_UNINSTALL_DESC)"
+    WriteRegStr HKCU ${QRC_UNINSTALL_KEY} "UninstallString" "$INSTDIR\${QRC_UNINST_EXE}"
     Goto install_files
   
   instrights_none:
@@ -172,14 +172,14 @@ Section "Install"
     SetOutPath "$INSTDIR\plugins"
     SetCompress Auto
     SetOverwrite on
-    File "..\gaym\src\${GAYM_DLL}"
+    File "..\gaym\src\.libs\${GAYM_DLL}"
     
     SetOutPath "$INSTDIR\pixmaps\gaim\status\default"
     File "..\gaym\pixmaps\${GAYM_PNG}"
     
     StrCmp $R0 "NONE" done
-    CreateShortCut "$SMPROGRAMS\Gaim\${GAYM_UNINSTALL_LNK}" "$INSTDIR\${GAYM_UNINST_EXE}"
-    WriteUninstaller "$INSTDIR\${GAYM_UNINST_EXE}"
+    CreateShortCut "$SMPROGRAMS\Gaim\${QRC_UNINSTALL_LNK}" "$INSTDIR\${QRC_UNINST_EXE}"
+    WriteUninstaller "$INSTDIR\${QRC_UNINST_EXE}"
     SetOverWrite off
 
   done:
@@ -192,19 +192,19 @@ Section Uninstall
   StrCmp $R0 "HKCU" try_hkcu try_hklm
 
   try_hkcu:
-    ReadRegStr $R0 HKCU "${GAYM_REG_KEY}" ""
+    ReadRegStr $R0 HKCU "${QRC_REG_KEY}" ""
     StrCmp $R0 $INSTDIR 0 cant_uninstall
       ; HKCU install path matches our INSTDIR.. so uninstall
-      DeleteRegKey HKCU "${GAYM_REG_KEY}"
-      DeleteRegKey HKCU "${GAYM_UNINSTALL_KEY}"
+      DeleteRegKey HKCU "${QRC_REG_KEY}"
+      DeleteRegKey HKCU "${QRC_UNINSTALL_KEY}"
       Goto cont_uninstall
 
   try_hklm:
-    ReadRegStr $R0 HKLM "${GAYM_REG_KEY}" ""
+    ReadRegStr $R0 HKLM "${QRC_REG_KEY}" ""
     StrCmp $R0 $INSTDIR 0 try_hkcu
       ; HKLM install path matches our INSTDIR.. so uninstall
-      DeleteRegKey HKLM "${GAYM_REG_KEY}"
-      DeleteRegKey HKLM "${GAYM_UNINSTALL_KEY}"
+      DeleteRegKey HKLM "${QRC_REG_KEY}"
+      DeleteRegKey HKLM "${QRC_UNINSTALL_KEY}"
       ; Sets start menu and desktop scope to all users..
       SetShellVarContext "all"
 
@@ -214,9 +214,9 @@ Section Uninstall
     ; pixmaps
     Delete "$INSTDIR\pixmaps\gaim\status\default\${GAYM_PNG}"
     ; uninstaller
-    Delete "$INSTDIR\${GAYM_UNINST_EXE}"
+    Delete "$INSTDIR\${QRC_UNINST_EXE}"
     ; uninstaller shortcut
-    Delete "$SMPROGRAMS\Gaim\${GAYM_UNINSTALL_LNK}"
+    Delete "$SMPROGRAMS\Gaim\${QRC_UNINSTALL_LNK}"
     
     ; try to delete the Gaim directories, in case it has already uninstalled
     RMDir "$INSTDIR\plugins"
@@ -226,11 +226,11 @@ Section Uninstall
     Goto done
 
   cant_uninstall:
-    MessageBox MB_OK $(un.GAYM_UNINSTALL_ERROR_1) IDOK
+    MessageBox MB_OK $(un.QRC_UNINSTALL_ERROR_1) IDOK
     Quit
 
   no_rights:
-    MessageBox MB_OK $(un.GAYM_UNINSTALL_ERROR_2) IDOK
+    MessageBox MB_OK $(un.QRC_UNINSTALL_ERROR_2) IDOK
     Quit
 
   done:

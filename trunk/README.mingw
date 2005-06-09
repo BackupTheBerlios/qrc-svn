@@ -1,15 +1,37 @@
-To install:
+         NEW AND IMPROVED WIN32 (tested on Debian/GNU Linux)
 
-   - install gaim from http://gaim.sourceforge.net/win32/index.php
+Getting a build environment:
 
-   - probably you need to reboot at this point
+   Get something like gaim-win32-dev-1.3.0-1.tar.gz from
+   http://developer.berlios.de/projects/qrc/
 
-   - find the file "libirc.dll" and put "libgaym.dll" in the same
-     directory
+   Unwind it in a directory of your choice and run build-pkgconfig.sh to
+   set up the pkgconfig paths.
 
-   - find the file "irc.png" and put "gaym.png" in the same directory
+Running configure:
+   
+   ./configure --host=i586-mingw32msvc \
+   PKG_CONFIG_PATH=/some/path/to/gaim-win32-dev-1.3.0-1/pkgconfig
 
-   - probably you need to reboot at this point
+Running make:
+
+   make   (what did you expect?)
+
+Building the windows installer
+
+   makensis -DQRC_VERSION="0.33.0+svn" -DGAIM_VERSION="1.3.0" \
+   -DGAIM_TOP="/some/path/to/gaim-win32-dev-1.3.0-1/gaim-1.3.0" \
+   nsis/installer.nsi
+
+   QRC_VERSION and GAIM_VERSION are I hope obvious.
+
+   GAIM_TOP is the absolute path to the top level directory inside your
+   win32 gaim development libraries and headers.
+
+How to make a win32 build environment (only true geeks need this):
+
+   This documents how the win32 build environment available at
+   http://developer.berlios.de/projects/qrc/ was created.
 
 To build from linux:
 
@@ -39,18 +61,18 @@ To build from linux:
 
    - make -f Makefile.mingw  gaim.dll CC=i586-mingw32msvc-gcc
 
-   - Now you can build the gaym plugin from its top level source
-     directory (the same directory containing this file).  This
-     requires that you have nsis to build the windows installer:
+   - Additionally, you need to rename gaim.dll to libgaim.dll
 
-   - make -f Makefile.mingw install \
-     GAYM_VERSION="0.33.0+2005-06-03" \
-     GAIM_VERSION="1.3.0" \
-     GAIM_TOP="/home/deckrider/wingaim/gaim-1.3.0" \
-     CC=i586-mingw32msvc-gcc \
-     MAKENSIS=makensis \
-     GTK_TOP="/home/deckrider/wingaim/win32-dev/gtk_2_0"
+   - move the top level gaim directory in with the others under
+     win32-dev
 
-   - make -f Makefile.mingw clean
-     (will restore the the source tree to its pristine form)
+   - find all the *.pc files, put them in a central location and fix
+     their paths (since they report a path different from where they
+     probably are now)
+
+   - Finally you will need to create gaim.pc, since for some reason they
+     don't build one under win32.  You can use the template they provide
+     called gaim.pc.in (used for regular builds).  Note that under
+     win32, all gaim plugins require gtk, even if they don't directly
+     use it.
 
