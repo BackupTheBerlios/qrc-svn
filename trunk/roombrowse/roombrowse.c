@@ -19,13 +19,19 @@
 #include "gtkdialogs.h"
 #include "gtkutils.h"
 #include "gtkblist.h"
+#include "gtkimhtmltoolbar.h"
 #include <gdk/gdkkeysyms.h>
 
 #define CHATSORT_PLUGIN_ID "gtk-chatsort"
 #define CHATSORT_USERS_COLUMNS 4
 #define CHATSORT_USERS_ENTRY_COLUMN 3
 
-static GList *browsers = NULL;
+/**
+ * Unused variables:
+ *
+ * static GList *browsers = NULL;
+ */
+
 struct RoomBrowseInfo {
 
 	GaimAccount *account;
@@ -35,21 +41,27 @@ struct RoomBrowseInfo {
 static GtkWidget *
 setup_roombrowse_pane(GaimConversation *conv)
 {
-	GaimPluginProtocolInfo *prpl_info = NULL;
 	GaimGtkConversation *gtkconv;
 	GaimGtkChatPane *gtkchat;
 	GaimConnection *gc;
 	GtkWidget *vpaned, *hpaned;
-	GtkWidget *vbox, *hbox;
-	GtkWidget *lbox, *bbox;
-	GtkWidget *label;
-	GtkWidget *list;
-	GtkWidget *button;
-	GtkWidget *sw;
-	GtkListStore *ls;
-	GtkCellRenderer *rend;
-	GtkTreeViewColumn *col;
-	GList *focus_chain = NULL;
+	GtkWidget *vbox;
+
+	/**
+	 * Unused variables:
+	 *
+	 * GaimPluginProtocolInfo *prpl_info = NULL;
+	 * GtkWidget *hbox;
+	 * GtkWidget *lbox, *bbox;
+	 * GtkWidget *label;
+	 * GtkWidget *list;
+	 * GtkWidget *button;
+	 * GtkWidget *sw;
+	 * GtkListStore *ls;
+	 * GtkCellRenderer *rend;
+	 * GtkTreeViewColumn *col;
+	 * GList *focus_chain = NULL;
+	 */
 
 	gtkconv = GAIM_GTK_CONVERSATION(conv);
 	gtkchat = gtkconv->u.chat;
@@ -136,6 +148,10 @@ GdkPixbuf* get_tab_icon(GaimConversation *conv, gboolean small_icon)
  return status;
 }
 
+/**
+ * Unused function
+ */
+#if 0
 static void
 update_tab_icon(GaimConversation *conv)
 {
@@ -172,6 +188,8 @@ update_tab_icon(GaimConversation *conv)
                         g_object_unref(status);
         }
 }
+#endif
+
 /* Courtesy of Galeon! */
 static void
 tab_close_button_state_changed_cb(GtkWidget *widget, GtkStateType prev_state)

@@ -29,8 +29,12 @@ return 1;
 static void redochatwindow(GaimConversation *c) {
 
 	GtkListStore *ls;
-	GtkCellRenderer *rend;
-	GtkTreeViewColumn *col;
+	/**
+	 * Unused variables:
+	 *
+	 * GtkCellRenderer *rend;
+	 * GtkTreeViewColumn *col;
+	 */
 	GtkTreeModel *oldls;
 	GtkTreeIter iter;
 	
