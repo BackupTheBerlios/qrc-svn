@@ -56,14 +56,6 @@ if test "$want_roombrowse" != "yes" ; then
 fi
 
 # Checks for libraries.
-if test "$want_chatsort" = "yes" -o "$want_roombrowse" = "yes" ; then
-	PKG_CHECK_MODULES([GTK], [$REQUIRED_GTK],
-		[
-		AC_SUBST(GTK_CFLAGS)
-		AC_SUBST(GTK_LIBS)
-		]
-	)
-fi
 PKG_CHECK_MODULES([GAIM], [$REQUIRED_GAIM],
 	[
 	AC_SUBST(GAIM_CFLAGS)
@@ -80,6 +72,14 @@ GAIM[]_DATADIR=$pkg_cv_[]GAIM[]_DATADIR
 GAIM[]_LIBDIR=$pkg_cv_[]GAIM[]_LIBDIR
 AC_SUBST(GAIM_DATADIR)
 AC_SUBST(GAIM_LIBDIR)
+if test "$want_chatsort" = "yes" -o "$want_roombrowse" = "yes" ; then
+	PKG_CHECK_MODULES([GTK], [$REQUIRED_GTK],
+		[
+		AC_SUBST(GTK_CFLAGS)
+		AC_SUBST(GTK_LIBS)
+		]
+	)
+fi
 
 # Checks for header files.
 AC_HEADER_STDC
