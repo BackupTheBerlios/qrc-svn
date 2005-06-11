@@ -285,7 +285,13 @@ gboolean gaym_im_check(GaimConnection * gc, const char *nick,
                 retval = FALSE;
             }
         }
+        for (tmp = challenge_q; tmp; tmp = tmp->next) {
+            char *debug = tmp->data;
+            gaim_debug_info("gaym", "Bot Challenge Queue Item: %s\n",
+                            debug);
+        }
     }
+
     return retval;
 }
 
