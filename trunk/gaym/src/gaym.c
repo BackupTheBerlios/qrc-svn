@@ -987,7 +987,8 @@ static GaimPluginPrefFrame *get_plugin_pref_frame(GaimPlugin * plugin)
          _("Show bio when entrance messages are shown"));
     gaim_plugin_pref_frame_add(frame, ppref);
 
-    ppref = gaim_plugin_pref_new_with_label(_("Instant Messages"));
+    ppref =
+        gaim_plugin_pref_new_with_label(_("Instant Messages (stricter privacy settings override these)"));
     gaim_plugin_pref_frame_add(frame, ppref);
 
     ppref =
