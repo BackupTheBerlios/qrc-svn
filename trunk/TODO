@@ -3,12 +3,6 @@ When these are DONE, please move to the very bottom of the list.
 TODO
 ====
 
-- add gaym_bot_check(), patterned similar to gaym_privacy_check() that
-  takes a list of strings/patterns the user can enter in GayM
-  preferences and then looks to see if a match is found in the nick's
-  bio.  If there is, returns TRUE (or FALSE?), if not, then the
-  opposite.
-
 - "Tools | Account Actions | Change Bio" should not obliterate the
   "^AS|A|L" but only the bio string.  Currently, the S|A|L gets
   obliterated which means no one else can see it.
@@ -88,6 +82,15 @@ TODO
 
 DONE
 ====
+
+- NOTE:  This item was found to be ineffective and not committed,
+  instead, a challenge / response system was put in its place.  Add
+  gaym_bot_check(), patterned similar to gaym_privacy_check() that takes
+  a list of strings/patterns the user can enter in GayM preferences and
+  then looks to see if a match is found in the nick's bio.  If there is,
+  returns TRUE (or FALSE?), if not, then the opposite.  NOTE:  This was
+  found to be ineffective and not done, instead, a challenge / response
+  system was put in its place.
 
 - Add windows installer package
 
