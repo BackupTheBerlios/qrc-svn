@@ -25,6 +25,15 @@
 #include "util.h"
 
 #include "gaympriv.h"
+#include "gaym.h"
+
+/**
+ * Function we need from cmds.c, but if we make cmds.h, there is
+ * a clash with cmds.h that is in gaim.  FIXME
+ */
+
+int gaym_cmd_privmsg(struct gaym_conn *gaym, const char *cmd,
+                     const char *target, const char **args);
 
 int gaym_ignore_joining_leaving(GaimConversation * conv, char *name)
 {
@@ -176,17 +185,15 @@ void gaym_privacy_change(GaimConnection * gc, const char *name)
     }
 }
 
-gboolean gaym_im_check(GaimConnection * gc, const char *nick)
+gboolean gaym_im_check(GaimConnection * gc, const char *nick,
+                       const char *msg)
 {
+    static GList *challenge_q = NULL;
+
     gboolean retval = TRUE;
 
     /* not good, but don't do anything */
     if (!gc || !nick) {
-        return retval;
-    }
-
-    /* user wants to allow anyone */
-    if (!gaim_prefs_get_bool("/plugins/prpl/gaym/only_buddies_can_im")) {
         return retval;
     }
 
@@ -195,11 +202,90 @@ gboolean gaym_im_check(GaimConnection * gc, const char *nick)
         return retval;
     }
 
-    /* nick is not on the account's buddy list */
-    if (!gaim_find_buddy(gc->account, nick)) {
-        retval = FALSE;
+    /* user wants to allow only Buddies to IM */
+    if (gaim_prefs_get_bool("/plugins/prpl/gaym/only_buddies_can_im")) {
+        /* nick is not on the account's buddy list */
+        if (!gaim_find_buddy(gc->account, nick)) {
+            retval = FALSE;
+            return retval;
+        } else {
+            return retval;
+        }
+    } else {
+        /* don't make buddies use the challenge/response system */
+        if (gaim_find_buddy(gc->account, nick)) {
+            return retval;
+        }
     }
 
+    /* User wants to use the challenge/response system */
+    if (gaim_prefs_get_bool("/plugins/prpl/gaym/challenge_enable")) {
+        const char *args[2];
+        const char *question =
+            gaim_prefs_get_string("/plugins/prpl/gaym/challenge_question");
+        const char *answer =
+            gaim_prefs_get_string("/plugins/prpl/gaym/challenge_answer");
+
+        /* let the IM through if there is no question */
+        if (!question) {
+            return retval;
+        }
+
+        /* let the IM through if there is no answer */
+        if (!answer) {
+            return retval;
+        }
+
+        /* must be something horribly wrong if this happens */
+        if (!msg) {
+            return retval;
+        }
+
+        args[0] = nick;
+        gboolean found = FALSE;
+        GList *tmp;
+        for (tmp = challenge_q; tmp; tmp = tmp->next) {
+            char *q_nick = tmp->data;
+            if (!gaim_utf8_strcasecmp(nick, q_nick)) {
+                found = TRUE;
+                break;
+            }
+        }
+        if (!found) {
+            /**
+             * its the first time through, save the nick/msg to the
+             * queue and ask the question
+             */
+            challenge_q = g_list_append(challenge_q, g_strdup(nick));
+            challenge_q = g_list_append(challenge_q, g_strdup(msg));
+            args[1] = _("GayM Bot Challenger requires a correct answer:");
+            gaym_cmd_privmsg(gc->proto_data, "msg", NULL, args);
+            args[1] = question;
+            gaym_cmd_privmsg(gc->proto_data, "msg", NULL, args);
+            retval = FALSE;
+        } else {
+            if (gaim_utf8_strcasecmp(msg, answer)) {
+                /**
+                 * Sorry, thanks for playing, please try again
+                 */
+                args[1] = question;
+                gaym_cmd_privmsg(gc->proto_data, "msg", NULL, args);
+                retval = FALSE;
+            } else {
+                args[1] = _("Your answer was accepted");
+                gaym_cmd_privmsg(gc->proto_data, "msg", NULL, args);
+
+                GList *next = tmp->next;
+                char *q_msg = next->data;
+                serv_got_im(gc, nick, q_msg, 0, time(NULL));
+
+                challenge_q = g_list_remove(challenge_q, next->data);
+                challenge_q = g_list_remove(challenge_q, tmp->data);
+
+                retval = FALSE;
+            }
+        }
+    }
     return retval;
 }
 

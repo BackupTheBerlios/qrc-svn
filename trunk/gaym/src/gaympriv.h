@@ -1,5 +1,5 @@
 /**
- * @file helpers.h GayM Helpers API
+ * @file gaympriv.h GayM Privacy API
  *
  * GayM
  *
@@ -70,7 +70,8 @@ void gaym_privacy_change(GaimConnection * gc, const char *name);
  *
  * @return TRUE if the user is allowed, or @c FALSE otherwise.
  */
-gboolean gaym_im_check(GaimConnection * gc, const char *nick);
+gboolean gaym_im_check(GaimConnection * gc, const char *nick,
+                       const char *msg);
 
 #endif                          /* _GAIM_GAYM_GAYMPRIV_H_ */
 

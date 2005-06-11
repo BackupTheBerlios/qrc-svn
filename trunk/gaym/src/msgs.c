@@ -1306,17 +1306,17 @@ void gaym_msg_privmsg(struct gaym_conn *gaym, const char *name,
     convert_nick_from_gaycom(args[0]);
     convert_nick_from_gaycom(nick);
 
-    if (!gaym_privacy_check(gc, nick) || !gaym_im_check(gc, nick)) {
-        g_free(nick);
-        return;
-    }
-
     convo = gaim_find_conversation_with_account(args[0], gaym->account);
 
     notice = !strcmp(args[0], " notice ");
     tmp = gaym_parse_ctcp(gaym, nick, args[0], args[1], notice);
 
     if (!tmp) {
+        g_free(nick);
+        return;
+    }
+
+    if (!gaym_privacy_check(gc, nick)) {
         g_free(nick);
         return;
     }
@@ -1333,7 +1333,9 @@ void gaym_msg_privmsg(struct gaym_conn *gaym, const char *name,
 
     if (!gaim_utf8_strcasecmp
         (args[0], gaim_connection_get_display_name(gc))) {
-        serv_got_im(gc, nick, msg, 0, time(NULL));
+        if (gaym_im_check(gc, nick, msg)) {
+            serv_got_im(gc, nick, msg, 0, time(NULL));
+        }
     } else if (notice) {
         serv_got_im(gc, nick, msg, 0, time(NULL));
     } else if (convo) {
