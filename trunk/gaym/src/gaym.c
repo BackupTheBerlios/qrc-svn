@@ -988,7 +988,8 @@ static GaimPluginPrefFrame *get_plugin_pref_frame(GaimPlugin * plugin)
     gaim_plugin_pref_frame_add(frame, ppref);
 
     ppref =
-        gaim_plugin_pref_new_with_label(_("Instant Messages (stricter privacy settings override these)"));
+        gaim_plugin_pref_new_with_label(_
+                                        ("Instant Messages (stricter privacy settings override these)"));
     gaim_plugin_pref_frame_add(frame, ppref);
 
     ppref =
@@ -1000,7 +1001,7 @@ static GaimPluginPrefFrame *get_plugin_pref_frame(GaimPlugin * plugin)
     ppref =
         gaim_plugin_pref_new_with_name_and_label
         ("/plugins/prpl/gaym/challenge_enable",
-         _("Enable Bot Challenger"));
+         _("Enable Bot Challenger (Buddy List Exempted)"));
     gaim_plugin_pref_frame_add(frame, ppref);
 
     ppref =
