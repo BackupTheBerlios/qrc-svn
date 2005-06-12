@@ -244,8 +244,10 @@ gboolean gaym_im_check(GaimConnection * gc, const char *nick,
         args[0] = nick;
         gboolean found = FALSE;
         GList *tmp;
+        gint pos = -1;
         for (tmp = challenge_q; tmp; tmp = tmp->next) {
             char *q_nick = tmp->data;
+            pos = g_list_position(challenge_q, tmp);
             if (!gaim_utf8_strcasecmp(nick, q_nick)) {
                 found = TRUE;
                 break;
@@ -256,6 +258,14 @@ gboolean gaym_im_check(GaimConnection * gc, const char *nick,
              * its the first time through, save the nick/msg to the
              * queue and ask the question
              */
+            if (pos == 19) {    /* don't track more than 10 pending */
+                challenge_q =
+                    g_list_remove(challenge_q,
+                                  g_list_nth_data(challenge_q, 0));
+                challenge_q =
+                    g_list_remove(challenge_q,
+                                  g_list_nth_data(challenge_q, 0));
+            }
             challenge_q = g_list_append(challenge_q, g_strdup(nick));
             challenge_q = g_list_append(challenge_q, g_strdup(msg));
             args[1] = _("GayM Bot Challenger requires a correct answer:");

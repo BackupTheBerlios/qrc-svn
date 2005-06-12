@@ -1097,9 +1097,9 @@ static void _init_plugin(GaimPlugin * plugin)
     gaim_prefs_add_bool("/plugins/prpl/gaym/only_buddies_can_im", FALSE);
     gaim_prefs_add_bool("/plugins/prpl/gaym/challenge_enable", FALSE);
     gaim_prefs_add_string("/plugins/prpl/gaym/challenge_question",
-                          "What is the last word in this sentence?");
+                          _("What is the last word in this sentence?"));
     gaim_prefs_add_string("/plugins/prpl/gaym/challenge_answer",
-                          "sentence");
+                          _("sentence"));
 
     _gaym_plugin = plugin;
 
