@@ -1,9 +1,9 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ([2.59])
+AC_PREREQ(2.59)
 AC_INIT([qrc],[0.33.0+svn],[gaymplugin@yahoogroups.com])
-AC_CANONICAL_SYSTEM
+AC_CANONICAL_TARGET([])
 AM_INIT_AUTOMAKE([1.9.5])
 
 REQUIRED_PKG_CONFIG="0.17.2"
@@ -35,23 +35,19 @@ fi
 
 # Build preferences
 AC_ARG_ENABLE([chatsort],
-	[AC_HELP_STRING([--enable-chatsort],
-		[build the chatsort plugin @<:@default=no@:>@])],,
+	[AS_HELP_STRING(--enable-chatsort,build the chatsort plugin @<:@default=no@:>@)],,
 	[enable_chatsort="no"])
 
 AC_ARG_ENABLE([gaym],
-	[AC_HELP_STRING([--enable-gaym],
-		[build the gaym plugin @<:@default=yes@:>@])],,
+	[AS_HELP_STRING(--enable-gaym,build the gaym plugin @<:@default=yes@:>@)],,
 	[enable_gaym="yes"])
 
 AC_ARG_ENABLE([privacy],
-	[AC_HELP_STRING([--enable-privacy],
-		[build the privacy plugin @<:@default=no@:>@])],,
+	[AS_HELP_STRING(--enable-privacy,build the privacy plugin @<:@default=no@:>@)],,
 	[enable_privacy="no"])
 
 AC_ARG_ENABLE([roombrowse],
-	[AC_HELP_STRING([--enable-roombrowse],
-		[build the roombrowse plugin @<:@default=no@:>@])],,
+	[AS_HELP_STRING(--enable-roombrowse,build the roombrowse plugin @<:@default=no@:>@)],,
 	[enable_roombrowse="no"])
 
 AM_CONDITIONAL([COND_CHATSORT], [test "$enable_chatsort" = "yes"])
