@@ -34,38 +34,50 @@ if test x$PKG_CONFIG = xno ; then
 fi
 
 # Build preferences
-AC_ARG_ENABLE([chatsort],AC_HELP_STRING([--enable-chatsort],[build the chatsort plugin @<:@default=no@:>@]),[want_chatsort="yes"],)
+AC_ARG_ENABLE([chatsort],
+	[AC_HELP_STRING([--enable-chatsort],
+		[build the chatsort plugin @<:@default=no@:>@])],,
+	[enable_chatsort="no"])
 
-AC_ARG_ENABLE([gaym],AC_HELP_STRING([--enable-gaym],[build the gaym plugin @<:@default=yes@:>@]),,[want_gaym="yes"])
+AC_ARG_ENABLE([gaym],
+	[AC_HELP_STRING([--enable-gaym],
+		[build the gaym plugin @<:@default=yes@:>@])],,
+	[enable_gaym="yes"])
 
-AC_ARG_ENABLE([privacy],AC_HELP_STRING([--enable-privacy],[build the privacy plugin @<:@default=no@:>@]),[want_privacy="yes"],)
+AC_ARG_ENABLE([privacy],
+	[AC_HELP_STRING([--enable-privacy],
+		[build the privacy plugin @<:@default=no@:>@])],,
+	[enable_privacy="no"])
 
-AC_ARG_ENABLE([roombrowse],AC_HELP_STRING([--enable-roombrowse],[build the roombrowse plugin @<:@default=no@:>@]),[want_roombrowse="yes"],)
+AC_ARG_ENABLE([roombrowse],
+	[AC_HELP_STRING([--enable-roombrowse],
+		[build the roombrowse plugin @<:@default=no@:>@])],,
+	[enable_roombrowse="no"])
 
-AM_CONDITIONAL([COND_CHATSORT], [test "$want_chatsort" = "yes"])
-AM_CONDITIONAL([COND_GAYM], [test "$want_gaym" = "yes"])
-AM_CONDITIONAL([COND_PRIVACY], [test "$want_privacy" = "yes"])
-AM_CONDITIONAL([COND_ROOMBROWSE], [test "$want_roombrowse" = "yes"])
+AM_CONDITIONAL([COND_CHATSORT], [test "$enable_chatsort" = "yes"])
+AM_CONDITIONAL([COND_GAYM], [test "$enable_gaym" = "yes"])
+AM_CONDITIONAL([COND_PRIVACY], [test "$enable_privacy" = "yes"])
+AM_CONDITIONAL([COND_ROOMBROWSE], [test "$enable_roombrowse" = "yes"])
 
-if test "$want_chatsort" != "yes" ; then
-	want_chatsort="no"
+if test "$enable_chatsort" != "yes" ; then
+	enable_chatsort="no"
 fi
 
-if test "$want_gaym" != "yes" ; then
-	want_gaym="no"
+if test "$enable_gaym" != "yes" ; then
+	enable_gaym="no"
 fi
 
-if test "$want_privacy" != "yes" ; then
-	want_privacy="no"
+if test "$enable_privacy" != "yes" ; then
+	enable_privacy="no"
 fi
 
-if test "$want_roombrowse" != "yes" ; then
-	want_roombrowse="no"
+if test "$enable_roombrowse" != "yes" ; then
+	enable_roombrowse="no"
 fi
 
 # Checks for libraries.
 PKG_PROG_PKG_CONFIG([$REQUIRED_PKG_CONFIG])
-if test "$want_chatsort" = "yes" -o "$want_roombrowse" = "yes" ; then
+if test "$enable_chatsort" = "yes" -o "$enable_roombrowse" = "yes" ; then
 	PKG_CHECK_MODULES([GTK], [$REQUIRED_GTK],
 		[
 		AC_SUBST(GTK_CFLAGS)
@@ -130,10 +142,10 @@ AC_OUTPUT
 echo
 echo $PACKAGE $VERSION
 echo
-echo Build chatsort plugin............ : $want_chatsort
-echo Build gaym plugin................ : $want_gaym
-echo Build privacy plugin............. : $want_privacy
-echo Build roombrowse plugin.......... : $want_roombrowse
+echo Build chatsort plugin............ : $enable_chatsort
+echo Build gaym plugin................ : $enable_gaym
+echo Build privacy plugin............. : $enable_privacy
+echo Build roombrowse plugin.......... : $enable_roombrowse
 echo
 echo Installation directory........... : $GAIM_LIBDIR/gaim
 echo
