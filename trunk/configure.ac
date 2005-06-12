@@ -6,6 +6,9 @@ AC_INIT([qrc],[0.33.0+svn],[gaymplugin@yahoogroups.com])
 AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE([1.9.5])
 
+REQUIRED_PKG_CONFIG="0.17.2"
+AC_SUBST(REQUIRED_PKG_CONFIG)
+
 REQUIRED_GAIM="gaim >= 1.2 gaim < 2.0"
 AC_SUBST(REQUIRED_GAIM)
 
@@ -24,6 +27,11 @@ AC_LIBTOOL_WIN32_DLL
 AC_PROG_LIBTOOL
 LIBTOOL="$LIBTOOL --silent"
 AC_PROG_INSTALL
+AC_PATH_PROG(PKG_CONFIG, [pkg-config], [no])
+
+if test x$PKG_CONFIG = xno ; then
+  AC_MSG_ERROR([*** pkg-config not found])
+fi
 
 # Build preferences
 AC_ARG_ENABLE([chatsort],AC_HELP_STRING([--enable-chatsort],[build the chatsort plugin @<:@default=no@:>@]),[want_chatsort="yes"],)
@@ -56,6 +64,15 @@ if test "$want_roombrowse" != "yes" ; then
 fi
 
 # Checks for libraries.
+PKG_PROG_PKG_CONFIG([$REQUIRED_PKG_CONFIG])
+if test "$want_chatsort" = "yes" -o "$want_roombrowse" = "yes" ; then
+	PKG_CHECK_MODULES([GTK], [$REQUIRED_GTK],
+		[
+		AC_SUBST(GTK_CFLAGS)
+		AC_SUBST(GTK_LIBS)
+		]
+	)
+fi
 PKG_CHECK_MODULES([GAIM], [$REQUIRED_GAIM],
 	[
 	AC_SUBST(GAIM_CFLAGS)
@@ -72,14 +89,6 @@ GAIM[]_DATADIR=$pkg_cv_[]GAIM[]_DATADIR
 GAIM[]_LIBDIR=$pkg_cv_[]GAIM[]_LIBDIR
 AC_SUBST(GAIM_DATADIR)
 AC_SUBST(GAIM_LIBDIR)
-if test "$want_chatsort" = "yes" -o "$want_roombrowse" = "yes" ; then
-	PKG_CHECK_MODULES([GTK], [$REQUIRED_GTK],
-		[
-		AC_SUBST(GTK_CFLAGS)
-		AC_SUBST(GTK_LIBS)
-		]
-	)
-fi
 
 # Checks for header files.
 AC_HEADER_STDC
