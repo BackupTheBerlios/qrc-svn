@@ -259,38 +259,46 @@ gboolean gaym_im_check(GaimConnection * gc, const char *nick,
              * queue and ask the question
              */
             if (pos == 19) {    /* don't track more than 10 pending */
+                g_free(g_list_nth_data(challenge_q, 0));
                 challenge_q =
-                    g_list_remove(challenge_q,
-                                  g_list_nth_data(challenge_q, 0));
+                    g_list_remove_link(challenge_q,
+                                       g_list_nth(challenge_q, 0));
+
+                g_free(g_list_nth_data(challenge_q, 0));
                 challenge_q =
-                    g_list_remove(challenge_q,
-                                  g_list_nth_data(challenge_q, 0));
+                    g_list_remove_link(challenge_q,
+                                       g_list_nth(challenge_q, 0));
             }
             challenge_q = g_list_append(challenge_q, g_strdup(nick));
             challenge_q = g_list_append(challenge_q, g_strdup(msg));
-            args[1] = _("GayM Bot Challenger requires a correct answer:");
+            args[1] =
+                g_strdup_printf(_
+                                ("GayM Bot Challenger engaged!  You are now on auto-ignore until you provide the correct answer:  %s"),
+                                question);
             gaym_cmd_privmsg(gc->proto_data, "msg", NULL, args);
-            args[1] = question;
-            gaym_cmd_privmsg(gc->proto_data, "msg", NULL, args);
+            g_free((gpointer) args[1]);
             retval = FALSE;
         } else {
             if (gaim_utf8_strcasecmp(msg, answer)) {
                 /**
                  * Sorry, thanks for playing, please try again
                  */
-                args[1] = question;
-                gaym_cmd_privmsg(gc->proto_data, "msg", NULL, args);
                 retval = FALSE;
             } else {
-                args[1] = _("Your answer was accepted");
+                args[1] =
+                    _
+                    ("Bot Challenger accepted your answer and delivered your original message.  You may now speak freely.");
                 gaym_cmd_privmsg(gc->proto_data, "msg", NULL, args);
 
                 GList *next = tmp->next;
                 char *q_msg = next->data;
                 serv_got_im(gc, nick, q_msg, 0, time(NULL));
 
-                challenge_q = g_list_remove(challenge_q, next->data);
-                challenge_q = g_list_remove(challenge_q, tmp->data);
+                g_free(next->data);
+                g_free(tmp->data);
+
+                challenge_q = g_list_remove_link(challenge_q, next);
+                challenge_q = g_list_remove_link(challenge_q, tmp);
 
                 retval = FALSE;
             }
