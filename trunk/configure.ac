@@ -6,7 +6,7 @@ AC_INIT([qrc],[0.33.0+svn],[gaymplugin@yahoogroups.com])
 AC_CANONICAL_TARGET([])
 AM_INIT_AUTOMAKE([1.9.5])
 
-REQUIRED_PKG_CONFIG="0.17.2"
+REQUIRED_PKG_CONFIG="0.15.0"
 AC_SUBST(REQUIRED_PKG_CONFIG)
 
 REQUIRED_GAIM="gaim >= 1.2 gaim < 2.0"
