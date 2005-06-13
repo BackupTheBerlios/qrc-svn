@@ -1,7 +1,3 @@
-When using subversion, before running ./configure, run:
-
-   autoreconf --force --install --symlink 
-
 An explanation of privacy settings as implemented in GayM:
 
 Gaim Privacy Setting Options (only one of the following may be selected):

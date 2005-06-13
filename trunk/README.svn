@@ -1,0 +1,19 @@
+When using subversion, there is no configure script, so you have to
+generate one (as well as many other generated files you need):
+
+   autoreconf --force --install --symlink 
+
+You may need other options, based on the layout of your environment.
+Read the manual or run:
+
+   autoreconf --help
+
+Doing the above requires special versions of software, some of which is
+not needed if you use a normal source package (qrc.x.y.z.tar.gz):
+
+   autoconf   2.59a  (not needed by source packages)
+   automake   1.9.5  (not needed by source packages)
+   libtool    1.5.6  (not needed by source packages)
+   pkg-config 0.17.2 (source packages may use pkg-config >= 0.15.0)
+
+# this README.svn should not be included in the source package
