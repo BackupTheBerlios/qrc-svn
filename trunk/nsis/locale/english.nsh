@@ -19,21 +19,21 @@ LangString BAD_GAIM_VERSION_2 ${LANG_ENGLISH} "installed.$\r$\n$\r$\nSee http://
 ; Overrides for default text in windows:
 
 LangString WELCOME_TITLE ${LANG_ENGLISH} "Gaim-QRC v${QRC_VERSION} Installer"
-LangString WELCOME_TEXT  ${LANG_ENGLISH} "Note: This version of the plugin is designed for Gaim ${GAIM_VERSION}, and will not install or function with other versions of Gaim.\r\n\r\nWhen you upgrade your version of Gaim, you must uninstall or upgrade this plugin as well.\r\n\r\n"
+LangString WELCOME_TEXT  ${LANG_ENGLISH} "Note: These plugins are designed for Gaim ${GAIM_VERSION}, and will not install or function with other versions of Gaim.\r\n\r\nWhen you upgrade your version of Gaim, you must uninstall or upgrade this plugin as well.\r\n\r\n"
 
 LangString DIR_SUBTITLE ${LANG_ENGLISH} "Please locate the directory where Gaim is installed"
 LangString DIR_INNERTEXT ${LANG_ENGLISH} "Install in this Gaim folder:"
 
 LangString FINISH_TITLE ${LANG_ENGLISH} "Gaim-QRC v${QRC_VERSION} Install Complete"
-LangString FINISH_TEXT ${LANG_ENGLISH} "You will need to restart Gaim for the plugin to be loaded."
+LangString FINISH_TEXT ${LANG_ENGLISH} "You will need to restart Gaim for the plugins to be loaded."
 
 ; during install uninstaller
 LangString QRC_PROMPT_WIPEOUT ${LANG_ENGLISH} "The QRC plugins are about to be deleted from your Gaim/plugins directory.  Continue?"
 
 ; for windows uninstall
 LangString QRC_UNINSTALL_DESC ${LANG_ENGLISH} "Gaim-QRC Plugins (remove only)"
-LangString un.QRC_UNINSTALL_ERROR_1 ${LANG_ENGLISH} "The uninstaller could not find registry entries for Gaim-QRC.$\rIt is likely that another user installed the plugin."
-LangString un.QRC_UNINSTALL_ERROR_2 ${LANG_ENGLISH} "You do not have the permissions necessary to uninstall the plugin."
+LangString un.QRC_UNINSTALL_ERROR_1 ${LANG_ENGLISH} "The uninstaller could not find registry entries for Gaim-QRC.$\rIt is likely that another user installed the plugins."
+LangString un.QRC_UNINSTALL_ERROR_2 ${LANG_ENGLISH} "You do not have the permissions necessary to uninstall the plugins."
 
 
 
