@@ -46,10 +46,6 @@ AC_ARG_ENABLE([gaym],
 	[AS_HELP_STRING(--enable-gaym,build the gaym plugin @<:@default=yes@:>@)],,
 	[enable_gaym="yes"])
 
-AC_ARG_ENABLE([privacy],
-	[AS_HELP_STRING(--enable-privacy,build the privacy plugin @<:@default=no@:>@)],,
-	[enable_privacy="no"])
-
 AC_ARG_ENABLE([roombrowse],
 	[AS_HELP_STRING(--enable-roombrowse,build the roombrowse plugin @<:@default=no@:>@)],,
 	[enable_roombrowse="no"])
@@ -57,7 +53,6 @@ AC_ARG_ENABLE([roombrowse],
 AM_CONDITIONAL([COND_BOT_CHALLENGER], [test "$enable_bot_challenger" = "yes"])
 AM_CONDITIONAL([COND_CHATSORT], [test "$enable_chatsort" = "yes"])
 AM_CONDITIONAL([COND_GAYM], [test "$enable_gaym" = "yes"])
-AM_CONDITIONAL([COND_PRIVACY], [test "$enable_privacy" = "yes"])
 AM_CONDITIONAL([COND_ROOMBROWSE], [test "$enable_roombrowse" = "yes"])
 
 if test "$enable_bot_challenger" != "yes" ; then
@@ -70,10 +65,6 @@ fi
 
 if test "$enable_gaym" != "yes" ; then
 	enable_gaym="no"
-fi
-
-if test "$enable_privacy" != "yes" ; then
-	enable_privacy="no"
 fi
 
 if test "$enable_roombrowse" != "yes" ; then
@@ -141,7 +132,6 @@ AC_CONFIG_FILES([Makefile
                  gaym/src/Makefile
                  nsis/Makefile
 		 nsis/locale/Makefile
-                 privacy/Makefile
                  roombrowse/Makefile])
 AC_OUTPUT
 
@@ -151,7 +141,6 @@ echo
 echo Build bot-challenger plugin...... : $enable_bot_challenger
 echo Build chatsort plugin............ : $enable_chatsort
 echo Build gaym plugin................ : $enable_gaym
-echo Build privacy plugin............. : $enable_privacy
 echo Build roombrowse plugin.......... : $enable_roombrowse
 echo
 echo Installation directory........... : $GAIM_LIBDIR/gaim
