@@ -188,8 +188,6 @@ void gaym_privacy_change(GaimConnection * gc, const char *name)
 gboolean gaym_im_check(GaimConnection * gc, const char *nick,
                        const char *msg)
 {
-    static GList *challenge_q = NULL;
-
     gboolean retval = TRUE;
 
     /* not good, but don't do anything */
