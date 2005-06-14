@@ -8,6 +8,7 @@ Name "Gaim-QRC ${QRC_VERSION}"
 !define QRC_UNINSTALL_KEY  "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\gaim-qrc"
 !define QRC_UNINST_EXE     "gaim-qrc-uninst.exe"
 !define GAYM_DLL           "libgaym.dll"
+!define BOT_CHALLENGER_DLL "libbot-challenger.dll"
 !define GAYM_PNG           "gaym.png"
 !define QRC_UNINSTALL_LNK  "Gaim-QRC Uninstall.lnk"
 
@@ -128,6 +129,7 @@ Section -SecUninstallOldPlugin
             uninstall_prob_cont:
               ; plugin DLL
               Delete "$R1\plugins\${GAYM_DLL}"
+              Delete "$R1\plugins\${BOT_CHALLENGER_DLL}"
               ; pixmaps
               Delete "$R1\pixmaps\gaim\status\default\${GAYM_PNG}"
               Delete "$R3"
@@ -173,6 +175,7 @@ Section "Install"
     SetCompress Auto
     SetOverwrite on
     File "..\gaym\src\.libs\${GAYM_DLL}"
+    File "..\bot-challenger\.libs\${BOT_CHALLENGER_DLL}"
     
     SetOutPath "$INSTDIR\pixmaps\gaim\status\default"
     File "..\gaym\pixmaps\${GAYM_PNG}"
@@ -211,6 +214,7 @@ Section Uninstall
   cont_uninstall:
     ; plugin 
     Delete "$INSTDIR\plugins\${GAYM_DLL}"
+    Delete "$INSTDIR\plugins\${BOT_CHALLENGER_DLL}"
     ; pixmaps
     Delete "$INSTDIR\pixmaps\gaim\status\default\${GAYM_PNG}"
     ; uninstaller

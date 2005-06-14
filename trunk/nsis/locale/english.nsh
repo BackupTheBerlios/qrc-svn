@@ -28,7 +28,7 @@ LangString FINISH_TITLE ${LANG_ENGLISH} "Gaim-QRC v${QRC_VERSION} Install Comple
 LangString FINISH_TEXT ${LANG_ENGLISH} "You will need to restart Gaim for the plugin to be loaded."
 
 ; during install uninstaller
-LangString QRC_PROMPT_WIPEOUT ${LANG_ENGLISH} "The libgaym.dll plugin is about to be deleted from your Gaim/plugins directory.  Continue?"
+LangString QRC_PROMPT_WIPEOUT ${LANG_ENGLISH} "The QRC plugins are about to be deleted from your Gaim/plugins directory.  Continue?"
 
 ; for windows uninstall
 LangString QRC_UNINSTALL_DESC ${LANG_ENGLISH} "Gaim-QRC Plugins (remove only)"
