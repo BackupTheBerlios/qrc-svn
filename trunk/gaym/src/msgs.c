@@ -946,7 +946,7 @@ void gaym_msg_ison(struct gaym_conn *gaym, const char *name,
     if (!args || !args[1])
         return;
     nicks = g_strsplit(args[1], " ", -1);
-    for (i = 0; nicks[i]; i++) {
+    for (i = 0; (nicks[i] != NULL) && (*nicks[i] != '\0'); i++) {
         convert_nick_from_gaycom(nicks[i]);
         if ((ib =
              g_hash_table_lookup(gaym->buddies,
