@@ -28,29 +28,36 @@
 /* system headers */
 #include <glib.h>
 
-/* gaim headers */
-#include "gaim.h"
-#include "internal.h"
-#include "conversation.h"
-#include "debug.h"
-#include "pluginpref.h"
-#include "prefs.h"
-#include "util.h"
+/* gaim headers for most plugins */
+#include "plugin.h"
 #include "version.h"
+
+/* gaim headers for this plugin */
+#include "util.h"
+#include "debug.h"
 #include "account.h"
 #include "privacy.h"
 
-typedef struct _PendingMessage PendingMessage;
+/* gaim header needed for gettext */
+#include "internal.h"
 
+/**
+ * Declare the list of struct that is used to store the first
+ * message that a member sends for later delivery if he meets
+ * the challenge.
+ */
+typedef struct _PendingMessage PendingMessage;
 struct _PendingMessage {
     char *protocol;
     char *username;
     char *sender;
     char *message;
 };
-
 static GSList *pending_list = NULL;     /* GSList of PendingMessage */
 
+/**
+ * Return TRUE if the protocols match
+ */
 gboolean protocmp(GaimAccount * account, const PendingMessage * pending)
 {
     if (!gaim_utf8_strcasecmp(pending->username, account->username)) {
@@ -60,6 +67,9 @@ gboolean protocmp(GaimAccount * account, const PendingMessage * pending)
     }
 }
 
+/**
+ * Return TRUE if the accounts match
+ */
 gboolean usercmp(GaimAccount * account, const PendingMessage * pending)
 {
     if (!gaim_utf8_strcasecmp(pending->username, account->username)) {
@@ -69,6 +79,9 @@ gboolean usercmp(GaimAccount * account, const PendingMessage * pending)
     }
 }
 
+/**
+ * Return TRUE if the member names match
+ */
 gboolean sendercmp(const char *sender, const PendingMessage * pending)
 {
     if (!gaim_utf8_strcasecmp(pending->sender, sender)) {
@@ -78,6 +91,9 @@ gboolean sendercmp(const char *sender, const PendingMessage * pending)
     }
 }
 
+/**
+ * Print the contents of pending_list to the debug log
+ */
 void debug_pending_list()
 {
     GSList *search = NULL;
@@ -90,7 +106,9 @@ void debug_pending_list()
     }
 }
 
-/* thanks to the gaim-otr plugin */
+/**
+ * Send an IM to the recipient (thanks to the gaim-otr plugin)
+ */
 void inject_message(GaimAccount * account, const char *recipient,
                     const char *message)
 {
@@ -115,7 +133,11 @@ void inject_message(GaimAccount * account, const char *recipient,
     serv_send_im(connection, recipient, message, 0);
 }
 
-/* return TRUE to block the IM, FALSE to accept the IM */
+/**
+ * This is our callback for the receiving-im-msg signal.
+ *
+ * We return TRUE to block the IM, FALSE to accept the IM
+ */
 static gboolean receiving_im_msg_cb(GaimAccount * account, char **sender,
                                     char **buffer, int *flags, void *data)
 {
@@ -158,9 +180,9 @@ static gboolean receiving_im_msg_cb(GaimAccount * account, char **sender,
 
     /* if there is no question or no answer, allowe the sender */
     const char *question =
-        gaim_prefs_get_string("/plugins/bot/challenger/question");
+        gaim_prefs_get_string("/plugins/core/bot/challenger/question");
     const char *answer =
-        gaim_prefs_get_string("/plugins/bot/challenger/answer");
+        gaim_prefs_get_string("/plugins/core/bot/challenger/answer");
     if (!question || !answer) {
         return retval;
     }
@@ -234,7 +256,7 @@ static gboolean receiving_im_msg_cb(GaimAccount * account, char **sender,
             inject_message(account, *sender, botmsg);
 
             if (gaim_prefs_get_bool
-                ("/plugins/bot/challenger/auto_add_permit")) {
+                ("/plugins/core/bot/challenger/auto_add_permit")) {
                 if (!gaim_privacy_permit_add(account, *sender, FALSE)) {
                     gaim_debug_info("bot-challenger",
                                     "Unable to add %s/%s/%s to permit list\n",
@@ -277,12 +299,12 @@ static GaimPluginPrefFrame *get_plugin_pref_frame(GaimPlugin * plugin)
 
     ppref =
         gaim_plugin_pref_new_with_name_and_label
-        ("/plugins/bot/challenger/question", _("Question"));
+        ("/plugins/core/bot/challenger/question", _("Question"));
     gaim_plugin_pref_frame_add(frame, ppref);
 
     ppref =
         gaim_plugin_pref_new_with_name_and_label
-        ("/plugins/bot/challenger/answer", _("Answer"));
+        ("/plugins/core/bot/challenger/answer", _("Answer"));
     gaim_plugin_pref_frame_add(frame, ppref);
 
     ppref =
@@ -292,7 +314,7 @@ static GaimPluginPrefFrame *get_plugin_pref_frame(GaimPlugin * plugin)
 
     ppref =
         gaim_plugin_pref_new_with_name_and_label
-        ("/plugins/bot/challenger/auto_add_permit",
+        ("/plugins/core/bot/challenger/auto_add_permit",
          _("Add this person to your Permit List"));
     gaim_plugin_pref_frame_add(frame, ppref);
 
@@ -307,14 +329,17 @@ static gboolean plugin_load(GaimPlugin * plugin)
 {
     void *conv_handle = gaim_conversations_get_handle();
 
-    gaim_prefs_add_none("/plugins/bot");
-    gaim_prefs_add_none("/plugins/bot/challenger");
+    gaim_prefs_add_none("/plugins");
+    gaim_prefs_add_none("/plugins/core");
+    gaim_prefs_add_none("/plugins/core/bot");
+    gaim_prefs_add_none("/plugins/core/bot/challenger");
 
-    gaim_prefs_add_string("/plugins/bot/challenger/question",
+    gaim_prefs_add_string("/plugins/core/bot/challenger/question",
                           _("How do you spell the number 10?"));
-    gaim_prefs_add_string("/plugins/bot/challenger/answer", _("ten"));
+    gaim_prefs_add_string("/plugins/core/bot/challenger/answer", _("ten"));
 
-    gaim_prefs_add_bool("/plugins/bot/challenger/auto_add_permit", FALSE);
+    gaim_prefs_add_bool("/plugins/core/bot/challenger/auto_add_permit",
+                        FALSE);
 
     gaim_signal_connect(conv_handle, "receiving-im-msg",
                         plugin, GAIM_CALLBACK(receiving_im_msg_cb), NULL);
@@ -332,7 +357,7 @@ static GaimPluginInfo info = {
     NULL,                                                 /**< dependencies   */
     GAIM_PRIORITY_DEFAULT,                                /**< priority       */
 
-    N_("bot-challenger"),                                 /**< id             */
+    N_("core-bot_challenger"),                            /**< id             */
     N_("Bot Challenger"),                                 /**< name           */
     VERSION,                                              /**< version        */
                                                           /**  summary        */
@@ -357,7 +382,7 @@ static void init_plugin(GaimPlugin * plugin)
     return;
 }
 
-GAIM_INIT_PLUGIN(bot - challenger, init_plugin, info)
+GAIM_INIT_PLUGIN(bot_challenger, init_plugin, info)
 
 /**
  * vim:tabstop=4:shiftwidth=4:expandtab:
