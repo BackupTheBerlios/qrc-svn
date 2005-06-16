@@ -38,6 +38,7 @@
 
 #include "helpers.h"
 #include "gaympriv.h"
+#include "configtxt.h"
 #include "gaym.h"
 
 char *gaym_mask_bio(const char *biostring);
@@ -353,6 +354,7 @@ static void gaym_get_configtxt_cb(gpointer proto_data,
                                   const gchar * config_text, size_t len)
 {
     struct gaym_conn *gaym = (struct gaym_conn *) proto_data;
+    GaimConnection *gc = gaim_account_get_connection(gaym->account);
 
     if (!config_text) {
         return;
@@ -365,6 +367,8 @@ static void gaym_get_configtxt_cb(gpointer proto_data,
     if (!gaym->configtxt) {
         gaim_debug(GAIM_DEBUG_ERROR, "gaym",
                    "Could not convert config.txt to utf-8.\n");
+    } else {
+        process_configtxt(gc, gaym->configtxt);
     }
     return;
 }

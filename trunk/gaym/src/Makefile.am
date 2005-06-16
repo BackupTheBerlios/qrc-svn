@@ -3,6 +3,8 @@ pkgdir = \
 
 GAYMSOURCES = \
 	cmds.c \
+	configtxt.c \
+	configtxt.h \
 	dcc_send.c \
 	gaym.c \
 	gaym.h \
