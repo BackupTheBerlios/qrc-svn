@@ -14,8 +14,8 @@ TODO
   the end or receive an error, since the server doesn't appear to send
   one at at first glance (verify before acting).
 
-- integrate server buddy, bookmarks, hotlists, im hot lists, ignore
-  lists (below is two version of this)
+- integrate server buddy, bookmarks, hotlists, im hot lists, (below is two
+  version of this)
 
 - gay.com buddy list integration. An option to "auto-add" NOTIFY
   buddies (really, we already have the complete list in config.txt
@@ -49,7 +49,7 @@ TODO
 
 - Thumbnail in "chat" windows for selected user. Again -- this will need
   to be a separate plugin, since it will require gtk-specific code (most
-  likely)
+  likely) (gaim developers seem to be working on this now)
 
 - Room namelist sorting -- another non-proto option. I'm not even sure
   if a plugin can affect this, based on the way it seems to be
@@ -96,7 +96,9 @@ DONE
 
 - Connect link to web page for report user to Warn button in Gaim
 
-- activate privacy/block users in gui
+- Activate privacy/block users in gui, synchronize ignore/deny lists
+  between server and client.  Activation of Gaim's prpl privacy API is
+  complete.
 
 - Join/part message on/off
 
