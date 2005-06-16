@@ -27,14 +27,6 @@
 #include "gaympriv.h"
 #include "gaym.h"
 
-/**
- * Function we need from cmds.c, but if we make cmds.h, there is
- * a clash with cmds.h that is in gaim.  FIXME
- */
-
-int gaym_cmd_privmsg(struct gaym_conn *gaym, const char *cmd,
-                     const char *target, const char **args);
-
 int gaym_ignore_joining_leaving(GaimConversation * conv, char *name)
 {
     GaimConnection *gc = gaim_conversation_get_gc(conv);
@@ -217,6 +209,42 @@ gboolean gaym_im_check(GaimConnection * gc, const char *nick,
     }
 
     return retval;
+}
+
+void gaym_server_change_deny_status_cb(void *data, const char *result,
+                                       size_t len)
+{
+    gaim_debug_info("gaym", "gaym_server_change_deny_status_cb:\n%s\n",
+                    result);
+    return;
+}
+
+void gaym_server_store_deny(GaimConnection * gc, const char *name,
+                            gboolean add)
+{
+    char *action = NULL;
+    if (add) {
+        action = "add";
+    } else {
+        action = "remove";
+    }
+
+    struct gaym_conn *gaym = gc->proto_data;
+    const char *server =
+        gaim_account_get_string(gc->account, "server", IRC_DEFAULT_SERVER);
+
+    char *url =
+        g_strdup_printf
+        ("http://%s/messenger/lists.txt?name=%s&key=%s&list=ignore&op=%s",
+         server, name, gaym->hash_pw, action);
+
+    char *user_agent = "Mozilla/4.0";
+
+    gaim_url_fetch(url, FALSE, user_agent, FALSE,
+                   gaym_server_change_deny_status_cb, NULL);
+
+    g_free(url);
+    return;
 }
 
 /**

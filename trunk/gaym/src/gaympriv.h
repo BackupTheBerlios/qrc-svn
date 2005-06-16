@@ -73,6 +73,28 @@ void gaym_privacy_change(GaimConnection * gc, const char *name);
 gboolean gaym_im_check(GaimConnection * gc, const char *nick,
                        const char *msg);
 
+/**
+ * Report the status of the http request to add a name to the deny
+ * list or remove a name from the deny list.
+ *
+ * @param gc     The connection.
+ * @param data   The data passed from gaim_url_fetch().
+ * @param result The information fetched by the http GET.
+ * @param len    The length of the result.
+ */
+void gaym_server_change_deny_status_cb(void *data, const char *result,
+                                       size_t len);
+
+/**
+ * Add a name to (or remove a name from) the Gay.com server's deny list.
+ *
+ * @param      gc The connection.
+ * @param name The name of the user to add or remove.
+ * @param add  TRUE of the name should be added, FALSE if the name should be removed.
+ */
+void gaym_server_store_deny(GaimConnection * gc, const char *name,
+                            gboolean add);
+
 #endif                          /* _GAIM_GAYM_GAYMPRIV_H_ */
 
 /**

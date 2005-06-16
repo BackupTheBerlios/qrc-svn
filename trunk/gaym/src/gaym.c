@@ -622,28 +622,13 @@ static void gaym_add_permit(GaimConnection * gc, const char *name)
 
 static void gaym_add_deny(GaimConnection * gc, const char *name)
 {
-    /**
-     * FIXME: add code here to store this setting on gay.com
-     * 
-     * The way to store it is by doing a GET on www.gay.com to
-     * /messenger/lists.txt?name=NICK_TO_BLOCK
-     * &key=BIG_STRING_THAT_WAS_USED_TO_RETRIEVE_CONFIG_TXT
-     * &list=ignore&op=add
-     * 
-     * If successful, the following is returned:
-     * 
-     * success=1
-     * status=ok
-     * list=ignore
-     * command=add
-     */
-
     if (!gaym_nick_check(name)) {
         gaim_privacy_deny_remove(gc->account, name, TRUE);
         gaim_notify_error(gc, _("Invalid User Name"), name,
                           _("Invalid user name not added."));
         return;
     }
+    gaym_server_store_deny(gc, name, TRUE);
     gaym_privacy_change(gc, name);
 }
 
@@ -654,22 +639,7 @@ static void gaym_rem_permit(GaimConnection * gc, const char *name)
 
 static void gaym_rem_deny(GaimConnection * gc, const char *name)
 {
-    /**
-     * FIXME: add code here to store this setting on gay.com
-     * 
-     * The way to store it is by doing a GET on www.gay.com to
-     * /messenger/lists.txt?name=NICK_TO_BLOCK
-     * &key=BIG_STRING_THAT_WAS_USED_TO_RETRIEVE_CONFIG_TXT
-     * &list=ignore&op=remove
-     * 
-     * If successful, the following is returned:
-     * 
-     * success=1
-     * status=ok
-     * list=ignore
-     * command=remove
-     */
-
+    gaym_server_store_deny(gc, name, FALSE);
     gaym_privacy_change(gc, name);
 }
 
