@@ -3,42 +3,18 @@ When these are DONE, please move to the very bottom of the list.
 TODO
 ====
 
-- "Tools | Account Actions | Change Bio" should not obliterate the
-  "^AS|A|L" but only the bio string.  Currently, the S|A|L gets
-  obliterated which means no one else can see it.
+See http://developer.berlios.de/bugs/?group_id=2690
 
-- Make it so users enter free form text to chat and this gets converted
-  to a member-created-room style by replacing spaces with underscores
-  and appending #_ at the beginning and =1 (or some number) at the end.
-  Probably the users should be required to enter ":1" or some number at
-  the end or receive an error, since the server doesn't appear to send
-  one at at first glance (verify before acting).
-
-- integrate server buddy, bookmarks, hotlists, im hot lists, (below is two
-  version of this)
-
-- gay.com buddy list integration. An option to "auto-add" NOTIFY
-  buddies (really, we already have the complete list in config.txt
-  without waiting for NOTIFY).
-
-- Synchronize buddy list with server.  This is easy to do.  Already, we
-  have the server's view of the list in config.txt.  Adding a new buddy
-  to the server is basically an http GET.  Some thought however needs to
-  be given to user interface design, in terms of whether we should sync
-  to the server's buddies, and/or bookmarks, and/or hotlist.
+Working on transferring these remaining open TODO items to the Bugs
+system:
 
 - Bio Line display in chat window. (I think this can be done using
   TOPIC when the user's name is clicked.  I think yahoo may do something
   so its not editable, which would help us here.  So this could be a
   PROTOCOL PLUGIN)
 
-- The "Room List" operation should parse the /messenger/config.txt file
-  from gay.com. We need to hide as much as possible the "real" channel
-  names (Like #557 is Sacramento). As the room list is generated, it
-  should automatically display the multiple rooms associated with a
-  locale, so that the user can select one. The user should have the
-  option of adding EITHER the #xxx=* room, OR a particular #xxx=x room,
-  to the buddy list.   (I think this is somewhat done, but not sure)
+  As the room list is generated, it should automatically display the multiple
+  rooms associated with a locale, so that the user can select one.
 
 - Split-phase operation notifiers. For example.... if you click to join
   a channel, there may be a delay if, for example, the buddy list is
@@ -67,21 +43,18 @@ TODO
 - check if there is another way to retrieve thumbnails without the extra
   signal connect
 
-- there seem to be a lot of NOTIFYs that gaym ignores ... might be nice
-  to use them instead of polling (or in addition to)
-
 - handle all "unknowns" shown in the debug window
 
 - Getting these in red, not sure what it is: gaim_utf8_strcasecmp: One
   or both parameters are invalid UTF8  (still valid?)
 
+DONE
+====
+
 - Need a better way to coordinate VERSION between configure.ac an win32
   builds (which do not currently use autoconf).  Perhaps win32 can
   eventually use autoconf/automake, but I don't yet know how
   cross-compiler builds would work with this.
-
-DONE
-====
 
 - NOTE:  This item was found to be ineffective and not committed,
   instead, a challenge / response system was put in its place.  Add
