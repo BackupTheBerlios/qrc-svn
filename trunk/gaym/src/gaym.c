@@ -795,6 +795,58 @@ static void gaym_buddy_free(struct gaym_buddy *ib)
     g_free(ib);
 }
 
+static GaimChat *gaym_find_blist_chat(GaimAccount * account,
+                                      const char *name)
+{
+    char *chat_name;
+    GaimChat *chat;
+    GaimPlugin *prpl;
+    GaimPluginProtocolInfo *prpl_info = NULL;
+    struct proto_chat_entry *pce;
+    GaimBlistNode *node, *group;
+    GList *parts;
+
+    GaimBuddyList *gaimbuddylist = gaim_get_blist();
+
+    g_return_val_if_fail(gaimbuddylist != NULL, NULL);
+    g_return_val_if_fail((name != NULL) && (*name != '\0'), NULL);
+
+    if (!gaim_account_is_connected(account))
+        return NULL;
+
+    prpl = gaim_find_prpl(gaim_account_get_protocol_id(account));
+    prpl_info = GAIM_PLUGIN_PROTOCOL_INFO(prpl);
+
+    for (group = gaimbuddylist->root; group != NULL; group = group->next) {
+        for (node = group->child; node != NULL; node = node->next) {
+            if (GAIM_BLIST_NODE_IS_CHAT(node)) {
+
+                chat = (GaimChat *) node;
+
+                if (account != chat->account)
+                    continue;
+
+                parts =
+                    prpl_info->
+                    chat_info(gaim_account_get_connection(chat->account));
+
+                pce = parts->data;
+                chat_name = g_hash_table_lookup(chat->components,
+                                                pce->identifier);
+
+                if (chat->account == account && chat_name != NULL &&
+                    name != NULL
+                    && g_pattern_match_simple(chat_name, name)) {
+
+                    return chat;
+                }
+            }
+        }
+    }
+
+    return NULL;
+}
+
 static GaimRoomlist *gaym_roomlist_get_list(GaimConnection * gc)
 {
     struct gaym_conn *gaym;
@@ -905,7 +957,7 @@ static GaimPluginProtocolInfo prpl_info = {
     NULL,                       /* remove_group */
     NULL,                       /* get_cb_real_name */
     NULL,                       /* set_chat_topic */
-    NULL,                       /* find_blist_chat */
+    gaym_find_blist_chat,       /* find_blist_chat */
     gaym_roomlist_get_list,     /* roomlist_get_list */
     gaym_roomlist_cancel,       /* roomlist_cancel */
     NULL,                       /* roomlist_expand_category */

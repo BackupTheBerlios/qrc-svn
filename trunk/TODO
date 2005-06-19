@@ -13,7 +13,7 @@ system:
   so its not editable, which would help us here.  So this could be a
   PROTOCOL PLUGIN)
 
-  As the room list is generated, it should automatically display the multiple
+- As the room list is generated, it should automatically display the multiple
   rooms associated with a locale, so that the user can select one.
 
 - Split-phase operation notifiers. For example.... if you click to join

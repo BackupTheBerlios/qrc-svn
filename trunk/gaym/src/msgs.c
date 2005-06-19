@@ -1,24 +1,26 @@
 /**
-* @file msgs.c
-* 
-* gaim
-*
-* Copyright (C) 2003, Ethan Blanton <eblanton@cs.purdue.edu>
-* 
-* This program is free software; you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation; either version 2 of the License, or
-* (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software
-* Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-*/
+ * @file msgs.c
+ *
+ * GayM
+ *
+ * GayM is the legal property of its developers, whose names are too numerous
+ * to list here.  Please refer to the COPYRIGHT file distributed with this
+ * source distribution.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
 
 #include "internal.h"
 #include "conversation.h"
@@ -31,13 +33,13 @@
 #include "privacy.h"
 #include "prefs.h"
 
-#include <stdio.h>
-
 #include "helpers.h"
 #include "gaympriv.h"
 #include "gaym.h"
 
-// begin forward declarations
+/**
+ * begin forward declarations
+ */
 
 static char *gaym_mask_nick(const char *mask);
 
@@ -47,7 +49,9 @@ static void gaym_chat_remove_buddy(GaimConversation * convo,
 static void gaym_buddy_status(char *name, struct gaym_buddy *ib,
                               struct gaym_conn *gaym);
 
-// end forward declarations
+/**
+ * end forward declarations
+ */
 
 char *gaym_mask_thumbnail(const char *biostring)
 {
@@ -124,7 +128,9 @@ static char *gaym_mask_nick(const char *mask)
 
 static void gaym_chat_remove_buddy(GaimConversation * convo, char *data[2])
 {
-    // FIXME: is *message ever used ???
+    /**
+     * FIXME: is *message ever used ???
+     */
     char *message = g_strdup_printf("quit: %s", data[1]);
 
     if (gaim_conv_chat_find_user(GAIM_CONV_CHAT(convo), data[0]))
@@ -359,17 +365,17 @@ void gaym_msg_whois(struct gaym_conn *gaym, const char *name,
 void gaym_msg_list(struct gaym_conn *gaym, const char *name,
                    const char *from, char **args)
 {
-    // 
-    // If you free anything here related to the roomlist
-    // be sure you test what happens when the roomlist reference
-    // count goes to zero! Because it may crash gaim.
-    // 
+    /**
+     * If you free anything here related to the roomlist
+     * be sure you test what happens when the roomlist reference
+     * count goes to zero! Because it may crash gaim.
+     */
     if (!gaym->roomlist) {
         return;
     }
-    // 
-    // Begin result of member created room list
-    // 
+    /**
+     * Begin result of member created room list
+     */
     if (!strcmp(name, "321")) {
         GaimRoomlistRoom *room;
         room = gaim_roomlist_room_new(GAIM_ROOMLIST_ROOMTYPE_CATEGORY,
@@ -378,9 +384,9 @@ void gaym_msg_list(struct gaym_conn *gaym, const char *name,
         gaim_roomlist_set_in_progress(gaym->roomlist, TRUE);
         return;
     }
-    // 
-    // The list of member created room
-    // 
+    /**
+     * The list of member created room
+     */
     if (!strcmp(name, "322")) {
         GaimRoomlistRoom *room;
         char *field_start = NULL;
@@ -391,10 +397,10 @@ void gaym_msg_list(struct gaym_conn *gaym, const char *name,
         if (!args[1]) {
             return;
         }
-        // 
-        // strip leading "#_" and trailing "=1"
-        // 
 
+        /**
+         * strip leading "#_" and trailing "=1"
+         */
         field_start = strchr(args[1], '_');
         field_end = strrchr(args[1], '=');
 
@@ -410,16 +416,17 @@ void gaym_msg_list(struct gaym_conn *gaym, const char *name,
 
         char *field_name = g_strndup(field_start, field_len);
 
-        // 
-        // replace all remaining "_" with " "
-        // 
-
+        /**
+         * replace all remaining "_" with " "
+         */
         for (i = 0; field_name[i] != '\0'; i++) {
             if (field_name[i] == '_') {
                 field_name[i] = ' ';
             }
         }
-        // replace '=' with ':'
+        /**
+         * replace '=' with ':'
+         */
         field_name[i - 2] = ':';
 
         room = gaim_roomlist_room_new(GAIM_ROOMLIST_ROOMTYPE_ROOM,
@@ -431,23 +438,23 @@ void gaym_msg_list(struct gaym_conn *gaym, const char *name,
         gaim_roomlist_room_add(gaym->roomlist, room);
         g_free(field_name);
     }
-    // 
-    // Begin result of member created room list
-    // This is our trigger to add the static rooms
-    // 
+    /**
+     * Begin result of member created room list
+     * This is our trigger to add the static rooms
+     */
     if (!strcmp(name, "323")) {
 
-        // 
-        // The following shoul be done just before every "return"
-        // 
-        // gaim_roomlist_set_in_progress(gaym->roomlist, FALSE);
-        // gaim_roomlist_unref(gaym->roomlist);
-        // gaym->roomlist = NULL;
-        // return;
-        // 
-        // Perhaps this can be simplified, but not worrying with
-        // it right now
-        // 
+        /**
+         * The following shoul be done just before every "return"
+         * 
+         * gaim_roomlist_set_in_progress(gaym->roomlist, FALSE);
+         * gaim_roomlist_unref(gaym->roomlist);
+         * gaym->roomlist = NULL;
+         * return;
+         * 
+         * Perhaps this can be simplified, but not worrying with
+         * it right now
+         */
 
         int current_level = 0;
         char *list_position = NULL;
@@ -490,11 +497,13 @@ void gaym_msg_list(struct gaym_conn *gaym, const char *name,
             level = 0;
             list_position += 2;
 
-            // 
-            // This is a room
-            // 
+            /**
+             * This is a room
+             */
             if (*list_position == '#') {
-                // First, parse the room number
+                /**
+                 * First, parse the room number
+                 */
                 field_end = strchr(list_position, '=');
                 if (!field_end) {
                     gaim_debug_error("gaym",
@@ -510,9 +519,9 @@ void gaym_msg_list(struct gaym_conn *gaym, const char *name,
                 num = g_strndup(list_position, field_len);
                 list_position = field_end + 2;
 
-                // 
-                // Next, the +'s indicate the level in the tree
-                // 
+                /**
+                 * Next, the +'s indicate the level in the tree
+                 */
                 while (*list_position == '+') {
                     level++;
                     list_position++;
@@ -528,9 +537,9 @@ void gaym_msg_list(struct gaym_conn *gaym, const char *name,
                             current_parent ? current_parent->parent : NULL;
                     }
                 }
-                // 
-                // Finally, the readable room name
-                // 
+                /**
+                 * Finally, the readable room name
+                 */
                 field_end = strstr(list_position, "\\\n");
                 if (!field_end) {
                     gaim_debug_error("gaym", "Room list parsing error!");
@@ -552,10 +561,9 @@ void gaym_msg_list(struct gaym_conn *gaym, const char *name,
                 if (!gaym->roomlist_filter
                     || strstr(lname, gaym->roomlist_filter) != 0) {
 
-                    // 
-                    // create and add the room folder
-                    // 
-
+                    /**
+                     * create and add the room folder
+                     */
                     room =
                         gaim_roomlist_room_new
                         (GAIM_ROOMLIST_ROOMTYPE_CATEGORY, name,
@@ -564,9 +572,25 @@ void gaym_msg_list(struct gaym_conn *gaym, const char *name,
 
                     room_title = room;
 
-                    // 
-                    // and now the room instances (1, 2, 3 ...)
-                    // 
+                    name_inst = g_strdup_printf("%s:*", name);
+                    num_inst = g_strdup_printf("%s*", num);
+
+                    room =
+                        gaim_roomlist_room_new
+                        (GAIM_ROOMLIST_ROOMTYPE_ROOM, name_inst,
+                         room_title);
+                    gaim_roomlist_room_add_field(gaym->roomlist, room,
+                                                 name_inst);
+                    gaim_roomlist_room_add_field(gaym->roomlist, room,
+                                                 num_inst);
+                    gaim_roomlist_room_add(gaym->roomlist, room);
+                    g_free(name_inst);
+                    g_free(num_inst);
+                    name_inst = NULL;
+                    num_inst = NULL;
+                    /**
+                     * and now the room instances (1, 2, 3 ...)
+                     */
                     room_inst = 0;
                     for (room_inst = 1; room_inst <= 4; room_inst++) {
                         name_inst =
@@ -582,11 +606,7 @@ void gaym_msg_list(struct gaym_conn *gaym, const char *name,
                         gaim_roomlist_room_add_field(gaym->roomlist, room,
                                                      num_inst);
                         gaim_roomlist_room_add(gaym->roomlist, room);
-                        // gaim_debug_misc("gaym",
-                        // "(Ref %x) Added room %s: %s (level %d) (parent
-                        // %x)\n",
-                        // room, num, name, current_level,
-                        // room_title);
+
                         g_free(name_inst);
                         g_free(num_inst);
                         name_inst = NULL;
@@ -598,16 +618,15 @@ void gaym_msg_list(struct gaym_conn *gaym, const char *name,
                         g_free(lname);
                     }
                 }
-                // 
-                // This is a category
-                // 
+                /**
+                 * This is a category
+                 */
             } else if (!gaym->roomlist_filter) {
 
-                // 
-                // This code is duplicated above. Should probably make a
-                // function.
-                // 
-
+                /**
+                 * This code is duplicated above. Should probably make a
+                 * function.
+                 */
                 while (*list_position == '+') {
                     level++;
                     list_position++;
@@ -622,14 +641,11 @@ void gaym_msg_list(struct gaym_conn *gaym, const char *name,
                         current_level--;
                         current_parent =
                             current_parent ? current_parent->parent : NULL;
-                        // gaim_debug_misc("gaym", "Changed parent to
-                        // %x\n",
-                        // current_parent);
                     }
                 }
-                // 
-                // end duplicate
-                // 
+                /**
+                 * end duplicate
+                 */
                 field_end = strstr(list_position, "\\\n");
                 if (!field_end) {
                     gaim_debug_error("gaym", "Room list parsing error!");
@@ -645,9 +661,6 @@ void gaym_msg_list(struct gaym_conn *gaym, const char *name,
                                            name, current_parent);
                 gaim_roomlist_room_add(gaym->roomlist, room);
 
-                // gaim_debug_misc("gaym",
-                // "(Ref %x) Added categroy %s (level %d) (parent %x)\n",
-                // room, name, level, current_parent);
                 g_free(name);
                 list_position = field_end;
             } else {
@@ -776,9 +789,9 @@ void gaym_msg_names(struct gaym_conn *gaym, const char *name,
     }
 }
 
-
-// Change this to WELCOME
-
+/**
+ * Change this to WELCOME
+ */
 void gaym_msg_endmotd(struct gaym_conn *gaym, const char *name,
                       const char *from, char **args)
 {
@@ -829,19 +842,18 @@ void gaym_msg_nonick(struct gaym_conn *gaym, const char *name,
 
     convo = gaim_find_conversation_with_account(args[1], gaym->account);
     if (convo) {
-        if (gaim_conversation_get_type(convo) == GAIM_CONV_CHAT)        /* does 
-                                                                           this 
-                                                                           happen? 
-                                                                         */
+        if (gaim_conversation_get_type(convo) == GAIM_CONV_CHAT) {
+            /* does this happen? */
             gaim_conv_chat_write(GAIM_CONV_CHAT(convo), args[1],
                                  _("no such channel"),
                                  GAIM_MESSAGE_SYSTEM | GAIM_MESSAGE_NO_LOG,
                                  time(NULL));
-        else
+        } else {
             gaim_conv_im_write(GAIM_CONV_IM(convo), args[1],
                                _("User is not logged in"),
                                GAIM_MESSAGE_SYSTEM | GAIM_MESSAGE_NO_LOG,
                                time(NULL));
+        }
     } else {
         if ((gc = gaim_account_get_connection(gaym->account)) == NULL)
             return;
@@ -873,7 +885,9 @@ void gaym_msg_nosend(struct gaym_conn *gaym, const char *name,
     }
 }
 
-// Is this used?
+/**
+ * Is this used?
+ */
 void gaym_msg_notinchan(struct gaym_conn *gaym, const char *name,
                         const char *from, char **args)
 {
@@ -892,8 +906,9 @@ void gaym_msg_notinchan(struct gaym_conn *gaym, const char *name,
     }
 }
 
-
-// Invite WORKS in gay.com!
+/**
+ * Invite WORKS in gay.com!
+ */
 void gaym_msg_invite(struct gaym_conn *gaym, const char *name,
                      const char *from, char **args)
 {
@@ -974,9 +989,11 @@ static void gaym_buddy_status(char *name, struct gaym_buddy *ib,
         return;
 
     if (ib->online && !ib->flag) {
-        // FUTURE VERSION ALERT: This will become
-        // gaim_prpl_got_user_status.
-        // serv_got_update is being deprecated.
+        /**
+         * FUTURE VERSION ALERT: This will become
+         * gaim_prpl_got_user_status.
+         * serv_got_update is being deprecated.
+         */
         serv_got_update(gc, buddy->name, FALSE, 0, 0, 0, 0);
         ib->online = FALSE;
     }
@@ -1065,7 +1082,9 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name,
                                 flags, TRUE);
     }
 
-    // Make the ignore.png icon appear next to the nick.
+    /**
+     * Make the ignore.png icon appear next to the nick.
+     */
     GaimConversationUiOps *ops = gaim_conversation_get_ui_ops(convo);
     if (!gaym_privacy_check(gc, nick)) {
         gaim_conv_chat_ignore(GAIM_CONV_CHAT(convo), nick);
@@ -1469,9 +1488,11 @@ void gaym_msg_create_pay_only(struct gaym_conn *gaym, const char *name,
     }
     buf = g_strdup_printf(_("%s"), args[2]);
     gaim_notify_error(gc, _("Pay Only"), _("Pay Only"), buf);
-    // FIXME
-    // by now the chatroom is already in the buddy list...need
-    // to remove it or something
+    /**
+     * FIXME
+     * by now the chatroom is already in the buddy list...need
+     * to remove it or something
+     */
     g_free(buf);
 }
 
@@ -1546,7 +1567,9 @@ void gaym_msg_richnames_list(struct gaym_conn *gaym, const char *name,
 
     convo = gaim_find_conversation_with_account(channel, gaym->account);
 
-    // gaym_bot_detect(gaym_mask_bio(extra), convo, nick);
+    /**
+     * gaym_bot_detect(gaym_mask_bio(extra), convo, nick);
+     */
 
     if (convo == NULL) {
         gaim_debug(GAIM_DEBUG_ERROR, "gaym", "690 for %s failed\n",
@@ -1563,7 +1586,9 @@ void gaym_msg_richnames_list(struct gaym_conn *gaym, const char *name,
     gaim_conv_chat_add_user(GAIM_CONV_CHAT(convo), nick, NULL, flags,
                             FALSE);
 
-    // Make the ignore.png icon appear next to the nick.
+    /**
+     * Make the ignore.png icon appear next to the nick.
+     */
     GaimConversationUiOps *ops = gaim_conversation_get_ui_ops(convo);
     if (!gaym_privacy_check(gc, nick)) {
         gaim_conv_chat_ignore(GAIM_CONV_CHAT(convo), nick);
