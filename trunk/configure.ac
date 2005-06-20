@@ -4,7 +4,7 @@
 AC_PREREQ(2.59)
 AC_INIT([qrc],[0.33.0+svn],[gaymplugin@yahoogroups.com])
 AC_CANONICAL_TARGET([])
-AM_INIT_AUTOMAKE([1.9.5])
+AM_INIT_AUTOMAKE([1.9.5 no-dist-gzip dist-bzip2])
 
 REQUIRED_PKG_CONFIG="0.15.0"
 AC_SUBST(REQUIRED_PKG_CONFIG)
