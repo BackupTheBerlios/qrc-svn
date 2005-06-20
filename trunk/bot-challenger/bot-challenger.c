@@ -265,17 +265,23 @@ static gboolean receiving_im_msg_cb(GaimAccount * account, char **sender,
                 }
             }
 
-            serv_got_im(connection, *sender, pending->message, 0,
-                        time(NULL));
+            /**
+             * Free what is currently in the buffer (the correct answer)
+             * and replace it with the user's first message that was
+             * queued, pending the correct answer.  I think some other
+             * process is supposed to free the buffer after its sent.
+             */
+            g_free(*buffer);
+            *buffer = pending->message;
 
+            /* Clean up everything else except pending->message */
             g_free(pending->protocol);
             g_free(pending->username);
             g_free(pending->sender);
-            g_free(pending->message);
             g_free(pending);
             pending_list = g_slist_remove_link(pending_list, search);
 
-            retval = TRUE;
+            retval = FALSE;     /* Don't block this message */
         }
     }
     debug_pending_list();
