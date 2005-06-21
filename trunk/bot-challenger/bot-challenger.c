@@ -321,7 +321,7 @@ static GaimPluginPrefFrame *get_plugin_pref_frame(GaimPlugin * plugin)
     ppref =
         gaim_plugin_pref_new_with_name_and_label
         ("/plugins/core/bot/challenger/auto_add_permit",
-         _("Add this person to your Permit List"));
+         _("Add this person to your Allow List"));
     gaim_plugin_pref_frame_add(frame, ppref);
 
     return frame;
@@ -353,6 +353,21 @@ static gboolean plugin_load(GaimPlugin * plugin)
     return TRUE;
 }
 
+static gboolean plugin_unload(GaimPlugin * plugin)
+{
+    GSList *search = NULL;
+    for (search = pending_list; search; search = search->next) {
+        PendingMessage *pending = search->data;
+        g_free(pending->protocol);
+        g_free(pending->username);
+        g_free(pending->sender);
+        g_free(pending->message);
+        g_free(pending);
+        pending_list = g_slist_remove_link(pending_list, search);
+    }
+    return TRUE;
+}
+
 static GaimPluginInfo info = {
     GAIM_PLUGIN_MAGIC,
     GAIM_MAJOR_VERSION,
@@ -369,12 +384,12 @@ static GaimPluginInfo info = {
                                                           /**  summary        */
     N_("Block robots from sending Instant Messages"),
                                                           /**  description    */
-    N_("A simple challenge-response system to permit only real people to send you instant messages"),
+    N_("A simple challenge-response system to prevent spam-bots from sending you instant messages.  Think of it as a pop-up blocker.  You define a question and an answer.  Instant messages from others will be ignored unless one of the following is true:\n\n\t* the sender is in your Buddy List\n\t* the sender is in your Allow List\n\t* the sender correctly answers your question\n\nOptionally, you may have the sender automatically added to your Allow List when the correct answer is provided."),
     "David Everly <deckrider@gmail.com>",                 /**< author         */
     "http://developer.berlios.de/projects/qrc/",          /**< homepage       */
 
     plugin_load,                                          /**< load           */
-    NULL,                                                 /**< unload         */
+    plugin_unload,                                        /**< unload         */
     NULL,                                                 /**< destroy        */
 
     NULL,                                                 /**< ui_info        */
