@@ -3,13 +3,13 @@ generate one (as well as many other generated files you need):
 
    autoreconf --force --install --symlink 
 
-You may need other options, based on the layout of your environment.
+You may need different options, based on the layout of your environment.
 Read the manual or run:
 
    autoreconf --help
 
 Doing the above requires special versions of software, some of which is
-not needed if you use a normal source package (qrc.x.y.z.tar.gz):
+not needed if you use a normal source package (qrc-x.y.z.tar.bz2):
 
    autoconf   2.59a  (not needed by source packages)
    automake   1.9.5  (not needed by source packages)
