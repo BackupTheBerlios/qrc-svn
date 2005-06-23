@@ -357,6 +357,8 @@ static void gaym_get_configtxt_cb(gpointer proto_data,
     GaimConnection *gc = gaim_account_get_connection(gaym->account);
 
     if (!config_text) {
+        gaim_debug(GAIM_DEBUG_ERROR, "gaym",
+                   "Could not retrieve config.txt.\n");
         return;
     }
     /**
@@ -452,11 +454,20 @@ static void gaym_login_cb(gpointer data, gint source,
         }
 
         g_free(buf);
-        const char *roomlisturl =
-            "http://www.gay.com/messenger/config.txt";
-        gaim_session_fetch(roomlisturl, FALSE,
-                           "Mozilla/4.0 (compatible; MSIE 5.0)", FALSE,
-                           gaym_get_configtxt_cb, gaym, gaym->session);
+
+        const char *server = gaim_account_get_string(gc->account, "server",
+                                                     IRC_DEFAULT_SERVER);
+
+        char *url =
+            g_strdup_printf
+            ("http://%s/messenger/config.txt?%s", server, gaym->hash_pw);
+
+        char *user_agent = "Mozilla/4.0";
+
+        gaim_url_fetch(url, FALSE, user_agent, FALSE,
+                       gaym_get_configtxt_cb, gaym);
+
+        g_free(url);
 
         gc->inpa =
             gaim_input_add(gaym->fd, GAIM_INPUT_READ, gaym_input_cb, gc);
