@@ -48,12 +48,15 @@
  */
 typedef struct _PendingMessage PendingMessage;
 struct _PendingMessage {
+    glong tv_sec;
     char *protocol;
     char *username;
     char *sender;
     char *message;
 };
 static GSList *pending_list = NULL;     /* GSList of PendingMessage */
+
+#define BOT_MAX_MINUTES 10
 
 /**
  * Return TRUE if the protocols match
@@ -89,6 +92,42 @@ gboolean sendercmp(const char *sender, const PendingMessage * pending)
     } else {
         return FALSE;
     }
+}
+
+/**
+ * Free an entry in the pending_list.  Don't free the message field
+ * unless free_message = TRUE
+ */
+void free_pending(GSList * entry, gboolean free_message)
+{
+    PendingMessage *pending = entry->data;
+    g_free(pending->protocol);
+    g_free(pending->username);
+    g_free(pending->sender);
+    if (free_message) {
+        g_free(pending->message);
+    }
+    g_free(pending);
+    pending_list = g_slist_remove_link(pending_list, entry);
+}
+
+/**
+ * Purge pending_list of entries older than BOT_MAX_MINUTES minutes
+ */
+void expire_pending_list()
+{
+    const glong max_sec = 60 * BOT_MAX_MINUTES;
+    GTimeVal *now = NULL;
+    now = g_new0(GTimeVal, 1);
+    g_get_current_time(now);
+    GSList *search = NULL;
+    for (search = pending_list; search; search = search->next) {
+        PendingMessage *pending = search->data;
+        if (pending->tv_sec < (now->tv_sec - max_sec)) {
+            free_pending(search, TRUE);
+        }
+    }
+    g_free(now);
 }
 
 /**
@@ -153,6 +192,9 @@ static gboolean receiving_im_msg_cb(GaimAccount * account, char **sender,
 
     GaimConnection *connection = NULL;
 
+    /* expire any old entries in pending */
+    expire_pending_list();
+
     connection = gaim_account_get_connection(account);
 
     /* not good, but don't do anything */
@@ -178,7 +220,7 @@ static gboolean receiving_im_msg_cb(GaimAccount * account, char **sender,
         }
     }
 
-    /* if there is no question or no answer, allowe the sender */
+    /* if there is no question or no answer, allow the sender */
     const char *question =
         gaim_prefs_get_string("/plugins/core/bot/challenger/question");
     const char *answer =
@@ -192,8 +234,6 @@ static gboolean receiving_im_msg_cb(GaimAccount * account, char **sender,
         return retval;
     }
 
-    /* ok, now we can actually do someting */
-
     /* search if this sender is already in pending */
     for (search = pending_list; search; search = search->next) {
         pending = search->data;
@@ -205,30 +245,19 @@ static gboolean receiving_im_msg_cb(GaimAccount * account, char **sender,
             break;
         }
     }
-    if (!found) {
-            /**
-             * its the first time through, save the nick/msg to the
-             * queue and ask the question
-             */
-        if (pos == 9) {
-            /**
-             * don't track more than 10
-             * add to the end, remove from the beginning
-             */
-            PendingMessage *freepend = NULL;
-            freepend = g_slist_nth_data(pending_list, 0);
-            g_free(freepend->protocol);
-            g_free(freepend->username);
-            g_free(freepend->sender);
-            g_free(freepend->message);
-            g_free(freepend);
-            pending_list =
-                g_slist_remove_link(pending_list,
-                                    g_slist_nth(pending_list, 0));
-        }
 
+    if (!found) {
+        /**
+         * its the first time through, save the nick/msg to the
+         * queue and ask the question
+         */
+        GTimeVal *now = NULL;
+        now = g_new0(GTimeVal, 1);
+        g_get_current_time(now);
         PendingMessage *newpend = NULL;
+
         newpend = g_new0(PendingMessage, 1);
+        newpend->tv_sec = now->tv_sec;
         newpend->protocol = g_strdup(account->protocol_id);
         newpend->username = g_strdup(account->username);
         newpend->sender = g_strdup(*sender);
@@ -237,10 +266,11 @@ static gboolean receiving_im_msg_cb(GaimAccount * account, char **sender,
 
         botmsg =
             g_strdup_printf(_
-                            ("Bot Challenger engaged!  You are now on auto-ignore until you provide the correct answer:  %s"),
-                            question);
+                            ("Bot Challenger engaged:  you are now being ignored!  Your message will be delivered if you can correctly answer the following question within %i minutes:  %s"),
+                            BOT_MAX_MINUTES, question);
         inject_message(account, *sender, botmsg);
 
+        g_free(now);
         g_free(botmsg);
         retval = TRUE;
     } else {
@@ -275,17 +305,13 @@ static gboolean receiving_im_msg_cb(GaimAccount * account, char **sender,
             *buffer = pending->message;
 
             /* Clean up everything else except pending->message */
-            g_free(pending->protocol);
-            g_free(pending->username);
-            g_free(pending->sender);
-            g_free(pending);
-            pending_list = g_slist_remove_link(pending_list, search);
+            free_pending(search, FALSE);
 
             retval = FALSE;     /* Don't block this message */
         }
     }
     debug_pending_list();
-    return retval;              /* return TRUE to block the IM */
+    return retval;              /* returning TRUE will block the IM */
 }
 
 void gaim_plugin_remove()
@@ -357,13 +383,7 @@ static gboolean plugin_unload(GaimPlugin * plugin)
 {
     GSList *search = NULL;
     for (search = pending_list; search; search = search->next) {
-        PendingMessage *pending = search->data;
-        g_free(pending->protocol);
-        g_free(pending->username);
-        g_free(pending->sender);
-        g_free(pending->message);
-        g_free(pending);
-        pending_list = g_slist_remove_link(pending_list, search);
+        free_pending(search, TRUE);
     }
     return TRUE;
 }
