@@ -27,21 +27,6 @@
 #include "gaympriv.h"
 #include "gaym.h"
 
-int gaym_ignore_joining_leaving(GaimConversation * conv, char *name)
-{
-    GaimConnection *gc = gaim_conversation_get_gc(conv);
-    if (!gc) {
-        return 1;
-    }
-    if (!gaim_prefs_get_bool("/plugins/prpl/gaym/show_join_leave_msgs")) {
-        return 1;
-    }
-    if (!gaym_privacy_check(gc, name)) {
-        return 1;
-    }
-    return 0;
-}
-
 gboolean gaym_privacy_check(GaimConnection * gc, const char *nick)
 {
     /**

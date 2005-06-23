@@ -29,17 +29,6 @@
 #include <glib.h>
 
 /**
- * Selectively ignores joining / leaving messages based on GayM
- * preferences and Gaim privacy settings.
- *
- * @param gc   The connection.
- * @param name The user joining or leaving.
- *
- * @return 0 to show the join/leave message, or @c 1 otherwise.
- */
-int gaym_ignore_joining_leaving(GaimConversation * conv, char *name);
-
-/**
  * Check if the account's privacy settings allow or block the user
  * (shamelessly taken from the yahoo prpl).
  *

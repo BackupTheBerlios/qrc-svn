@@ -1074,22 +1074,26 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name,
             flags = GAIM_CBFLAGS_OP;
     }
 
+    gboolean gaym_privacy_permit = gaym_privacy_check(gc, nick);
+
     if (gaim_prefs_get_bool("/plugins/prpl/gaym/show_bio_with_join")) {
         gaim_conv_chat_add_user(GAIM_CONV_CHAT(convo), nick, bio_markedup,
-                                flags, TRUE);
+                                flags, gaym_privacy_permit);
     } else {
         gaim_conv_chat_add_user(GAIM_CONV_CHAT(convo), nick, NULL,
-                                flags, TRUE);
+                                flags, gaym_privacy_permit);
     }
 
     /**
      * Make the ignore.png icon appear next to the nick.
      */
     GaimConversationUiOps *ops = gaim_conversation_get_ui_ops(convo);
-    if (!gaym_privacy_check(gc, nick)) {
+    if (gaym_privacy_permit) {
+        gaim_conv_chat_unignore(GAIM_CONV_CHAT(convo), nick);
+    } else {
         gaim_conv_chat_ignore(GAIM_CONV_CHAT(convo), nick);
-        ops->chat_update_user((convo), nick);
     }
+    ops->chat_update_user((convo), nick);
 
     if ((ib = g_hash_table_lookup(gaym->buddies, nick)) != NULL) {
         ib->flag = TRUE;
@@ -1223,7 +1227,7 @@ void gaym_msg_part(struct gaym_conn *gaym, const char *name,
     GaimConnection *gc = gaim_account_get_connection(gaym->account);
     char *nick = gaym_mask_nick(from);
 
-    if (!args || !args[0] || !gc) {
+    if (!args || !args[0] || !gc || !nick) {
         g_free(nick);
         return;
     }
@@ -1240,7 +1244,24 @@ void gaym_msg_part(struct gaym_conn *gaym, const char *name,
         serv_got_chat_left(gc,
                            gaim_conv_chat_get_id(GAIM_CONV_CHAT(convo)));
     } else {
-        gaim_conv_chat_remove_user(GAIM_CONV_CHAT(convo), nick, NULL);
+        if (gaym_privacy_check(gc, nick)) {
+            gaim_conv_chat_remove_user(GAIM_CONV_CHAT(convo), nick, NULL);
+        } else {
+            GaimConversationUiOps *ops =
+                gaim_conversation_get_ui_ops(convo);
+            if (ops != NULL && ops->chat_remove_user != NULL) {
+                ops->chat_remove_user(convo, nick);
+            }
+            GaimConvChatBuddy *cb =
+                gaim_conv_chat_cb_find(GAIM_CONV_CHAT(convo), nick);
+            if (cb) {
+                gaim_conv_chat_set_users(GAIM_CONV_CHAT(convo),
+                                         g_list_remove
+                                         (gaim_conv_chat_get_users
+                                          (GAIM_CONV_CHAT(convo)), cb));
+                gaim_conv_chat_cb_destroy(cb);
+            }
+        }
     }
 
     g_free(nick);
@@ -1590,10 +1611,12 @@ void gaym_msg_richnames_list(struct gaym_conn *gaym, const char *name,
      * Make the ignore.png icon appear next to the nick.
      */
     GaimConversationUiOps *ops = gaim_conversation_get_ui_ops(convo);
-    if (!gaym_privacy_check(gc, nick)) {
+    if (gaym_privacy_check(gc, nick)) {
+        gaim_conv_chat_unignore(GAIM_CONV_CHAT(convo), nick);
+    } else {
         gaim_conv_chat_ignore(GAIM_CONV_CHAT(convo), nick);
-        ops->chat_update_user((convo), nick);
     }
+    ops->chat_update_user((convo), nick);
 }
 
 /**

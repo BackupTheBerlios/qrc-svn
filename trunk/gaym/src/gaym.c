@@ -1003,14 +1003,8 @@ static GaimPluginPrefFrame *get_plugin_pref_frame(GaimPlugin * plugin)
 
     ppref =
         gaim_plugin_pref_new_with_name_and_label
-        ("/plugins/prpl/gaym/show_join_leave_msgs",
-         _("Show entrance/exit messages"));
-    gaim_plugin_pref_frame_add(frame, ppref);
-
-    ppref =
-        gaim_plugin_pref_new_with_name_and_label
         ("/plugins/prpl/gaym/show_bio_with_join",
-         _("Show bio when entrance messages are shown"));
+         _("Show member bio with entrance announcement"));
     gaim_plugin_pref_frame_add(frame, ppref);
 
     ppref =
@@ -1080,20 +1074,6 @@ static void _init_plugin(GaimPlugin * plugin)
         g_list_append(prpl_info.protocol_options, option);
 
     /**
-     * gaim doesn't support suppressing entrance messages
-     */
-    gaim_signal_connect(gaim_conversations_get_handle(),
-                        "chat-buddy-joining", plugin,
-                        GAIM_CALLBACK(gaym_ignore_joining_leaving), NULL);
-
-    /**
-     * gaim doesn't support suppressing exit messages
-     */
-    gaim_signal_connect(gaim_conversations_get_handle(),
-                        "chat-buddy-leaving", plugin,
-                        GAIM_CALLBACK(gaym_ignore_joining_leaving), NULL);
-
-    /**
      * We have to pull thumbnails, since they aren't pushed like with
      * other protocols.
      */
@@ -1103,7 +1083,6 @@ static void _init_plugin(GaimPlugin * plugin)
 
     gaim_prefs_add_none("/plugins/prpl/gaym");
     gaim_prefs_add_bool("/plugins/prpl/gaym/show_bio_with_join", TRUE);
-    gaim_prefs_add_bool("/plugins/prpl/gaym/show_join_leave_msgs", TRUE);
     gaim_prefs_add_bool("/plugins/prpl/gaym/only_buddies_can_im", FALSE);
 
     _gaym_plugin = plugin;
