@@ -385,7 +385,7 @@ void gaym_msg_list(struct gaym_conn *gaym, const char *name,
         return;
     }
     /**
-     * The list of member created room
+     * The list of member created rooms
      */
     if (!strcmp(name, "322")) {
         GaimRoomlistRoom *room;
@@ -472,6 +472,9 @@ void gaym_msg_list(struct gaym_conn *gaym, const char *name,
         int room_inst = 0;
         char *name_inst = NULL;
         char *num_inst = NULL;
+
+        int max =
+            gaim_prefs_get_int("/plugins/prpl/gaym/chat_room_instances");
 
         if (!gaym->configtxt) {
             gaim_debug_fatal("gaym",
@@ -592,7 +595,7 @@ void gaym_msg_list(struct gaym_conn *gaym, const char *name,
                      * and now the room instances (1, 2, 3 ...)
                      */
                     room_inst = 0;
-                    for (room_inst = 1; room_inst <= 4; room_inst++) {
+                    for (room_inst = 1; room_inst <= max; room_inst++) {
                         name_inst =
                             g_strdup_printf("%s:%i", name, room_inst);
                         num_inst = g_strdup_printf("%s%i", num, room_inst);

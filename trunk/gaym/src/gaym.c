@@ -239,15 +239,57 @@ static GList *gaym_actions(GaimPlugin * plugin, gpointer context)
     return list;
 }
 
-#if 0
+static void gaym_blist_join_chat_cb(GaimBlistNode * node, gpointer data)
+{
+    const char *args[1];
+
+    GaimChat *chat = (GaimChat *) node;
+    struct gaym_conn *gaym = chat->account->gc->proto_data;
+    args[0] = data;
+
+    g_return_if_fail(args[0] != NULL);
+    g_return_if_fail(gaym != NULL);
+
+    gaym_cmd_join(gaym, "join", NULL, args);
+}
+
 static GList *gaym_blist_node_menu(GaimBlistNode * node)
 {
     GList *m = NULL;
-    GaimBlistNodeAction *act;
+    GaimBlistNodeAction *act = NULL;
+    int i = 0;
 
+    if (node->type != GAIM_BLIST_CHAT_NODE) {
+        return m;
+    }
+
+    GaimChat *chat = (GaimChat *) node;
+    char *channel = g_hash_table_lookup(chat->components, "channel");
+
+    if (!channel) {
+        return m;
+    }
+
+    if (!g_str_has_suffix(channel, "=*")) {
+        return m;
+    }
+
+    char *label = NULL;
+    char *instance = NULL;
+
+    int max = gaim_prefs_get_int("/plugins/prpl/gaym/chat_room_instances");
+
+    for (i = 1; i <= max; i++) {
+        label = g_strdup_printf(_("Join Room %d"), i);
+        instance =
+            g_strdup_printf("%.*s%d", strlen(channel) - 1, channel, i);
+        act =
+            gaim_blist_node_action_new(label, gaym_blist_join_chat_cb,
+                                       instance);
+        m = g_list_append(m, act);
+    }
     return m;
 }
-#endif
 
 static GList *gaym_chat_join_info(GaimConnection * gc)
 {
@@ -925,7 +967,7 @@ static GaimPluginProtocolInfo prpl_info = {
     NULL,                       /* status_text */
     NULL,                       /* tooltip_text */
     gaym_away_states,           /* away_states */
-    NULL,                       /* blist_node_menu */
+    gaym_blist_node_menu,       /* blist_node_menu */
     gaym_chat_join_info,        /* chat_info */
     gaym_chat_info_defaults,    /* chat_info_defaults */
     gaym_login,                 /* login */
@@ -1019,6 +1061,13 @@ static GaimPluginPrefFrame *get_plugin_pref_frame(GaimPlugin * plugin)
     gaim_plugin_pref_frame_add(frame, ppref);
 
     ppref =
+        gaim_plugin_pref_new_with_name_and_label
+        ("/plugins/prpl/gaym/chat_room_instances",
+         _("Number of chat room instances to display"));
+    gaim_plugin_pref_set_bounds(ppref, 0, 9);
+    gaim_plugin_pref_frame_add(frame, ppref);
+
+    ppref =
         gaim_plugin_pref_new_with_label(_
                                         ("Instant Messages (stricter privacy settings override these)"));
     gaim_plugin_pref_frame_add(frame, ppref);
@@ -1093,6 +1142,7 @@ static void _init_plugin(GaimPlugin * plugin)
                         GAIM_CALLBACK(gaym_get_photo_info), NULL);
 
     gaim_prefs_add_none("/plugins/prpl/gaym");
+    gaim_prefs_add_int("/plugins/prpl/gaym/chat_room_instances", 4);
     gaim_prefs_add_bool("/plugins/prpl/gaym/show_bio_with_join", TRUE);
     gaim_prefs_add_bool("/plugins/prpl/gaym/only_buddies_can_im", FALSE);
 
