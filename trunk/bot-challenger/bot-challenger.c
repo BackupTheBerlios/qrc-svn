@@ -381,10 +381,13 @@ static gboolean plugin_load(GaimPlugin * plugin)
 
 static gboolean plugin_unload(GaimPlugin * plugin)
 {
+    gaim_signals_disconnect_by_handle(plugin);
+
     GSList *search = NULL;
     for (search = pending_list; search; search = search->next) {
         free_pending(search, TRUE);
     }
+
     return TRUE;
 }
 
@@ -404,7 +407,7 @@ static GaimPluginInfo info = {
                                                           /**  summary        */
     N_("Block robots from sending Instant Messages"),
                                                           /**  description    */
-    N_("A simple challenge-response system to prevent spam-bots from sending you instant messages.  Think of it as a pop-up blocker.  You define a question and an answer.  Instant messages from others will be ignored unless one of the following is true:\n\n\t* the sender is in your Buddy List\n\t* the sender is in your Allow List\n\t* the sender correctly answers your question\n\nOptionally, you may have the sender automatically added to your Allow List when the correct answer is provided."),
+    N_("A simple challenge-response system to prevent spam-bots from sending you instant messages.  Think of it as a pop-up blocker.  You define a question and an answer.  Instant messages from others will be ignored unless one of the following is true:\n\n\t* the sender is in your Buddy List\n\t* the sender is in your Allow List\n\t* the sender correctly answers your question\n\nOptionally, you may have the sender automatically added to your Allow List when the correct answer is provided.\n\nEncryption plugin users:  Bot Challenger will send plain text messages to the sender until the sender correctly answers your question."),
     "David Everly <deckrider@gmail.com>",                 /**< author         */
     "http://developer.berlios.de/projects/qrc/",          /**< homepage       */
 
