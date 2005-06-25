@@ -1069,6 +1069,36 @@ static GaimPluginPrefFrame *get_plugin_pref_frame(GaimPlugin * plugin)
 
     ppref =
         gaim_plugin_pref_new_with_label(_
+                                        ("Bio-Based Chat Room Activity Filtering"));
+    gaim_plugin_pref_frame_add(frame, ppref);
+
+    ppref =
+        gaim_plugin_pref_new_with_name_and_label
+        ("/plugins/prpl/gaym/botfilter_enable", _("Enable"));
+    gaim_plugin_pref_frame_add(frame, ppref);
+
+    ppref =
+        gaim_plugin_pref_new_with_name_and_label
+        ("/plugins/prpl/gaym/botfilter_ignore_null",
+         _("Ignore if bio is blank"));
+    gaim_plugin_pref_frame_add(frame, ppref);
+
+    ppref =
+        gaim_plugin_pref_new_with_name_and_label
+        ("/plugins/prpl/gaym/botfilter_patterns",
+         _
+         ("Ignore if bio contains these patterns\n\t? = match any single character\n\t* = match zero, one, or more"));
+    gaim_plugin_pref_frame_add(frame, ppref);
+
+    ppref =
+        gaim_plugin_pref_new_with_name_and_label
+        ("/plugins/prpl/gaym/botfilter_sep",
+         _("Above patterns are separated by"));
+    gaim_plugin_pref_set_max_length(ppref, 1);
+    gaim_plugin_pref_frame_add(frame, ppref);
+
+    ppref =
+        gaim_plugin_pref_new_with_label(_
                                         ("Instant Messages (stricter privacy settings override these)"));
     gaim_plugin_pref_frame_add(frame, ppref);
 
@@ -1145,6 +1175,12 @@ static void _init_plugin(GaimPlugin * plugin)
     gaim_prefs_add_int("/plugins/prpl/gaym/chat_room_instances", 4);
     gaim_prefs_add_bool("/plugins/prpl/gaym/show_bio_with_join", TRUE);
     gaim_prefs_add_bool("/plugins/prpl/gaym/only_buddies_can_im", FALSE);
+
+    gaim_prefs_add_bool("/plugins/prpl/gaym/botfilter_enable", FALSE);
+    gaim_prefs_add_bool("/plugins/prpl/gaym/botfilter_ignore_null", FALSE);
+    gaim_prefs_add_string("/plugins/prpl/gaym/botfilter_sep", "|");
+    gaim_prefs_add_string("/plugins/prpl/gaym/botfilter_patterns",
+                          "NULL|MODE * -i|*dantcamboy*|*Free preview*|*epowerchat*|*Live gay sex cam show*|*camboiz*|*gaysplender.com*|*longschlong.com*|*levitra4all*|*facelink.ws*|*robofucker*|*ironflesh*|*bargaindujour*|*squiby.com*|*jc__32d*|*texaslonghorn21*|*gaycom.ws*|*h0rnydolls*|*allgaycom*|*hotnakedmen.com*|*gay-dar.net*|*twinks4you.com*|*toysanddildos.com*|*twinkplayground*|*hisrx.com*|*itrick.org*|*abelive.com*|*hornyd0lls*|*adultmodeling1.com*|*pornxxxporno.com*|*gayloves.com*|*gayonlinevideos.com*|*grandpaspup.4t.com*|*naughtysingles*|*ruckis.com*|*moan.at/*|*rainbowmeds.com*|*genxxxohio.com*|*deep.at*|*allgaycam.com*|*sweatyman.com*|*midwestxbois2003*|*fun4sale*|*wwwlookin-goodcom*|*sex3xsuperstore.com*|*turnedon.by/*|*hornyjock.com*|*camsguys.com*|*dirty-homepages.com*|*squirt.to*|*sugarboys*|*hairyfetishes.com*|*manzones.com*|*amateurstraightguys.com*|*funfirm.com*|*emil.virtue.nu*|*mywebpages.comcast.net/allaboutjae*|*guyshome.com*|*poppermart.com*|*assncocks.com*|*twinkvillage.com*|*beercancock.com*|*2n1.net*|*medicineville.com*|*1stoptoys.com*|*cheappornnow.com*|*sexvids.150m.com*|*lookin-good.com*|*phelan-reunites-lovers.com*|*cowboy-style.com*|*burn.at/mypage*|*xxxmalemodels.com*|*jeffreys-place.com*|*mygaystuff.com*|*hornydolls.com*|*gayfreepicture.com*|*gayadultdvds.com*|*dvds.ne1.net*|*www.hot-sex.virtue.nu*|*gaypornfilms.com*|*2r4.com*|*hotmuscleboy.com*|*gayandproud.cjb.net*|*match.20fr.com*|*callbois4hire*|*fantasyboynyc*|*celebrityboiz*|*ratefun.com*|*callboisforhire*|*hot-cop.150m.com*|*pornboismanagement*|*trip0d*|*poppers4sale*|*ohghurl.com*|*www.h0rnydo*|*hung-jock.com*|*queerkid.com*|*beachguys.com*|*gay-teens.com*|*cutelad-uk*|*dicknetwork*|*my-gay-site*|*bondage4u.com*|*sorta__differentt*|*jock_forhookup*|*bestispdeal*|*dude_withcam*|*blatinothugs*|*gaypornpictures*|*bi_jock*|*dudedormpictures*|*earthtwink*|*escorts4unorfolk*|*menchats.com*|*gayvideovillage.com*|*angelfire.com*|*justin19freshman@*|*ge0cities*|*freegaypix.com*|*cheap-gay-videos.com*|*man-sluts.com*|*slaterreed.com*|*boysoncam*|*gaypornopalace.com*|*gayzgood*|*fastdental*|*gayamateurworld*|*contax.150m*|*tekknick.com/itrick*|*onlinegayvideo*|*gay-connectdotnet*|*southernguyz*|*horny_stud_923*|*jock_for_hookup_9284*|*1stopcommunication*|*godsit*|*hung_meat_3796*|*big_collegecock_*|*aaronklinestudios*|*brownbuns*|*gayavenue*|*ukguyz*|*ozneworleans*|*bestviagra*|*bryanmartinonline*|*trafficsurvivor*|*wc1_18rentboy*|*fit-guy-n15*|*babyfacedtop*|*cameran23*|*hardick.co.uk*|*poppersexpress*|*dudepages*|*earthtwinks*|*wayofthemaster*|*outpersonals*|*pegasuspittsburgh*|*damienstevens*|*everythingundertherainbow*|*barebackflix*|*knightboyz*|*bbppv*|*biz-wise*|*boysonwebcam*|*xtremelygay*|*nudewebcamboys*|*czechboys*|*roksworld*|*4genericdrugs*|*justgay*|*http://home.bellsouth.net/p/s/community.dll?ep=16&groupid=237194&ck=*|*ddlworld*|*istarthere*|*igetnet*|*sahagent*|*bigebonystuds*|*bigasscock*|*4genericdrug*|*pigsinc*|*cknoway*|*m-cams*|*Orlandoflaboi80.4t.com*|*mailboxcocks.com*|*gaystreamingvideos*|*bigmanmeat.com*|*bryanbanks*|*want2vote*|*icamsonline.com*|*successfulpeople.com*|*cockoncam*|*terra.es*|*fastsizenow*|*camsonline*|*tripod*|*freemuscledvd.com*|*gayxxxdvds*|*last36hours*|*sacbodymud.com*|*corycam*|*ryanproject*|*blackgaymen.net*|*xxxgaysuperstore*|*male4malesex.com*");
 
     _gaym_plugin = plugin;
 

@@ -2,6 +2,8 @@ pkgdir = \
 	$(GAIM_LIBDIR)/gaim
 
 GAYMSOURCES = \
+	botfilter.c \
+	botfilter.h \
 	cmds.c \
 	configtxt.c \
 	configtxt.h \

@@ -35,6 +35,7 @@
 
 #include "helpers.h"
 #include "gaympriv.h"
+#include "botfilter.h"
 #include "gaym.h"
 
 /**
@@ -1064,6 +1065,8 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name,
     }
 
     bio = gaym_mask_bio(args[1]);
+    gboolean gaym_botfilter_permit =
+        gaym_botfilter_check(gc, nick, bio, FALSE);
 
     if (bio) {
         bio_markedup = gaim_markup_linkify(bio);
@@ -1081,17 +1084,19 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name,
 
     if (gaim_prefs_get_bool("/plugins/prpl/gaym/show_bio_with_join")) {
         gaim_conv_chat_add_user(GAIM_CONV_CHAT(convo), nick, bio_markedup,
-                                flags, gaym_privacy_permit);
+                                flags, (gaym_privacy_permit
+                                        && gaym_botfilter_permit));
     } else {
         gaim_conv_chat_add_user(GAIM_CONV_CHAT(convo), nick, NULL,
-                                flags, gaym_privacy_permit);
+                                flags, (gaym_privacy_permit
+                                        && gaym_botfilter_permit));
     }
 
     /**
      * Make the ignore.png icon appear next to the nick.
      */
     GaimConversationUiOps *ops = gaim_conversation_get_ui_ops(convo);
-    if (gaym_privacy_permit) {
+    if (gaym_privacy_permit && gaym_botfilter_permit) {
         gaim_conv_chat_unignore(GAIM_CONV_CHAT(convo), nick);
     } else {
         gaim_conv_chat_ignore(GAIM_CONV_CHAT(convo), nick);
@@ -1591,9 +1596,12 @@ void gaym_msg_richnames_list(struct gaym_conn *gaym, const char *name,
 
     convo = gaim_find_conversation_with_account(channel, gaym->account);
 
-    /**
-     * gaym_bot_detect(gaym_mask_bio(extra), convo, nick);
-     */
+    char *masked_bio = gaym_mask_bio(extra);
+
+    gboolean gaym_botfilter_permit =
+        gaym_botfilter_check(gc, nick, masked_bio, FALSE);
+
+    g_free(masked_bio);
 
     if (convo == NULL) {
         gaim_debug(GAIM_DEBUG_ERROR, "gaym", "690 for %s failed\n",
@@ -1614,7 +1622,7 @@ void gaym_msg_richnames_list(struct gaym_conn *gaym, const char *name,
      * Make the ignore.png icon appear next to the nick.
      */
     GaimConversationUiOps *ops = gaim_conversation_get_ui_ops(convo);
-    if (gaym_privacy_check(gc, nick)) {
+    if (gaym_privacy_check(gc, nick) && gaym_botfilter_permit) {
         gaim_conv_chat_unignore(GAIM_CONV_CHAT(convo), nick);
     } else {
         gaim_conv_chat_ignore(GAIM_CONV_CHAT(convo), nick);

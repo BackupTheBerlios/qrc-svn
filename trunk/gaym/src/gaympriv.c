@@ -25,6 +25,7 @@
 #include "util.h"
 
 #include "gaympriv.h"
+#include "botfilter.h"
 #include "gaym.h"
 
 gboolean gaym_privacy_check(GaimConnection * gc, const char *nick)
@@ -139,7 +140,9 @@ void gaym_privacy_change(GaimConnection * gc, const char *name)
                 gaim_conversation_get_ui_ops(convo);
             if (name) {
                 if (!gaim_utf8_strcasecmp(name, buddy->name)) {
-                    if (gaym_privacy_check(gc, buddy->name)) {
+                    if (gaym_privacy_check(gc, buddy->name)
+                        && gaym_botfilter_check(gc, buddy->name, NULL,
+                                                TRUE)) {
                         gaim_conv_chat_unignore(GAIM_CONV_CHAT(convo),
                                                 buddy->name);
                     } else {
@@ -149,7 +152,8 @@ void gaym_privacy_change(GaimConnection * gc, const char *name)
                     ops->chat_update_user((convo), buddy->name);
                 }
             } else {
-                if (gaym_privacy_check(gc, buddy->name)) {
+                if (gaym_privacy_check(gc, buddy->name)
+                    && gaym_botfilter_check(gc, buddy->name, NULL, TRUE)) {
                     gaim_conv_chat_unignore(GAIM_CONV_CHAT(convo),
                                             buddy->name);
                 } else {
