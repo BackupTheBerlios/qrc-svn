@@ -1247,7 +1247,7 @@ void gaym_msg_part(struct gaym_conn *gaym, const char *name,
         serv_got_chat_left(gc,
                            gaim_conv_chat_get_id(GAIM_CONV_CHAT(convo)));
     } else {
-        if (gaym_privacy_check(gc, nick)) {
+        if (!gaim_conv_chat_is_user_ignored(GAIM_CONV_CHAT(convo), nick)) {
             gaim_conv_chat_remove_user(GAIM_CONV_CHAT(convo), nick, NULL);
         } else {
             GaimConversationUiOps *ops =
