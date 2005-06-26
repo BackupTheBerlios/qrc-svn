@@ -42,6 +42,16 @@ gboolean gaym_botfilter_check(GaimConnection * gc, const char *nick,
                               const char *text,
                               gboolean gaym_privacy_change);
 
+ /**
+ * Get GayBoi's spam list from his website.  Since this is for the plugin
+ * and not for any certain account, it should be done when the plugin
+ * is loaded.
+ */
+void get_spamlist_from_web(void);
+
+void botfilter_url_changed_cb(const char *name, GaimPrefType type,
+                              gpointer value, gpointer data);
+
 #endif                          /* _GAIM_GAYM_BOTFILTER_H_ */
 
 /**
