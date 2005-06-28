@@ -220,12 +220,9 @@ void get_spamlist_from_web(void)
 
     int last_check =
         gaim_prefs_get_int("/plugins/prpl/gaym/botfilter_url_last_check");
-    const char *result =
-        gaim_prefs_get_string("/plugins/prpl/gaym/botfilter_url_result");
 
 
-    if (!last_check || !result || !gaim_utf8_strcasecmp(result, "")
-        || time(NULL) - last_check > MIN_CHECK_INTERVAL) {
+    if (!last_check || time(NULL) - last_check > MIN_CHECK_INTERVAL) {
         gaim_prefs_set_int("/plugins/prpl/gaym/botfilter_url_last_check",
                            time(NULL));
         gaim_url_fetch(url, FALSE, user_agent, FALSE,
