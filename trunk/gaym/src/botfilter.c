@@ -170,16 +170,22 @@ void process_spamlist_from_web_cb(void *data, const char *result,
     if (!result) {
         gaim_prefs_set_string("/plugins/prpl/gaym/botfilter_url_result",
                               "");
+        gaim_prefs_set_int("/plugins/prpl/gaym/botfilter_url_last_check",
+                           0);
         return;
     }
     if (!g_str_has_prefix(result, "<HTML>\n")) {
         gaim_prefs_set_string("/plugins/prpl/gaym/botfilter_url_result",
                               "");
+        gaim_prefs_set_int("/plugins/prpl/gaym/botfilter_url_last_check",
+                           0);
         return;
     }
     if (!g_str_has_suffix(result, "</HTML>")) {
         gaim_prefs_set_string("/plugins/prpl/gaym/botfilter_url_result",
                               "");
+        gaim_prefs_set_int("/plugins/prpl/gaym/botfilter_url_last_check",
+                           0);
         return;
     }
     const char *sep =
@@ -187,6 +193,8 @@ void process_spamlist_from_web_cb(void *data, const char *result,
     if (!sep || !gaim_utf8_strcasecmp(sep, "")) {
         gaim_prefs_set_string("/plugins/prpl/gaym/botfilter_url_result",
                               "");
+        gaim_prefs_set_int("/plugins/prpl/gaym/botfilter_url_last_check",
+                           0);
         return;
     }
     char *html_stripped = gaim_markup_strip_html(result);
@@ -215,6 +223,8 @@ void get_spamlist_from_web(void)
     if (!url || !gaim_utf8_strcasecmp(url, "")) {
         gaim_prefs_set_string("/plugins/prpl/gaym/botfilter_url_result",
                               "");
+        gaim_prefs_set_int("/plugins/prpl/gaym/botfilter_url_last_check",
+                           0);
         return;
     }
 
