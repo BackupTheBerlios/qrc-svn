@@ -145,31 +145,25 @@ void debug_pending_list()
     }
 }
 
-/**
- * Send an IM to the recipient (thanks to the gaim-otr plugin)
- */
-void inject_message(GaimAccount * account, const char *recipient,
-                    const char *message)
+void send_auto_reply(GaimAccount * account, const char *recipient,
+                     const char *message)
 {
-    GaimConnection *connection;
+    int i = 0;
+    GaimConnection *gc = NULL;
+    GaimPluginProtocolInfo *prpl_info = NULL;
 
-    connection = gaim_account_get_connection(account);
+    gc = gaim_account_get_connection(account);
 
-    if (!connection) {
-        const char *protocol = gaim_account_get_protocol_id(account);
-        const char *accountname = gaim_account_get_username(account);
-        GaimPlugin *p = gaim_find_prpl(protocol);
-
-        gaim_debug_error("bot-challenger",
-                         "You are not currently connected to "
-                         "account %s (%s).", accountname, (p
-                                                           && p->info->
-                                                           name) ? p->
-                         info->name : "Unknown");
-
-        return;
+    if (gc != NULL && gc->prpl != NULL) {
+        prpl_info = GAIM_PLUGIN_PROTOCOL_INFO(gc->prpl);
     }
-    serv_send_im(connection, recipient, message, 0);
+
+    if (prpl_info && prpl_info->send_im) {
+        i = prpl_info->send_im(gc, recipient, message,
+                               GAIM_CONV_IM_AUTO_RESP);
+    }
+
+    return;
 }
 
 /**
@@ -268,7 +262,7 @@ static gboolean receiving_im_msg_cb(GaimAccount * account, char **sender,
             g_strdup_printf(_
                             ("Bot Challenger engaged:  you are now being ignored!  Your message will be delivered if you can correctly answer the following question within %i minutes:  %s"),
                             BOT_MAX_MINUTES, question);
-        inject_message(account, *sender, botmsg);
+        send_auto_reply(account, *sender, botmsg);
 
         g_free(now);
         g_free(botmsg);
@@ -283,7 +277,7 @@ static gboolean receiving_im_msg_cb(GaimAccount * account, char **sender,
             botmsg =
                 _
                 ("Bot Challenger accepted your answer and delivered your original message.  You may now speak freely.");
-            inject_message(account, *sender, botmsg);
+            send_auto_reply(account, *sender, botmsg);
 
             if (gaim_prefs_get_bool
                 ("/plugins/core/bot/challenger/auto_add_permit")) {
