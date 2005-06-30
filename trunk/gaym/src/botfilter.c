@@ -83,11 +83,28 @@ gboolean gaym_botfilter_check(GaimConnection * gc, const char *nick,
         return permitted;
     }
 
+    /* don't ignore self */
     if (!gaim_utf8_strcasecmp(gc->account->username, nick)) {
         permitted = TRUE;
         gaim_debug_info("gaym", "declining to block/ignore self\n");
         update_filtered_bots(nick, permitted);
         return permitted;
+    }
+
+    /* don't make buddies use the challenge/response system */
+    if (gaim_find_buddy(gc->account, nick)) {
+        permitted = TRUE;
+        return permitted;
+    }
+
+    /* don't make permit list members use the challenge/response system */
+    GSList *slist = NULL;
+    for (slist = gc->account->permit; slist != NULL; slist = slist->next) {
+        if (!gaim_utf8_strcasecmp
+            (nick, gaim_normalize(gc->account, (char *) slist->data))) {
+            permitted = TRUE;
+            return permitted;
+        }
     }
 
     /**
