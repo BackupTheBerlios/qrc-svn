@@ -52,17 +52,6 @@ gboolean gaym_privacy_check(GaimConnection * gc, const char *nick);
 void gaym_privacy_change(GaimConnection * gc, const char *name);
 
 /**
- * Check if the plugin's settings allow or block an IM.
- *
- * @param gc   The connection.
- * @param nick The user sending the IM.
- *
- * @return TRUE if the user is allowed, or @c FALSE otherwise.
- */
-gboolean gaym_im_check(GaimConnection * gc, const char *nick,
-                       const char *msg);
-
-/**
  * Report the status of the http request to add a name to the deny
  * list or remove a name from the deny list.
  *

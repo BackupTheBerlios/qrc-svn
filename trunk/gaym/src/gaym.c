@@ -1112,17 +1112,6 @@ static GaimPluginPrefFrame *get_plugin_pref_frame(GaimPlugin * plugin)
           GAYBOI_SPAM_URL));
     gaim_plugin_pref_frame_add(frame, ppref);
 
-    ppref =
-        gaim_plugin_pref_new_with_label(_
-                                        ("Instant Messages (stricter privacy settings override these)"));
-    gaim_plugin_pref_frame_add(frame, ppref);
-
-    ppref =
-        gaim_plugin_pref_new_with_name_and_label
-        ("/plugins/prpl/gaym/only_buddies_can_im",
-         _("Only buddies may open an IM session to me"));
-    gaim_plugin_pref_frame_add(frame, ppref);
-
     return frame;
 }
 
@@ -1189,7 +1178,6 @@ static void _init_plugin(GaimPlugin * plugin)
     gaim_prefs_add_none("/plugins/prpl/gaym");
     gaim_prefs_add_int("/plugins/prpl/gaym/chat_room_instances", 4);
     gaim_prefs_add_bool("/plugins/prpl/gaym/show_bio_with_join", TRUE);
-    gaim_prefs_add_bool("/plugins/prpl/gaym/only_buddies_can_im", FALSE);
 
     gaim_prefs_add_bool("/plugins/prpl/gaym/botfilter_enable", FALSE);
     gaim_prefs_add_bool("/plugins/prpl/gaym/botfilter_ignore_null", FALSE);

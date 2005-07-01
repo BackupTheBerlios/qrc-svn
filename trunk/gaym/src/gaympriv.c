@@ -166,40 +166,6 @@ void gaym_privacy_change(GaimConnection * gc, const char *name)
     }
 }
 
-gboolean gaym_im_check(GaimConnection * gc, const char *nick,
-                       const char *msg)
-{
-    gboolean retval = TRUE;
-
-    /* not good, but don't do anything */
-    if (!gc || !nick) {
-        return retval;
-    }
-
-    /* there is already an open conversation, so it must be allowed */
-    if (gaim_find_conversation_with_account(nick, gc->account)) {
-        return retval;
-    }
-
-    /* user wants to allow only Buddies to IM */
-    if (gaim_prefs_get_bool("/plugins/prpl/gaym/only_buddies_can_im")) {
-        /* nick is not on the account's buddy list */
-        if (!gaim_find_buddy(gc->account, nick)) {
-            retval = FALSE;
-            return retval;
-        } else {
-            return retval;
-        }
-    } else {
-        /* don't make buddies use the challenge/response system */
-        if (gaim_find_buddy(gc->account, nick)) {
-            return retval;
-        }
-    }
-
-    return retval;
-}
-
 void gaym_server_change_deny_status_cb(void *data, const char *result,
                                        size_t len)
 {

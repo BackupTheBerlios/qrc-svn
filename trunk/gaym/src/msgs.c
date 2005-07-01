@@ -1381,9 +1381,7 @@ void gaym_msg_privmsg(struct gaym_conn *gaym, const char *name,
 
     if (!gaim_utf8_strcasecmp
         (args[0], gaim_connection_get_display_name(gc))) {
-        if (gaym_im_check(gc, nick, msg)) {
-            serv_got_im(gc, nick, msg, 0, time(NULL));
-        }
+        serv_got_im(gc, nick, msg, 0, time(NULL));
     } else if (notice) {
         serv_got_im(gc, nick, msg, 0, time(NULL));
     } else if (convo) {
