@@ -91,13 +91,13 @@ gboolean gaym_botfilter_check(GaimConnection * gc, const char *nick,
         return permitted;
     }
 
-    /* don't make buddies use the challenge/response system */
+    /* don't ignore buddies */
     if (gaim_find_buddy(gc->account, nick)) {
         permitted = TRUE;
         return permitted;
     }
 
-    /* don't make permit list members use the challenge/response system */
+    /* don't ignore permit list members */
     GSList *slist = NULL;
     for (slist = gc->account->permit; slist != NULL; slist = slist->next) {
         if (!gaim_utf8_strcasecmp
