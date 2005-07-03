@@ -613,7 +613,7 @@ static void gaym_add_buddy(GaimConnection * gc, GaimBuddy * buddy,
     struct gaym_conn *gaym = (struct gaym_conn *) gc->proto_data;
     struct gaym_buddy *ib = g_new0(struct gaym_buddy, 1);
     ib->name = g_strdup(buddy->name);
-    g_hash_table_insert(gaym->buddies, ib->name, ib);
+    g_hash_table_replace(gaym->buddies, ib->name, ib);
     gaim_debug_misc("gaym", "Add buddy: %s\n", buddy->name);
     /**
      * if the timer isn't set, this is during signon, so we don't want to

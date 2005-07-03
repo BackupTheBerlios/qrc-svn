@@ -16,6 +16,9 @@
 	Bug Fixes:
 	- More cleanup/fix of autotools
 	- Code / documentation / repository cleanup / restructuring
+	- Fixed problems that caused invalid characters/commands to be
+	  sent to the server when checking to see if buddy list members
+	  were on line
 
 	Preference Changes:
 	- Number of chat room instances to display
