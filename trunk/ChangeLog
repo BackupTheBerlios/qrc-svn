@@ -24,7 +24,7 @@
 	- Number of chat room instances to display
 	- Enable/disable bot filtering in chat
 	- Modification of bot filtering strings
-	- Download and use GayBoy's spam list
+	- Download and use GayBoi's spam list
 	- Removed entrance/exit notification option, since this is
 	  available in another plugin:  http://gaim-extprefs.sf.net/
 
