@@ -8,10 +8,6 @@ Gaim Privacy Setting Options (only one of the following may be selected):
    Tools->Privacy->Block all users
    Tools->Privacy->Block only the users below (deny list)
 
-GayM Preferences that enhance privacy settings (enable/disable):
-
-   G1 = Preferences->GayM->Only buddies may open an IM session to me
-
 Widgets that interact with privacy settings:
 
    Chat Room->Ignore the user (ignore/unignore toggle)
@@ -22,22 +18,6 @@ Gaim Privacy Principles
    If a member is blocked via Gaim Privacy, you will never see anything
    from them, either any chat rooms or in an instant message.  GayM
    Preferences will not override it.
-
-GayM Preferences (Only buddies may open an IM session to me):
-
-   When enabled, only members of your Gaim buddy list may INITIATE an IM
-   session with you.  However, you may initiate an IM session with
-   someone who is not on your buddy list, and then they will be able to
-   IM you.
-
-   An IM session is defined as a visibly open Instant Message window.
-   To initiate an IM session, simply double-click on the user to open
-   the IM window.  If you both have GayM and neither are on the other's
-   buddy list, agree in the chat room that you want to IM each other,
-   both open an IM window, and you both may begin speaking.
-
-   However, if Gaim Privacy already blocks a member, that member will
-   still not be able to communicate with you in any way.
 
 Chat Room->Ignore the user
 

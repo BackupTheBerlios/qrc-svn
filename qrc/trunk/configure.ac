@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT([qrc],[0.34.0],[gaymplugin@yahoogroups.com])
+AC_INIT([qrc],[0.34.0+svn],[gaymplugin@yahoogroups.com])
 AC_CANONICAL_TARGET([])
 AM_INIT_AUTOMAKE([1.9.5 no-dist-gzip dist-bzip2])
 

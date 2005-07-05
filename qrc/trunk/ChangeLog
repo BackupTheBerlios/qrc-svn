@@ -1,3 +1,13 @@
+0.34.0+svn:
+	New Features:
+	- none
+
+	Bug Fixes:
+	- none
+
+	Preference Changes:
+	- none
+
 0.34.0:
 	New Features:
 	- Full win32 support for autotools and packaging
