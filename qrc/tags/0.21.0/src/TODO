@@ -1,0 +1,33 @@
+These are in no particular order --- edit/add as you see fit!
+
+PROTOCOL FEATURES
+
+1. The "Room List" operation should parse the /messenger/config.txt file from gay.com. We need to hide as much as possible 
+the "real" channel names (Like #557 is Sacramento). As the room list is generated, it should automatically display the 
+multiple rooms associated with a locale, so that the user can select one. The user should have the option of adding EITHER 
+the #xxx=* room, OR a particular #xxx=x room, to the buddy list. 
+
+2. gay.com buddy list integration. An option to "auto-add" NOTIFY buddies.
+
+3. chatclient buddy list import option built in.
+
+4. Split-phase operation notifiers. For example.... if you click to join a 
+channel, there may be a delay if, for example, 
+the buddy list is updating. This is NOT acceptable from a UI standpoint, since feedback should occur as soon as possible. 
+So, we need to incorporate notification dialogs for these operations, to give the user instant feedback. 
+
+5. There is a problem with the translation from . to | in nicks. It's not happening everywhere.
+
+NON PROTOCOL FEATURES (Probably a "gaym++" plugin that provides these features.)
+
+1. Bio Line display in chat window.
+
+2. Thumbnail in "chat" windows for selected user. Again -- this will need to be a separate plugin, since it will require 
+gtk-specific code (most likely)
+
+3. Room namelist sorting -- another non-proto option. I'm not even sure if a plugin can affect this, based on the way it 
+seems to be implemented :( Might end up being a wish on gaim.sourceforge.net. Or I'll just write a damned patch myself.
+
+4. "Extended" profiles -- get the entire profile "meat" without all of the gay.com advertising and bric-a-brac.
+
+5. Join/part message on/off
