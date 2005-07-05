@@ -1,0 +1,26 @@
+if COND_BOT_CHALLENGER
+MAYBE_BOT_CHALLENGER = bot-challenger
+endif
+
+if COND_CHATSORT
+MAYBE_CHATSORT = chatsort
+endif
+
+if COND_GAYM
+MAYBE_GAYM = gaym
+endif
+
+if COND_ROOMBROWSE
+MAYBE_ROOMBROWSE = roombrowse
+endif
+
+EXTRA_DIST = \
+	README.mingw \
+	TODO
+
+SUBDIRS = \
+	nsis \
+	$(MAYBE_BOT_CHALLENGER) \
+	$(MAYBE_CHATSORT) \
+	$(MAYBE_GAYM) \
+	$(MAYBE_ROOMBROWSE)
