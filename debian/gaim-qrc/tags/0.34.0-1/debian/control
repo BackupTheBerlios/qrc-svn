@@ -1,0 +1,17 @@
+Source: gaim-qrc
+Section: net
+Priority: optional
+Maintainer: David Everly <deckrider@yahoo.com>
+Build-Depends: debhelper (>= 4.0.0), dpatch (>= 1.11), gaim-dev (>= 1.2.0), sharutils
+Standards-Version: 3.6.1
+
+Package: gaim-qrc
+Architecture: any
+Conflicts: gaim-gaym
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: gay.com-related plugins for gaim
+ gaym allows you to participate in group and private chat on gay.com
+ from within gaim, and helps with chat room spam control.
+ .
+ bot-challenger provides a simple challenge-response system to prevent
+ spam/bots from sending you instant messages. 
