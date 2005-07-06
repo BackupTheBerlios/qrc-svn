@@ -26,6 +26,13 @@
 void gaym_convert_nick_to_gaycom(char *name)
 {
     int i;
+    
+    //If the first character is a punctuation or a number,
+    //Gay.com inserts a | character in front. We remedy this by changing 
+    //it to a space. This changes it back.
+    if (name[0]==' ')
+	name[0]='|';
+    
     if (!name) {
         return;
     }
@@ -42,6 +49,9 @@ char *return_string_between(const char *startbit, const char *endbit,
     char *start = 0;
     char *end = 0;
 
+    if(!source || !startbit || !endbit)
+	return 0;
+    
     start = strstr(source, startbit);
 
     if (start) {
@@ -59,6 +69,7 @@ char *return_string_between(const char *startbit, const char *endbit,
     }
 }
 
+/*
 char *convert_nick_to_gc(char *nick)
 {
     int i;
@@ -68,18 +79,22 @@ char *convert_nick_to_gc(char *nick)
             out[i] = '|';
         }
     }
-    /**
-     * gaim_debug_misc("gaym", "Converted %s to %s\n", nick, out);
-     */
     return out;
 }
-
+*/
 void convert_nick_from_gaycom(char *name)
 {
     int i;
+
     if (!name) {
         return;
     }
+
+    //If the first character is a punctuation or a number,
+    //Gay.com inserts a | character in front. Get rid of it.
+    if (name[0]=='|')
+	name[0]=' ';
+
     for (i = 0; i < strlen(name); i++) {
         if (name[i] == '|') {
             name[i] = '.';
