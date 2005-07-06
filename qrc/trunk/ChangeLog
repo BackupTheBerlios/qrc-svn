@@ -16,7 +16,7 @@
 	- Full win32 support for autotools and packaging
 	- Enabled and implemented all Gaim privacy hooks, including
 	  synchronization of ignore list with gay.com's server
-	- New /trace command to opbain IP address of a user
+	- New /trace command to obtain IP address of a user
 	- New protocol icon
 	- Enabled "Warn", mapping it to gay.com's "Report User" web
 	  form.
