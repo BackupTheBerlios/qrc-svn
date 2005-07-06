@@ -285,8 +285,7 @@ int gaym_cmd_nick(struct gaym_conn *gaym, const char *cmd,
     if (!args || !args[0])
         return 0;
 
-    temp = g_strdup(args[0]);
-    gaym_convert_nick_to_gaycom(temp);
+    temp = gaym_nick_to_gcom_strdup(args[0]);
     buf = gaym_format(gaym, "v:", "NICK", temp);
     gaym_send(gaym, buf);
     g_free(buf);
@@ -392,8 +391,7 @@ int gaym_cmd_privmsg(struct gaym_conn *gaym, const char *cmd,
     if (!args || !args[0] || !args[1])
         return 0;
 
-    nick = g_strdup(args[0]);
-    gaym_convert_nick_to_gaycom(nick);
+    nick = gaym_nick_to_gcom_strdup(args[0]);
     cur = args[1];
     end = args[1];
     while (*end && *cur) {
@@ -561,9 +559,8 @@ int gaym_cmd_whois(struct gaym_conn *gaym, const char *cmd,
         return 0;
 
     gaym->whois.nick = g_strdup(args[0]);
-    converted_nick = g_strdup(args[0]);
-    convert_nick_from_gaycom(gaym->whois.nick);
-    gaym_convert_nick_to_gaycom(converted_nick);
+    gcom_nick_to_gaym(gaym->whois.nick);
+    converted_nick = gaym_nick_to_gcom_strdup(args[0]);
     buf = gaym_format(gaym, "vn", "WHOIS", converted_nick);
     gaym_send(gaym, buf);
     g_free(buf);

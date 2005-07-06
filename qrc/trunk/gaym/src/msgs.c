@@ -156,7 +156,7 @@ void gaym_msg_away(struct gaym_conn *gaym, const char *name,
         return;
     }
 
-    convert_nick_from_gaycom(args[1]);
+    gcom_nick_to_gaym(args[1]);
     serv_got_im(gc, args[1], args[2], GAIM_CONV_IM_AUTO_RESP, time(NULL));
 }
 
@@ -291,7 +291,7 @@ void gaym_msg_no_such_nick(struct gaym_conn *gaym, const char *name,
         return;
     }
 
-    convert_nick_from_gaycom(args[1]);
+    gcom_nick_to_gaym(args[1]);
     gaym->info_window_needed = 0;
     char *buf;
 
@@ -308,7 +308,7 @@ void gaym_msg_whois(struct gaym_conn *gaym, const char *name,
 {
     char *thumburl = NULL;
 
-    convert_nick_from_gaycom(args[1]);
+    gcom_nick_to_gaym(args[1]);
     if (!gaym->whois.nick) {
         gaim_debug(GAIM_DEBUG_WARNING, "gaym",
                    "Unexpected WHOIS reply for %s\n", args[1]);
@@ -934,7 +934,7 @@ void gaym_msg_invite(struct gaym_conn *gaym, const char *name,
     }
 
     g_hash_table_insert(components, strdup("channel"), strdup(args[1]));
-    convert_nick_from_gaycom(nick);
+    gcom_nick_to_gaym(nick);
     serv_got_chat_invite(gc, args[1], nick, NULL, components);
 
     g_free(nick);
@@ -966,7 +966,7 @@ void gaym_msg_ison(struct gaym_conn *gaym, const char *name,
         return;
     nicks = g_strsplit(args[1], " ", -1);
     for (i = 0; (nicks[i] != NULL) && (*nicks[i] != '\0'); i++) {
-        convert_nick_from_gaycom(nicks[i]);
+        gcom_nick_to_gaym(nicks[i]);
         if ((ib =
              g_hash_table_lookup(gaym->buddies,
                                  (gconstpointer) nicks[i])) == NULL) {
@@ -1040,7 +1040,7 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name,
         return;
     }
 
-    convert_nick_from_gaycom(nick);
+    gcom_nick_to_gaym(nick);
     if (!gaim_utf8_strcasecmp(nick, gaim_connection_get_display_name(gc))) {
         /* We are joining a channel for the first time */
         if (gaym->persist_room && !strcmp(gaym->persist_room, args[0])) {
@@ -1242,7 +1242,7 @@ void gaym_msg_part(struct gaym_conn *gaym, const char *name,
 
     convo = gaim_find_conversation_with_account(args[0], gaym->account);
 
-    convert_nick_from_gaycom(nick);
+    gcom_nick_to_gaym(nick);
     if (!gaim_utf8_strcasecmp(nick, gaim_connection_get_display_name(gc))) {
         msg = g_strdup_printf(_("You have parted the channel"));
 
@@ -1350,9 +1350,9 @@ void gaym_msg_privmsg(struct gaym_conn *gaym, const char *name,
         return;
     }
 
-    convert_nick_from_gaycom(args[1]);
-    convert_nick_from_gaycom(args[0]);
-    convert_nick_from_gaycom(nick);
+    gcom_nick_to_gaym(args[1]);
+    gcom_nick_to_gaym(args[0]);
+    gcom_nick_to_gaym(nick);
 
     convo = gaim_find_conversation_with_account(args[0], gaym->account);
 
@@ -1587,7 +1587,7 @@ void gaym_msg_richnames_list(struct gaym_conn *gaym, const char *name,
         return;
     }
 
-    convert_nick_from_gaycom(nick);
+    gcom_nick_to_gaym(nick);
     gaim_debug(GAIM_DEBUG_INFO, "gaym",
                "gaym_msg_richnames_list() Channel: %s Nick: %s Extra: %s\n",
                channel, nick, extra);

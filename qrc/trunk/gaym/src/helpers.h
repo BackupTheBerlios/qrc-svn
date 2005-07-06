@@ -29,9 +29,26 @@
 char *return_string_between(const char *startbit, const char *endbit,
                             const char *source);
 
-void gaym_convert_nick_to_gaycom(char *);
+/**
+ * Convert a nick from gay.com to what GayM needs to see.
+ * The conversion is done in place.  The converted value
+ * is for use within GayM/Gaim as well as with http requests
+ * to gay.com. When interacting with gay.com's IRC server,
+ * the nick must be converted using gaym_nick_to_gcom_strdup().
+ *
+ * @param nick The nick to convert.
+ */
+void gcom_nick_to_gaym(char *nick);
 
-void convert_nick_from_gaycom(char *);
+/**
+ * Convert a nick to what the gay.com IRC server needs to see.
+ * The returned string should be freed when no longer needed.
+ *
+ * @param nick The nick to convert.
+ *
+ * @return The converted nick.
+ */
+char *gaym_nick_to_gcom_strdup(const char *nick);
 
 /**
  * Convert a string that is pure ascii, that uses a pure ascii approach

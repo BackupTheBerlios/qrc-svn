@@ -3,7 +3,8 @@
 	- none
 
 	Bug Fixes:
-	- none
+	- Fixed protocol interaction with member names containing
+	  certain characters
 
 	Preference Changes:
 	- none

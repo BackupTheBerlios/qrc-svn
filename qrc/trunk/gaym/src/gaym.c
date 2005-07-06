@@ -145,12 +145,11 @@ static void gaym_buddy_append(char *name, struct gaym_buddy *ib,
         ib->stale = TRUE;
         ib->done = TRUE;
         ib->flag = FALSE;
-        converted_name = g_strdup(name);
-        gaym_convert_nick_to_gaycom(converted_name);
+        converted_name = gaym_nick_to_gcom_strdup(name);
         g_string_append_printf(string, "%s ", converted_name);
+        g_free(converted_name);
         return;
     }
-
 }
 
 static void gaym_ison_one(struct gaym_conn *gaym, struct gaym_buddy *ib)
@@ -158,10 +157,10 @@ static void gaym_ison_one(struct gaym_conn *gaym, struct gaym_buddy *ib)
     char *buf;
     char *nick;
     ib->flag = FALSE;
-    nick = g_strdup(ib->name);
-    gaym_convert_nick_to_gaycom(nick);
+    nick = gaym_nick_to_gcom_strdup(ib->name);
     buf = gaym_format(gaym, "vn", "ISON", nick);
     gaym_send(gaym, buf);
+    g_free(nick);
     g_free(buf);
 }
 
@@ -474,8 +473,9 @@ static void gaym_login_cb(gpointer data, gint source,
                         "In login_cb, user_bioline: %x, gc->account=%x\n",
                         user_bioline, gc->account);
 
-        login_name = g_strdup(gaim_connection_get_display_name(gc));
-        gaym_convert_nick_to_gaycom(login_name);
+        login_name =
+            gaym_nick_to_gcom_strdup(gaim_connection_get_display_name(gc));
+
         bioline = g_strdup_printf("%s#%s",
                                   gaym->thumbnail,
                                   user_bioline ? user_bioline : "");
@@ -497,7 +497,7 @@ static void gaym_login_cb(gpointer data, gint source,
             gaim_connection_error(gc, "Error registering with server");
             return;
         }
-
+        g_free(login_name);
         g_free(buf);
 
         const char *server = gaim_account_get_string(gc->account, "server",
@@ -1039,14 +1039,14 @@ static void gaym_get_photo_info(GaimConversation * conv)
         gaym = (struct gaym_conn *) gc->proto_data;
 
         gaym->info_window_needed = FALSE;
-        name = g_strdup(conv->name);
 
-        gaym->whois.nick = g_strdup(name);
-        gaym_convert_nick_to_gaycom(name);
+        gaym->whois.nick = g_strdup(conv->name);
+        name = gaym_nick_to_gcom_strdup(conv->name);
         buf = gaym_format(gaym, "vn", "WHOIS", name);
         gaim_debug_misc("gaym", "Conversation triggered command: %s\n",
                         buf);
         gaym_send(gaym, buf);
+        g_free(name);
         g_free(buf);
     }
 }

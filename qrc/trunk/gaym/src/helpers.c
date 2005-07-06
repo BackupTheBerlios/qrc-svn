@@ -23,24 +23,58 @@
 
 #include "helpers.h"
 
-void gaym_convert_nick_to_gaycom(char *name)
+void gcom_nick_to_gaym(char *nick)
 {
-    int i;
-    
-    //If the first character is a punctuation or a number,
-    //Gay.com inserts a | character in front. We remedy this by changing 
-    //it to a space. This changes it back.
-    if (name[0]==' ')
-	name[0]='|';
-    
-    if (!name) {
+    int i = 0;
+
+    if (!nick) {
         return;
     }
-    for (i = 0; i < strlen(name); i++) {
-        if (name[i] == '.') {
-            name[i] = '|';
+
+    /**
+     * If there is a "|" in the first position, it must be removed.
+     */
+    if (nick[0] == '|') {
+        nick[0] = ' ';
+        nick = g_strchug(nick);
+    }
+
+    /**
+     * Any remaining "|" must be replaced with "."
+     */
+    for (i = 0; i < strlen(nick); i++) {
+        if (nick[i] == '|') {
+            nick[i] = '.';
         }
     }
+    return;
+}
+
+char *gaym_nick_to_gcom_strdup(const char *nick)
+{
+    int i = 0;
+    char *converted = NULL;
+
+    /**
+     * If the first character is not an upper or lower case letter
+     * then gay.com's IRC server requires "|" to be prepended
+     */
+    if (g_ascii_isalpha(nick[0])) {
+        converted = g_strdup_printf("%s", nick);
+    } else {
+        converted = g_strdup_printf("|%s", nick);
+    }
+
+    /**
+     * gay.com's IRC server requires all "." in nicks to be represented
+     * by "|"
+     */
+    for (i = 0; i < strlen(converted); i++) {
+        if (converted[i] == '.') {
+            converted[i] = '|';
+        }
+    }
+    return converted;
 }
 
 char *return_string_between(const char *startbit, const char *endbit,
@@ -49,9 +83,9 @@ char *return_string_between(const char *startbit, const char *endbit,
     char *start = 0;
     char *end = 0;
 
-    if(!source || !startbit || !endbit)
-	return 0;
-    
+    if (!source || !startbit || !endbit)
+        return 0;
+
     start = strstr(source, startbit);
 
     if (start) {
@@ -66,39 +100,6 @@ char *return_string_between(const char *startbit, const char *endbit,
         return g_strdup_printf("%.*s", end - start, start);
     } else {
         return 0;
-    }
-}
-
-/*
-char *convert_nick_to_gc(char *nick)
-{
-    int i;
-    char *out = g_strdup(nick);
-    for (i = 0; i < strlen(out); i++) {
-        if (out[i] == '.') {
-            out[i] = '|';
-        }
-    }
-    return out;
-}
-*/
-void convert_nick_from_gaycom(char *name)
-{
-    int i;
-
-    if (!name) {
-        return;
-    }
-
-    //If the first character is a punctuation or a number,
-    //Gay.com inserts a | character in front. Get rid of it.
-    if (name[0]=='|')
-	name[0]=' ';
-
-    for (i = 0; i < strlen(name); i++) {
-        if (name[i] == '|') {
-            name[i] = '.';
-        }
     }
 }
 
@@ -166,30 +167,15 @@ gboolean gaym_nick_check(const char *nick)
         return retval;
     }
 
-    char *firstchar =
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz\0";
     char *allowed =
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_.-\0";
     int i = 0;
     int j = 0;
 
     /**
-     * first character validation is different from the remaining
-     * characters
+     * validate characters
      */
-    for (i = 0; firstchar[i]; i++) {
-        if (nick[0] == firstchar[i]) {
-            retval = TRUE;
-            break;
-        }
-    }
-    if (!retval) {
-        return retval;
-    }
-    /**
-     * validate remaining characters (but not the first character)
-     */
-    for (i = 1; nick[i]; i++) {
+    for (i = 0; nick[i]; i++) {
         retval = FALSE;
         for (j = 0; allowed[j]; j++) {
             if (nick[i] == allowed[j]) {
