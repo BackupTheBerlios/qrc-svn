@@ -391,7 +391,15 @@ int gaym_cmd_privmsg(struct gaym_conn *gaym, const char *cmd,
     if (!args || !args[0] || !args[1])
         return 0;
 
-    nick = gaym_nick_to_gcom_strdup(args[0]);
+    /**
+     * Only run gaym_nick_to_gcom_strdup() against nicks,
+     * never on channels (which begin with either "#" or "&")
+     */
+    if (!args[0] == '#' && !args[0] == '&') {
+        nick = gaym_nick_to_gcom_strdup(args[0]);
+    } else {
+        nick = g_strdup(args[0]);
+    }
     cur = args[1];
     end = args[1];
     while (*end && *cur) {

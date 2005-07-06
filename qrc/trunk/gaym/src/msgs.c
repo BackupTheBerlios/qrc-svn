@@ -1350,9 +1350,33 @@ void gaym_msg_privmsg(struct gaym_conn *gaym, const char *name,
         return;
     }
 
-    gcom_nick_to_gaym(args[1]);
-    gcom_nick_to_gaym(args[0]);
+    /**
+     * Only nicks (sender/receiver) should use gcom_nick_to_gaym().
+     *
+     * Channels (which begin with either "#" or "&") should not be
+     * converted.
+     *
+     * Messages should also not be converted.
+     *
+     * CHAT ROOM:
+     * nick = the sender
+     * args[0] = the receiving channel
+     * args[1] = the message
+     *
+     * INSTANT MESSAGE:
+     * nick = the sender
+     * args[0] = the receiver (me)
+     * args[1] = the message
+     *
+     * NOTICE:
+     * nick = the sender
+     * args[0] = " notice "
+     * args[1] = the message
+     */
     gcom_nick_to_gaym(nick);
+    if (!args[0] == '#' && !args[0] == '&') {
+        gcom_nick_to_gaym(args[0]);
+    }
 
     convo = gaim_find_conversation_with_account(args[0], gaym->account);
 
