@@ -1374,7 +1374,7 @@ void gaym_msg_privmsg(struct gaym_conn *gaym, const char *name,
      * args[1] = the message
      */
     gcom_nick_to_gaym(nick);
-    if (!args[0] == '#' && !args[0] == '&') {
+    if (args[0][0] != '#' && args[0][0] != '&') {
         gcom_nick_to_gaym(args[0]);
     }
 
