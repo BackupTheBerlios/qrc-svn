@@ -7,6 +7,7 @@
 	  beginning with non-alpha characters
 	- Fixed problem where "|" was replaced by "." in Chat and IM
 	  messages
+	- Addressed several memory leaks
 
 	Preference Changes:
 	- none
