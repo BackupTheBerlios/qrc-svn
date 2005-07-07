@@ -3,8 +3,8 @@
 	- none
 
 	Bug Fixes:
-	- Fixed protocol problem affecting member names containing
-	  beginning with non-alpha characters
+	- Fixed protocol problem affecting member names beginning with
+	  non-alpha characters
 	- Fixed problem where "|" was replaced by "." in Chat and IM
 	  messages
 	- Addressed several memory leaks
