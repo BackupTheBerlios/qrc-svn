@@ -71,7 +71,8 @@ gchar *ascii2native(const gchar * str);
  * - Cannot contain special characters, spaces, periods, or hyphens (-)
  *
  * However, in testing as well as observing existing members, the
- * the member name may in fact contain periods and hyphens.
+ * the member name may in fact contain periods and hyphens, and may
+ * even begin with numbers and other special characters.
  *
  * @param nick The string to check.
  */
