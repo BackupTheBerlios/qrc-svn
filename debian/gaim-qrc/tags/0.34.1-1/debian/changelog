@@ -1,0 +1,62 @@
+gaim-qrc (0.34.1-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- David Everly <deckrider@yahoo.com>  Fri,  8 Jul 2005 08:52:10 -0600
+
+gaim-qrc (0.34.0-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- David Everly <deckrider@yahoo.com>  Tue,  5 Jul 2005 10:01:19 -0600
+
+gaim-gaym (0.21+20050513-5) unstable; urgency=low
+
+  * Incorporating Jason LeBrun's excellent function to convert ASCII
+    based escaped unicode (from Java) back to native.  Among other
+    things, rooms containing special characters should now be displayed
+    properly.
+  * Break out formatting (gnu indent) into its own patch.
+  * Tweeked the icon I added earlier.
+
+ -- David Everly <deckrider@yahoo.com>  Tue, 24 May 2005 08:28:05 -0600
+
+gaim-gaym (0.21+20050513-4) unstable; urgency=low
+
+  * Added gaym.png which I made under the GNU Public License (GPL).
+    Hopefully someone else can make a better GPL'd one, since mine
+    sucks.
+
+ -- David Everly <deckrider@yahoo.com>  Mon, 23 May 2005 10:35:45 -0600
+
+gaim-gaym (0.21+20050513-3) unstable; urgency=low
+
+  * Use dh_gaim.
+
+ -- David Everly <deckrider@yahoo.com>  Mon, 23 May 2005 00:12:11 -0600
+
+gaim-gaym (0.21+20050513-2) unstable; urgency=low
+
+  * Worked a little more on the configure issues.  Not that I know that
+    much about autoconf.
+  * The title of rooms no longer have to be 'fixed' every time someone
+    goes in and out of a room.  This also eliminates conflicts related
+    to the notification plugin.
+  * Added retrieval of Member Created rooms to the roomlist.
+  * Added notification to the user for when the server is too busy to
+    retrieve the roomlist (Member Created rooms).
+  * Allow the #channel to be visible along with the room name.
+  * Give more control regarding which instance of a room is joined.
+    Currently (based on gay.com's own client) this amounts to instances
+    1 through 4 of every room in the static list.
+
+ -- David Everly <deckrider@yahoo.com>  Sun, 22 May 2005 21:15:33 -0600
+
+gaim-gaym (0.21+20050513-1) unstable; urgency=low
+
+  * Initial Release.
+  * Added autorconf patch to fix configure, make, make distclean.
+  * Added compile-warnings to eliminate warnings produced by gcc -Wall.
+
+ -- David Everly <deckrider@yahoo.com>  Sat, 14 May 2005 11:45:50 -0600
+
