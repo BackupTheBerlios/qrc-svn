@@ -1,0 +1,37 @@
+An explanation of privacy settings as implemented in GayM:
+
+Gaim Privacy Setting Options (only one of the following may be selected):
+
+   Tools->Privacy->Allow all users to contact me
+   Tools->Privacy->Allow all users on my buddy list
+   Tools->Privacy->Allow only the users below (permit list)
+   Tools->Privacy->Block all users
+   Tools->Privacy->Block only the users below (deny list)
+
+Widgets that interact with privacy settings:
+
+   Chat Room->Ignore the user (ignore/unignore toggle)
+   Instant Message->Block (add to deny list)
+
+Gaim Privacy Principles
+
+   If a member is blocked via Gaim Privacy, you will never see anything
+   from them, either any chat rooms or in an instant message.  GayM
+   Preferences will not override it.
+
+Chat Room->Ignore the user
+
+   This will ignore the user in that chat room only, and only while that
+   chat room window is open--if you close the chat room and re-open it,
+   the user is no longer ignore--if you close the chat room and re-open
+   it, the user is no longer ignored.  The user can always IM you and is
+   not ignored in other chat rooms (unless you click "Ignore the user"
+   in those rooms also).
+
+Instant Message->Block
+
+   All this does is add someone to your block/ignore list.  However, if
+   you have chosen something other than "Block only the users below" in
+   Tools->Privacy, you will see no change in privacy behavior after
+   clicking this button.
+
