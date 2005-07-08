@@ -1,3 +1,13 @@
+0.34.1+svn:
+	New Features:
+	- none
+
+	Bug Fixes:
+	- none
+
+	Preference Changes:
+	- none
+
 0.34.1:
 	Bug Fixes:
 	- Fixed protocol problem affecting member names beginning with
