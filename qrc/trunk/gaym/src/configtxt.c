@@ -37,6 +37,7 @@
 /* local headers for this plugin */
 #include "gaympriv.h"
 #include "gaym.h"
+#include "helpers.h"
 
 void synchronize_deny_list(GaimConnection * gc, const char *configtxt)
 {
@@ -54,6 +55,14 @@ void synchronize_deny_list(GaimConnection * gc, const char *configtxt)
     srvdeny = g_strndup(start, end - start);
 
     srvdenylist = g_strsplit(srvdeny, ",", -1);
+
+    /**
+     * The nicks come in here as if they came from the IRC server
+     * so they need to be converted to GayM format
+     */
+    for (i = 0; srvdenylist[i]; i++) {
+        gcom_nick_to_gaym(srvdenylist[i]);
+    }
 
     /* Add server deny list from config.txt to local deny list */
     for (i = 0; srvdenylist[i]; i++) {
