@@ -194,6 +194,63 @@ static void gaym_blist_emblems(GaimBuddy * b, char **se, char **sw,
         *se = "offline";
 }
 
+static char *gaym_status_text(GaimBuddy * buddy)
+{
+    char *status;
+
+    struct gaym_conn *gaym =
+        (struct gaym_conn *) buddy->account->gc->proto_data;
+
+    if (!gaym) {
+        return g_strdup("");
+    }
+
+    struct gaym_buddy *ib =
+        g_hash_table_lookup(gaym->buddies, buddy->name);
+
+    if (!ib) {
+        return g_strdup("");
+    }
+
+    if (!ib->bio) {
+        return g_strdup("");
+    }
+
+    status = g_markup_escape_text(ib->bio, strlen(ib->bio));
+
+    return status;
+}
+
+static char *gaym_tooltip_text(GaimBuddy * buddy)
+{
+    char *escaped, *tooltip;
+
+    struct gaym_conn *gaym =
+        (struct gaym_conn *) buddy->account->gc->proto_data;
+
+    if (!gaym) {
+        return g_strdup("");
+    }
+
+    struct gaym_buddy *ib =
+        g_hash_table_lookup(gaym->buddies, buddy->name);
+
+    if (!ib) {
+        return g_strdup("");
+    }
+
+    if (!ib->bio) {
+        return g_strdup("");
+    }
+
+    escaped = g_markup_escape_text(ib->bio, strlen(ib->bio));
+    tooltip = g_strdup_printf(_("\n<b>%s:</b> %s"), _("Bio"), escaped);
+
+    g_free(escaped);
+
+    return tooltip;
+}
+
 static GList *gaym_away_states(GaimConnection * gc)
 {
     return g_list_append(NULL, (gpointer) GAIM_AWAY_CUSTOM);
@@ -1014,8 +1071,8 @@ static GaimPluginProtocolInfo prpl_info = {
     {"jpg", 55, 75, 55, 75},    /* icon_spec */
     gaym_blist_icon,            /* list_icon */
     gaym_blist_emblems,         /* list_emblems */
-    NULL,                       /* status_text */
-    NULL,                       /* tooltip_text */
+    gaym_status_text,           /* status_text */
+    gaym_tooltip_text,          /* tooltip_text */
     gaym_away_states,           /* away_states */
     gaym_blist_node_menu,       /* blist_node_menu */
     gaym_chat_join_info,        /* chat_info */
