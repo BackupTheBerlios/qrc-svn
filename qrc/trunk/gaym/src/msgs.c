@@ -1081,15 +1081,19 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name,
     }
 
     gboolean gaym_privacy_permit = gaym_privacy_check(gc, nick);
+    gboolean show_join =
+        gaim_prefs_get_bool("/plugins/prpl/gaym/show_join");
 
     if (gaim_prefs_get_bool("/plugins/prpl/gaym/show_bio_with_join")) {
         gaim_conv_chat_add_user(GAIM_CONV_CHAT(convo), nick, bio_markedup,
                                 flags, (gaym_privacy_permit
-                                        && gaym_botfilter_permit));
+                                        && gaym_botfilter_permit
+                                        && show_join));
     } else {
         gaim_conv_chat_add_user(GAIM_CONV_CHAT(convo), nick, NULL,
                                 flags, (gaym_privacy_permit
-                                        && gaym_botfilter_permit));
+                                        && gaym_botfilter_permit
+                                        && show_join));
     }
 
     /**
@@ -1241,6 +1245,8 @@ void gaym_msg_part(struct gaym_conn *gaym, const char *name,
     }
 
     convo = gaim_find_conversation_with_account(args[0], gaym->account);
+    gboolean show_part =
+        gaim_prefs_get_bool("/plugins/prpl/gaym/show_part");
 
     gcom_nick_to_gaym(nick);
     if (!gaim_utf8_strcasecmp(nick, gaim_connection_get_display_name(gc))) {
@@ -1252,7 +1258,8 @@ void gaym_msg_part(struct gaym_conn *gaym, const char *name,
         serv_got_chat_left(gc,
                            gaim_conv_chat_get_id(GAIM_CONV_CHAT(convo)));
     } else {
-        if (!gaim_conv_chat_is_user_ignored(GAIM_CONV_CHAT(convo), nick)) {
+        if (!gaim_conv_chat_is_user_ignored(GAIM_CONV_CHAT(convo), nick)
+            && show_part) {
             gaim_conv_chat_remove_user(GAIM_CONV_CHAT(convo), nick, NULL);
         } else {
             GaimConversationUiOps *ops =

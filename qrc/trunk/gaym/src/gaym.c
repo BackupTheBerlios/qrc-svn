@@ -1063,8 +1063,18 @@ static GaimPluginPrefFrame *get_plugin_pref_frame(GaimPlugin * plugin)
 
     ppref =
         gaim_plugin_pref_new_with_name_and_label
+        ("/plugins/prpl/gaym/show_join", _("Show entrance announcement"));
+    gaim_plugin_pref_frame_add(frame, ppref);
+
+    ppref =
+        gaim_plugin_pref_new_with_name_and_label
         ("/plugins/prpl/gaym/show_bio_with_join",
          _("Show member bio with entrance announcement"));
+    gaim_plugin_pref_frame_add(frame, ppref);
+
+    ppref =
+        gaim_plugin_pref_new_with_name_and_label
+        ("/plugins/prpl/gaym/show_part", _("Show exit announcement"));
     gaim_plugin_pref_frame_add(frame, ppref);
 
     ppref =
@@ -1177,6 +1187,8 @@ static void _init_plugin(GaimPlugin * plugin)
 
     gaim_prefs_add_none("/plugins/prpl/gaym");
     gaim_prefs_add_int("/plugins/prpl/gaym/chat_room_instances", 4);
+    gaim_prefs_add_bool("/plugins/prpl/gaym/show_join", TRUE);
+    gaim_prefs_add_bool("/plugins/prpl/gaym/show_part", TRUE);
     gaim_prefs_add_bool("/plugins/prpl/gaym/show_bio_with_join", TRUE);
 
     gaim_prefs_add_bool("/plugins/prpl/gaym/botfilter_enable", FALSE);
