@@ -42,8 +42,6 @@
 #include "botfilter.h"
 #include "gaym.h"
 
-#define GAYBOI_SPAM_URL "http://gayboi.org/spam/spamlst.php"
-
 char *gaym_mask_bio(const char *biostring);
 static const char *gaym_blist_icon(GaimAccount * a, GaimBuddy * b);
 static void gaym_blist_emblems(GaimBuddy * b, char **se, char **sw,
@@ -67,7 +65,7 @@ static gboolean gaym_nick_equal(const char *nick1, const char *nick2);
 static void gaym_buddy_free(struct gaym_buddy *ib);
 
 static void gaym_buddy_append(char *name, struct gaym_buddy *ib,
-                              GString * string);
+                              BListWhois * blist_whois);
 static void gaym_buddy_clear_done(char *name, struct gaym_buddy *ib,
                                   gpointer nothing);
 
@@ -90,16 +88,24 @@ int gaym_send(struct gaym_conn *gaym, const char *buf)
     return ret;
 }
 
-/* XXX I don't like messing directly with these buddies */
 gboolean gaym_blist_timeout(struct gaym_conn * gaym)
 {
-    GString *string = g_string_sized_new(512);
+    /**
+     * There are 510 characters available for an IRC command (512 if
+     * you count CR-LF).  "WHOIS " takes up 6 characters.  Assuming
+     * you need allow an extra character for the NULL when using
+     * g_string_sized_new(), we need to allocate (510-6)+1=505 here.
+     */
+    BListWhois *blist_whois = g_new0(BListWhois, 1);
+    blist_whois->count = 0;
+    blist_whois->string = g_string_sized_new(505);
+
     char *list, *buf;
 
     g_hash_table_foreach(gaym->buddies, (GHFunc) gaym_buddy_append,
-                         (gpointer) string);
+                         (gpointer) blist_whois);
 
-    list = g_string_free(string, FALSE);
+    list = g_string_free(blist_whois->string, FALSE);
     if (!list || !strlen(list)) {
         g_hash_table_foreach(gaym->buddies, (GHFunc) gaym_buddy_clear_done,
                              NULL);
@@ -109,11 +115,12 @@ gboolean gaym_blist_timeout(struct gaym_conn * gaym)
                              (GSourceFunc) gaym_blist_timeout,
                              (gpointer) gaym);
         g_free(list);
+        g_free(blist_whois);
 
         return TRUE;
     }
     gaym->blist_updating = TRUE;
-    buf = gaym_format(gaym, "vn", "ISON", list);
+    buf = gaym_format(gaym, "vn", "WHOIS", list);
     gaym_send(gaym, buf);
     gaim_timeout_remove(gaym->timer);
     gaym->timer =
@@ -122,9 +129,8 @@ gboolean gaym_blist_timeout(struct gaym_conn * gaym)
                          (gpointer) gaym);
 
     g_free(buf);
-
     g_free(list);
-
+    g_free(blist_whois);
 
     return TRUE;
 }
@@ -136,29 +142,41 @@ static void gaym_buddy_clear_done(char *name, struct gaym_buddy *ib,
 }
 
 static void gaym_buddy_append(char *name, struct gaym_buddy *ib,
-                              GString * string)
+                              BListWhois * blist_whois)
 {
-    char *converted_name;
-    if ((strlen(name) + string->len) > CHUNK_SIZE)
-        return;
-    else if (ib->done == FALSE) {
-        ib->stale = TRUE;
+    char *converted_name = NULL;
+    converted_name = gaym_nick_to_gcom_strdup(name);
+
+    /**
+     * There are 510 characters available for an IRC command (512 if
+     * you count CR-LF).  "WHOIS " takes up 6 characters.  This means
+     * we have up to 504 characters available for comma separated
+     * converted_names
+     */
+    if (ib->done == FALSE && blist_whois->count < 10
+        && (strlen(converted_name) + blist_whois->string->len + 1) <=
+        504) {
+        blist_whois->count++;
         ib->done = TRUE;
-        ib->flag = FALSE;
-        converted_name = gaym_nick_to_gcom_strdup(name);
-        g_string_append_printf(string, "%s ", converted_name);
-        g_free(converted_name);
-        return;
+        if (blist_whois->string->len == 0) {
+            g_string_append_printf(blist_whois->string, "%s",
+                                   converted_name);
+        } else {
+            g_string_append_printf(blist_whois->string, ",%s",
+                                   converted_name);
+        }
     }
+
+    g_free(converted_name);
+    return;
 }
 
-static void gaym_ison_one(struct gaym_conn *gaym, struct gaym_buddy *ib)
+static void gaym_whois_one(struct gaym_conn *gaym, struct gaym_buddy *ib)
 {
     char *buf;
     char *nick;
-    ib->flag = FALSE;
     nick = gaym_nick_to_gcom_strdup(ib->name);
-    buf = gaym_format(gaym, "vn", "ISON", nick);
+    buf = gaym_format(gaym, "vn", "WHOIS", nick);
     gaym_send(gaym, buf);
     g_free(nick);
     g_free(buf);
@@ -613,22 +631,45 @@ static void gaym_add_buddy(GaimConnection * gc, GaimBuddy * buddy,
     struct gaym_conn *gaym = (struct gaym_conn *) gc->proto_data;
     struct gaym_buddy *ib = g_new0(struct gaym_buddy, 1);
     ib->name = g_strdup(buddy->name);
+    ib->done = FALSE;
+    ib->online = FALSE;
+    ib->bio = NULL;
+    ib->thumbnail = NULL;
     g_hash_table_replace(gaym->buddies, ib->name, ib);
     gaim_debug_misc("gaym", "Add buddy: %s\n", buddy->name);
     /**
      * if the timer isn't set, this is during signon, so we don't want to
-     * flood ourself off with ISON's, so we don't, but after that we want
+     * flood ourself off with WHOIS's, so we don't, but after that we want
      * to know when someone's online asap
      */
     if (gaym->timer)
-        gaym_ison_one(gaym, ib);
+        gaym_whois_one(gaym, ib);
 }
 
 static void gaym_remove_buddy(GaimConnection * gc, GaimBuddy * buddy,
                               GaimGroup * group)
 {
     struct gaym_conn *gaym = (struct gaym_conn *) gc->proto_data;
-    g_hash_table_remove(gaym->buddies, buddy->name);
+
+    /**
+     * Only remove buddy->name from gaym->buddies if it doesn't
+     * exist in any other group on the buddy list.  This allows us
+     * to manage the buddy once, even though it might exist in
+     * several groups within the buddy list.
+     *
+     * To add to confusion, the buddy being deleted is not yet deleted,
+     * so we look for less than two identical buddies, and if so, then
+     * remove the buddy from gaym->buddies.
+     */
+
+    GSList *buddies = gaim_find_buddies(gaym->account, buddy->name);
+    guint length = g_slist_length(buddies);
+
+    if (length < 2) {
+        g_hash_table_remove(gaym->buddies, buddy->name);
+    }
+
+    g_slist_free(buddies);
 }
 
 static void gaym_input_cb(gpointer data, gint source,
@@ -852,6 +893,8 @@ static gboolean gaym_nick_equal(const char *nick1, const char *nick2)
 static void gaym_buddy_free(struct gaym_buddy *ib)
 {
     g_free(ib->name);
+    g_free(ib->bio);
+    g_free(ib->thumbnail);
     g_free(ib);
 }
 

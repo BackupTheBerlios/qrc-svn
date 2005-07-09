@@ -37,11 +37,16 @@
 
 #define IRC_INITIAL_BUFSIZE 1024
 
-#define CHUNK_SIZE 500
-
-#define BLIST_UPDATE_PERIOD 45000       // buddy list updated every 45s
+#define BLIST_UPDATE_PERIOD 60000       // buddy list updated every 45s
 #define BLIST_CHUNK_INTERVAL 5000       // 5s between ISON chunks
 
+#define GAYBOI_SPAM_URL "http://gayboi.org/spam/spamlst.php"
+
+typedef struct _BListWhois BListWhois;
+struct _BListWhois {
+    int count;
+    GString *string;
+};
 
 enum { IRC_USEROPT_SERVER, IRC_USEROPT_PORT, IRC_USEROPT_CHARSET };
 enum gaym_state { IRC_STATE_NEW, IRC_STATE_ESTABLISHED };
@@ -96,6 +101,7 @@ struct gaym_conn {
         int idle;
         time_t signon;
     } whois;
+
     GaimRoomlist *roomlist;
 
     GList **node_menu;
@@ -111,18 +117,12 @@ struct gaym_conn {
 };
 
 struct gaym_buddy {
-    char *name;
-    gboolean online;
-    gboolean flag;              // Marks an ISON response.
-
-    gboolean stale;             // Signifies ISON update needed
-    gboolean done;              // Keep track of which buddies have been
-    // checked.
-
+    char *name;                 /* gaym formatted nick */
+    gboolean done;              /* has been checked */
+    gboolean online;            /* is online */
+    char *bio;                  /* bio string */
+    char *thumbnail;            /* thumbnail string */
 };
-
-
-
 
 typedef int (*IRCCmdCallback) (struct gaym_conn * gaym, const char *cmd,
                                const char *target, const char **args);
@@ -158,8 +158,6 @@ void gaym_msg_invite(struct gaym_conn *gaym, const char *name,
                      const char *from, char **args);
 void gaym_msg_inviteonly(struct gaym_conn *gaym, const char *name,
                          const char *from, char **args);
-void gaym_msg_ison(struct gaym_conn *gaym, const char *name,
-                   const char *from, char **args);
 void gaym_msg_who(struct gaym_conn *gaym, const char *name,
                   const char *from, char **args);
 void gaym_msg_chanfull(struct gaym_conn *gaym, const char *name,

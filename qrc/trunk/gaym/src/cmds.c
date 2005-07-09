@@ -567,7 +567,7 @@ int gaym_cmd_whois(struct gaym_conn *gaym, const char *cmd,
         return 0;
 
     gaym->whois.nick = g_strdup(args[0]);
-    gcom_nick_to_gaym(gaym->whois.nick);
+
     converted_nick = gaym_nick_to_gcom_strdup(args[0]);
     buf = gaym_format(gaym, "vn", "WHOIS", converted_nick);
     gaym_send(gaym, buf);

@@ -50,13 +50,11 @@ static struct _gaym_msg {
     {
     "001", "n:", gaym_msg_endmotd},     /* login ok */
     {
-    "205", "nnvvvvv", gaym_msg_trace},    /* trace response */
+    "205", "nnvvvvv", gaym_msg_trace},  /* trace response */
     {
     "263", "n:", gaym_msg_list_busy},   /* Server load to heavy */
     {
     "301", "nn:", gaym_msg_away},       /* User is away */
-    {
-    "303", "n:", gaym_msg_ison},        /* ISON reply */
     {
     "311", "nnvvv:", gaym_msg_whois},   /* Whois user */
     {
@@ -187,20 +185,17 @@ static struct _gaym_user_cmd {
             ("quit [message]:  Disconnect from the server, with an optional message.")},
     {
     "quote", "*", gaym_cmd_quote,
-            N_("quote [...]:  Send a raw command to the server.")}, 
-    {
+            N_("quote [...]:  Send a raw command to the server.")}, {
     "umode", ":", gaym_cmd_mode,
             N_
             ("umode &lt;+|-&gt;&lt;A-Za-z&gt;:  Set or unset a user mode.")},
     {
     "trace", "n", gaym_cmd_trace,
-            N_("trace &lt;nick&gt;: Get trace information on a user.")}, 
-
-    {
+            N_("trace &lt;nick&gt;: Get trace information on a user.")}, {
     "whois", "n", gaym_cmd_whois,
             N_("whois &lt;nick&gt;:  Get information on a user.")}, {
     NULL, NULL, NULL}
-    
+
 };
 
 static GaimCmdRet gaym_parse_gaim_cmd(GaimConversation * conv,
