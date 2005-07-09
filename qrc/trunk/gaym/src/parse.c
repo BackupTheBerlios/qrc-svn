@@ -464,7 +464,7 @@ void gaym_parse_msg(struct gaym_conn *gaym, char *input)
         NULL, *fmt = NULL, **args = NULL, *msg = NULL;
     guint i;
 
-    gaim_debug(GAIM_DEBUG_INFO, "gaym", "RAW Protocol: %s\n", input);
+    /* gaim_debug(GAIM_DEBUG_INFO, "gaym", "RAW Protocol: %s\n", input); */
 
     if (!strncmp(input, "PING ", 5)) {
         msg = gaym_format(gaym, "vv", "PONG", input + 5);
