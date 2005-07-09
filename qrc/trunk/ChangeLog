@@ -1,6 +1,7 @@
 0.34.1+svn:
 	New Features:
-	- none
+	- Bio is now available from the buddy list via status and
+	  tooltip text
 
 	Bug Fixes:
 	- Better refreshing of stale buddy list photos
