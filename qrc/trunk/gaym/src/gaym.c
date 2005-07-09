@@ -202,18 +202,22 @@ static char *gaym_status_text(GaimBuddy * buddy)
         (struct gaym_conn *) buddy->account->gc->proto_data;
 
     if (!gaym) {
-        return g_strdup("");
+        return g_strdup(_("Offline"));
     }
 
     struct gaym_buddy *ib =
         g_hash_table_lookup(gaym->buddies, buddy->name);
 
     if (!ib) {
-        return g_strdup("");
+        return g_strdup(_("Offline"));
+    }
+
+    if (!ib->online) {
+        return g_strdup(_("Offline"));
     }
 
     if (!ib->bio) {
-        return g_strdup("");
+        return NULL;
     }
 
     status = g_markup_escape_text(ib->bio, strlen(ib->bio));
@@ -229,18 +233,18 @@ static char *gaym_tooltip_text(GaimBuddy * buddy)
         (struct gaym_conn *) buddy->account->gc->proto_data;
 
     if (!gaym) {
-        return g_strdup("");
+        return NULL;
     }
 
     struct gaym_buddy *ib =
         g_hash_table_lookup(gaym->buddies, buddy->name);
 
     if (!ib) {
-        return g_strdup("");
+        return NULL;
     }
 
     if (!ib->bio) {
-        return g_strdup("");
+        return NULL;
     }
 
     escaped = g_markup_escape_text(ib->bio, strlen(ib->bio));
