@@ -1448,7 +1448,6 @@ void hammer_stop_cb(gpointer data)
 
     struct gaym_conn *gaym = (struct gaym_conn *) data;
 
-
     gaym->cancelling_persist = TRUE;
     gaim_debug_misc("gaym", "Cancelling persist: %s\n",
                     gaym->persist_room);
@@ -1483,8 +1482,8 @@ void gaym_msg_chanfull(struct gaym_conn *gaym, const char *name,
     if (!args || !args[1] || !gc)
         return;
 
-
     joinargs[0] = args[1];
+
     if (gaym->persist_room && !strcmp(gaym->persist_room, args[1]))
         if (gaym->cancelling_persist) {
             if (gaym->persist_room) {

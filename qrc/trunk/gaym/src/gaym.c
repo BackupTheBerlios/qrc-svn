@@ -1137,10 +1137,32 @@ static void gaym_get_photo_info(GaimConversation * conv)
     if (strncmp(conv->account->protocol_id, "prpl-gaym", 9) == 0
         && gaim_conversation_get_type(conv) == GAIM_CONV_IM) {
 
+        /**
+         * First check to see if we already have the photo via
+         * the buddy list process.
+         */
+
         struct gaym_conn *gaym;
 
         GaimConnection *gc = gaim_conversation_get_gc(conv);
+
         gaym = (struct gaym_conn *) gc->proto_data;
+
+        if (!gaym) {
+            return;
+        }
+
+        struct gaym_buddy *ib =
+            g_hash_table_lookup(gaym->buddies, conv->name);
+
+        if (ib) {
+            return;
+        }
+
+        /**
+         * Since this person isn't in our buddy list, go ahead
+         * with the WHOIS to get the photo for the IM thumbnail
+         */
 
         gaym->info_window_needed = FALSE;
 
