@@ -996,6 +996,7 @@ void gaym_msg_trace(struct gaym_conn *gaym, const char *name,
                             time(NULL));
 
 }
+
 void gaym_msg_join(struct gaym_conn *gaym, const char *name,
                    const char *from, char **args)
 {
@@ -1004,7 +1005,7 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name,
 
     GaimConversation *convo;
     GaimConvChatBuddyFlags flags = GAIM_CBFLAGS_NONE;
-    char *bio = NULL, *bio_markedup = NULL;
+    char *bio = NULL, *bio_markedup = NULL, *thumbnail = NULL;
     static int id = 1;
 
     if (!gc) {
@@ -1037,13 +1038,19 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name,
     }
 
     bio = gaym_mask_bio(args[1]);
+    thumbnail = gaym_mask_thumbnail(args[1]);
+
+    gaym_buddy_status(gaym, nick, TRUE, bio, thumbnail);
+
     gboolean gaym_botfilter_permit =
         gaym_botfilter_check(gc, nick, bio, FALSE);
+
 
     if (bio) {
         bio_markedup = gaim_markup_linkify(bio);
         g_free(bio);
     }
+    g_free(thumbnail);
 
     if (strstr(args[1], "thumb.jpg#")) {
         if (args[1][1] == '9')
@@ -1078,8 +1085,6 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name,
         gaim_conv_chat_ignore(GAIM_CONV_CHAT(convo), nick);
     }
     ops->chat_update_user((convo), nick);
-
-    gaym_buddy_status(gaym, nick, TRUE, bio_markedup, NULL);
 
     g_free(bio_markedup);
     g_free(nick);
@@ -1592,12 +1597,16 @@ void gaym_msg_richnames_list(struct gaym_conn *gaym, const char *name,
 
     convo = gaim_find_conversation_with_account(channel, gaym->account);
 
-    char *masked_bio = gaym_mask_bio(extra);
+    char *bio = gaym_mask_bio(extra);
+    char *thumbnail = gaym_mask_thumbnail(extra);
 
     gboolean gaym_botfilter_permit =
-        gaym_botfilter_check(gc, nick, masked_bio, FALSE);
+        gaym_botfilter_check(gc, nick, bio, FALSE);
 
-    g_free(masked_bio);
+    gaym_buddy_status(gaym, nick, TRUE, bio, thumbnail);
+
+    g_free(thumbnail);
+    g_free(bio);
 
     if (convo == NULL) {
         gaim_debug(GAIM_DEBUG_ERROR, "gaym", "690 for %s failed\n",
