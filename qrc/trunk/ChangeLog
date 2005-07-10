@@ -1,7 +1,7 @@
 0.34.1+svn:
 	New Features:
-	- Bio is now available from the buddy list via status and
-	  tooltip text
+	- Bio displays in the buddy list status area
+	- Buddy list tooltip shows sex, age, location, and bio
 
 	Bug Fixes:
 	- Better refreshing of stale buddy list photos

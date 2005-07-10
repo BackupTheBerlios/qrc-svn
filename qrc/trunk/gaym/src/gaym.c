@@ -227,8 +227,6 @@ static char *gaym_status_text(GaimBuddy * buddy)
 
 static char *gaym_tooltip_text(GaimBuddy * buddy)
 {
-    char *escaped, *tooltip;
-
     struct gaym_conn *gaym =
         (struct gaym_conn *) buddy->account->gc->proto_data;
 
@@ -243,16 +241,42 @@ static char *gaym_tooltip_text(GaimBuddy * buddy)
         return NULL;
     }
 
-    if (!ib->bio) {
-        return NULL;
+    char *escaped;
+    GString *tooltip = g_string_new("");
+
+    if (ib->sex) {
+        escaped = g_markup_escape_text(ib->sex, strlen(ib->sex));
+        g_string_append_printf(tooltip, _("\n<b>%s:</b> %s"), _("Sex"),
+                               escaped);
+        g_free(escaped);
     }
 
-    escaped = g_markup_escape_text(ib->bio, strlen(ib->bio));
-    tooltip = g_strdup_printf(_("\n<b>%s:</b> %s"), _("Bio"), escaped);
+    if (ib->age) {
+        escaped = g_markup_escape_text(ib->age, strlen(ib->age));
+        g_string_append_printf(tooltip, _("\n<b>%s:</b> %s"), _("Age"),
+                               escaped);
+        g_free(escaped);
+    }
 
-    g_free(escaped);
+    if (ib->location) {
+        escaped = g_markup_escape_text(ib->location, strlen(ib->location));
+        g_string_append_printf(tooltip, _("\n<b>%s:</b> %s"),
+                               _("Location"), escaped);
+        g_free(escaped);
+    }
 
-    return tooltip;
+    if (ib->bio) {
+        escaped = g_markup_escape_text(ib->bio, strlen(ib->bio));
+        g_string_append_printf(tooltip, _("\n<b>%s:</b> %s"), _("Bio"),
+                               escaped);
+        g_free(escaped);
+    }
+
+    if (tooltip->len == 0) {
+        return g_string_free(tooltip, TRUE);
+    }
+
+    return g_string_free(tooltip, FALSE);
 }
 
 static GList *gaym_away_states(GaimConnection * gc)
@@ -696,6 +720,9 @@ static void gaym_add_buddy(GaimConnection * gc, GaimBuddy * buddy,
     ib->online = FALSE;
     ib->bio = NULL;
     ib->thumbnail = NULL;
+    ib->sex = NULL;
+    ib->age = NULL;
+    ib->location = NULL;
     g_hash_table_replace(gaym->buddies, ib->name, ib);
     gaim_debug_misc("gaym", "Add buddy: %s\n", buddy->name);
     /**
@@ -956,6 +983,9 @@ static void gaym_buddy_free(struct gaym_buddy *ib)
     g_free(ib->name);
     g_free(ib->bio);
     g_free(ib->thumbnail);
+    g_free(ib->sex);
+    g_free(ib->age);
+    g_free(ib->location);
     g_free(ib);
 }
 

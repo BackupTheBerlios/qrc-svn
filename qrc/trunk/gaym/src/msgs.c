@@ -268,7 +268,8 @@ static void gaym_fetch_info_cb(void *user_data, const char *info_data,
 }
 
 static void gaym_buddy_status(struct gaym_conn *gaym, char *name,
-                              gboolean online, char *bio, char *thumbnail)
+                              gboolean online, char *bio, char *thumbnail,
+                              char *stats)
 {
     char *url = NULL;
     struct gaym_fetch_thumbnail_data *data;
@@ -311,6 +312,22 @@ static void gaym_buddy_status(struct gaym_conn *gaym, char *name,
             g_free(ib->thumbnail);
             ib->thumbnail = g_strdup(thumbnail);
         }
+        if (stats) {
+            g_free(ib->sex);
+            g_free(ib->age);
+            g_free(ib->location);
+            gchar **s = g_strsplit(stats, "|", 3);
+            if (s[0] && strlen(s[0]) > 0) {
+                ib->sex = g_ascii_strup(s[0], -1);
+            }
+            if (s[1] && strlen(s[1]) > 0) {
+                ib->age = g_strdup(s[1]);
+            }
+            if (s[2] && strlen(s[2]) > 0) {
+                ib->location = g_strdup(s[2]);
+            }
+            g_strfreev(s);
+        }
         GaimBuddy *buddy = gaim_find_buddy(gaym->account, name);
         if (buddy) {
             serv_got_update(gc, buddy->name, online, 0, 0, 0, 0);
@@ -335,7 +352,7 @@ void gaym_msg_no_such_nick(struct gaym_conn *gaym, const char *name,
 
     gcom_nick_to_gaym(args[1]);
 
-    gaym_buddy_status(gaym, args[1], FALSE, NULL, NULL);
+    gaym_buddy_status(gaym, args[1], FALSE, NULL, NULL, NULL);
 
     if (gaym->info_window_needed == TRUE) {
         gaym->info_window_needed = 0;
@@ -367,8 +384,9 @@ void gaym_msg_whois(struct gaym_conn *gaym, const char *name,
 
     char *bio = gaym_mask_bio(args[5]);
     char *thumbpath = gaym_mask_thumbnail(args[5]);
+    char *stats = gaym_mask_stats(args[5]);
 
-    gaym_buddy_status(gaym, args[1], TRUE, bio, thumbpath);
+    gaym_buddy_status(gaym, args[1], TRUE, bio, thumbpath, stats);
 
     if (gaym->info_window_needed == TRUE) {
         gaym->info_window_needed = 0;
@@ -390,6 +408,7 @@ void gaym_msg_whois(struct gaym_conn *gaym, const char *name,
     }
     g_free(bio);
     g_free(thumbpath);
+    g_free(stats);
 }
 
 void gaym_msg_list(struct gaym_conn *gaym, const char *name,
@@ -1005,7 +1024,10 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name,
 
     GaimConversation *convo;
     GaimConvChatBuddyFlags flags = GAIM_CBFLAGS_NONE;
-    char *bio = NULL, *bio_markedup = NULL, *thumbnail = NULL;
+    char *bio = NULL;
+    char *bio_markedup = NULL;
+    char *thumbnail = NULL;
+    char *stats = NULL;
     static int id = 1;
 
     if (!gc) {
@@ -1039,8 +1061,9 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name,
 
     bio = gaym_mask_bio(args[1]);
     thumbnail = gaym_mask_thumbnail(args[1]);
+    stats = gaym_mask_stats(args[1]);
 
-    gaym_buddy_status(gaym, nick, TRUE, bio, thumbnail);
+    gaym_buddy_status(gaym, nick, TRUE, bio, thumbnail, stats);
 
     gboolean gaym_botfilter_permit =
         gaym_botfilter_check(gc, nick, bio, FALSE);
@@ -1051,6 +1074,7 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name,
         g_free(bio);
     }
     g_free(thumbnail);
+    g_free(stats);
 
     if (strstr(args[1], "thumb.jpg#")) {
         if (args[1][1] == '9')
@@ -1417,6 +1441,7 @@ void gaym_msg_regonly(struct gaym_conn *gaym, const char *name,
     g_free(msg);
 }
 
+/* I don't think gay.com ever sends this message */
 void gaym_msg_quit(struct gaym_conn *gaym, const char *name,
                    const char *from, char **args)
 {
@@ -1431,7 +1456,7 @@ void gaym_msg_quit(struct gaym_conn *gaym, const char *name,
     /* XXX this should have an API, I shouldn't grab this directly */
     g_slist_foreach(gc->buddy_chats, (GFunc) gaym_chat_remove_buddy, data);
 
-    gaym_buddy_status(gaym, data[0], FALSE, NULL, NULL);
+    gaym_buddy_status(gaym, data[0], FALSE, NULL, NULL, NULL);
 
     g_free(data[0]);
 
@@ -1598,11 +1623,12 @@ void gaym_msg_richnames_list(struct gaym_conn *gaym, const char *name,
 
     char *bio = gaym_mask_bio(extra);
     char *thumbnail = gaym_mask_thumbnail(extra);
+    char *stats = gaym_mask_stats(extra);
 
     gboolean gaym_botfilter_permit =
         gaym_botfilter_check(gc, nick, bio, FALSE);
 
-    gaym_buddy_status(gaym, nick, TRUE, bio, thumbnail);
+    gaym_buddy_status(gaym, nick, TRUE, bio, thumbnail, stats);
 
     g_free(thumbnail);
     g_free(bio);
