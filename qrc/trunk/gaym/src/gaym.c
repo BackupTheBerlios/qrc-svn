@@ -718,9 +718,15 @@ static void gaym_set_away(GaimConnection * gc, const char *state,
 static void gaym_add_buddy(GaimConnection * gc, GaimBuddy * buddy,
                            GaimGroup * group)
 {
-    buddy->name = g_strstrip(buddy->name);
-    buddy->alias = g_strstrip(buddy->alias);
-    buddy->server_alias = g_strstrip(buddy->server_alias);
+    if (buddy->name) {
+        buddy->name = g_strstrip(buddy->name);
+    }
+    if (buddy->alias) {
+        buddy->alias = g_strstrip(buddy->alias);
+    }
+    if (buddy->server_alias) {
+        buddy->server_alias = g_strstrip(buddy->server_alias);
+    }
     struct gaym_conn *gaym = (struct gaym_conn *) gc->proto_data;
     struct gaym_buddy *ib = g_new0(struct gaym_buddy, 1);
     ib->name = g_strdup(buddy->name);

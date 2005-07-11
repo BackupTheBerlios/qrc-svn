@@ -94,13 +94,19 @@ void gaym_buddy_status(struct gaym_conn *gaym, char *name,
 
     if (info) {
         bio = gaym_bio_strdup(info);
-        bio = g_strstrip(bio);
+        if (bio) {
+            bio = g_strstrip(bio);
+        }
 
         thumbnail = gaym_thumbnail_strdup(info);
-        thumbnail = g_strstrip(thumbnail);
+        if (thumbnail) {
+            thumbnail = g_strstrip(thumbnail);
+        }
 
         stats = gaym_stats_strdup(info);
-        stats = g_strstrip(stats);
+        if (stats) {
+            stats = g_strstrip(stats);
+        }
     }
 
     GaimConnection *gc = gaim_account_get_connection(gaym->account);
@@ -144,15 +150,21 @@ void gaym_buddy_status(struct gaym_conn *gaym, char *name,
             gchar **s = g_strsplit(stats, "|", 3);
             if (s[0] && strlen(s[0]) > 0) {
                 ib->sex = g_ascii_strup(s[0], -1);
-                ib->sex = g_strstrip(ib->sex);
+                if (ib->sex) {
+                    ib->sex = g_strstrip(ib->sex);
+                }
             }
             if (s[1] && strlen(s[1]) > 0) {
                 ib->age = g_strdup(s[1]);
-                ib->age = g_strstrip(ib->age);
+                if (ib->age) {
+                    ib->age = g_strstrip(ib->age);
+                }
             }
             if (s[2] && strlen(s[2]) > 0) {
                 ib->location = g_strdup(s[2]);
-                ib->location = g_strstrip(ib->location);
+                if (ib->location) {
+                    ib->location = g_strstrip(ib->location);
+                }
             }
             g_strfreev(s);
             g_free(stats);
