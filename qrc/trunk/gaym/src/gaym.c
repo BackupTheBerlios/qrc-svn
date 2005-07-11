@@ -286,7 +286,6 @@ static GList *gaym_away_states(GaimConnection * gc)
 
 static void gaym_set_info(GaimConnection * gc, const char *info)
 {
-
     struct gaym_conn *gaym = gc->proto_data;
     GaimAccount *account = gaim_connection_get_account(gc);
     char *hostname = "none";
@@ -698,10 +697,19 @@ static void gaym_set_away(GaimConnection * gc, const char *state,
         gc->away = NULL;
     }
 
+    /**
+     * FIXME:  set the Bio to the away message; if the away message
+     * is NULL, then set the Bio to the original bio.
+     */
+
     if (msg)
         gc->away = g_strdup(msg);
 
     /**
+     *  The following would be great, and gay.com's server supports
+     *  it, but gay.com's clients don't see the result.  So even though
+     *  we can see the result, we won't bother.
+     *
      * args[0] = msg;
      * gaym_cmd_away(gaym, "away", NULL, args);
      */
