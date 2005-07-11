@@ -39,12 +39,6 @@
 #include "gaympriv.h"
 #include "helpers.h"
 
-char *make_nick_profile_link(char *name)
-{
-    return g_strdup_printf("<A href='http://my.gay.com/%s'>%s</A>", name,
-                           name);
-}
-
 static char *gaym_mask_nick(const char *mask)
 {
     char *end, *buf;
