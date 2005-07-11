@@ -134,19 +134,26 @@ void gaym_buddy_status(struct gaym_conn *gaym, char *name,
     }
 
     if (ib) {
+        g_free(ib->bio);
+        ib->bio = NULL;
+        g_free(ib->thumbnail);
+        ib->thumbnail = NULL;
+        g_free(ib->sex);
+        ib->sex = NULL;
+        g_free(ib->age);
+        ib->age = NULL;
+        g_free(ib->location);
+        ib->location = NULL;
+
         ib->online = online;
+
         if (bio) {
-            g_free(ib->bio);
             ib->bio = bio;
         }
         if (thumbnail) {
-            g_free(ib->thumbnail);
             ib->thumbnail = thumbnail;
         }
         if (stats) {
-            g_free(ib->sex);
-            g_free(ib->age);
-            g_free(ib->location);
             gchar **s = g_strsplit(stats, "|", 3);
             if (s[0] && strlen(s[0]) > 0) {
                 ib->sex = g_ascii_strup(s[0], -1);
