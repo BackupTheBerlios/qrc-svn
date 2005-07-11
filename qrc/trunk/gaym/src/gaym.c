@@ -37,12 +37,12 @@
 #include "privacy.h"
 
 #include "helpers.h"
+#include "gayminfo.h"
 #include "gaympriv.h"
 #include "configtxt.h"
 #include "botfilter.h"
 #include "gaym.h"
 
-char *gaym_mask_bio(const char *biostring);
 static const char *gaym_blist_icon(GaimAccount * a, GaimBuddy * b);
 static void gaym_blist_emblems(GaimBuddy * b, char **se, char **sw,
                                char **nw, char **ne);
@@ -300,7 +300,7 @@ static void gaym_set_info(GaimConnection * gc, const char *info)
         gaym->bio = g_strdup(info);
     } else if (gaym->server_bioline && strlen(gaym->server_bioline) > 2) {
         gaim_debug_misc("gaym", "option2\n");
-        gaym->bio = g_strdup(gaym_mask_bio(gaym->server_bioline));
+        gaym->bio = gaym_bio_strdup(gaym->server_bioline);
     } else {
         gaim_debug_misc("gaym", "option3\n");
         gaym->bio = g_strdup("Gaim User");

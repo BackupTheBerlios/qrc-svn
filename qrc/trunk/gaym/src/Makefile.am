@@ -10,6 +10,8 @@ GAYMSOURCES = \
 	dcc_send.c \
 	gaym.c \
 	gaym.h \
+	gayminfo.c \
+	gayminfo.h \
 	gaympriv.c \
 	gaympriv.h \
 	helpers.c \
