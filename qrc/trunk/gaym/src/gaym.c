@@ -694,10 +694,10 @@ static void gaym_get_info(GaimConnection * gc, const char *who)
 static void gaym_set_away(GaimConnection * gc, const char *state,
                           const char *msg)
 {
-    /**
-     * struct gaym_conn *gaym = gc->proto_data;
-     * const char *args[1];
-     */
+    char *bioline = NULL;
+    char *buf = NULL;
+    char *hostname = "none";
+    struct gaym_conn *gaym = gc->proto_data;
 
     if (gc->away) {
         g_free(gc->away);
@@ -705,12 +705,33 @@ static void gaym_set_away(GaimConnection * gc, const char *state,
     }
 
     /**
-     * FIXME:  set the Bio to the away message; if the away message
-     * is NULL, then set the Bio to the original bio.
+     * In addition to setting the away message, set the Bio to the
+     * away message; if the away message is NULL, then set the Bio
+     * to the original bio.
      */
-
-    if (msg)
+    if (msg) {
         gc->away = g_strdup(msg);
+        bioline =
+            g_strdup_printf("%s#%s\001%s",
+                            gaym->thumbnail ? gaym->thumbnail : "",
+                            msg,
+                            gaym->server_stats ? gaym->server_stats : "");
+    } else {
+        bioline =
+            g_strdup_printf("%s#%s\001%s",
+                            gaym->thumbnail ? gaym->thumbnail : "",
+                            gaym->bio ? gaym->bio : "",
+                            gaym->server_stats ? gaym->server_stats : "");
+
+    }
+
+    buf = gaym_format(gaym, "vvvv:", "USER",
+                      gaim_account_get_username(gc->account),
+                      hostname, gaym->server, bioline);
+
+    g_free(bioline);
+    gaym_send(gaym, buf);
+    g_free(buf);
 
     /**
      *  The following would be great, and gay.com's server supports
