@@ -290,8 +290,20 @@ static void gaym_set_info(GaimConnection * gc, const char *info)
     GaimAccount *account = gaim_connection_get_account(gc);
     char *hostname = "none";
     char *buf, *bioline;
+    int i = 0;
 
-    if (gc->away && !info) {
+    char *tmpinfo = NULL;
+    if (info) {
+        tmpinfo = g_strdup(info);
+        for (i = 0; i < strlen(tmpinfo); i++) {
+            if (tmpinfo[i] == '\n') {
+                tmpinfo[i] = ' ';
+            }
+        }
+        tmpinfo = g_strstrip(tmpinfo);
+    }
+
+    if (gc->away && !tmpinfo) {
         /**
          * don't change any bio settings, since this is just
          * setting an away message
@@ -300,11 +312,12 @@ static void gaym_set_info(GaimConnection * gc, const char *info)
         if (gaym->bio) {
             g_free(gaym->bio);
         }
-        if (info && strlen(info) > 2) {
-            gaim_debug_misc("gaym", "option1, info=%x\n", info);
-            gaym->bio = g_strdup_printf("%s", info);
+        if (tmpinfo && strlen(tmpinfo) > 0) {
+            gaim_debug_misc("gaym", "option1, info=%x\n", tmpinfo);
+            /* java client allows MAX_BIO_LEN characters */
+            gaym->bio = g_strndup(tmpinfo, MAX_BIO_LEN);
         } else if (gaym->server_bioline
-                   && strlen(gaym->server_bioline) > 2) {
+                   && strlen(gaym->server_bioline) > 0) {
             gaim_debug_misc("gaym", "option2\n");
             gaym->bio = gaym_bio_strdup(gaym->server_bioline);
         } else {
@@ -313,7 +326,7 @@ static void gaym_set_info(GaimConnection * gc, const char *info)
         }
         gaim_account_set_user_info(account, gaym->bio);
         gaim_account_set_string(account, "bioline", gaym->bio);
-        gaim_debug_info("gaym", "INFO=%x BIO=%x\n", info, gaym->bio);
+        gaim_debug_info("gaym", "INFO=%x BIO=%x\n", tmpinfo, gaym->bio);
         gaim_debug_misc("gaym", "In login_cb, gc->account=%x\n",
                         gc->account);
     }
@@ -334,6 +347,9 @@ static void gaym_set_info(GaimConnection * gc, const char *info)
         gaim_connection_error(gc, "Error registering with server");
     }
 
+    if (tmpinfo) {
+        g_free(tmpinfo);
+    }
     g_free(bioline);
     g_free(buf);
 
@@ -707,6 +723,8 @@ static void gaym_set_away(GaimConnection * gc, const char *state,
                           const char *msg)
 {
     char *bio = NULL;
+    char *tmpmsg = NULL;
+    int i = 0;
     struct gaym_conn *gaym = gc->proto_data;
 
     if (gc->away) {
@@ -721,8 +739,17 @@ static void gaym_set_away(GaimConnection * gc, const char *state,
      */
 
     if (msg) {
-        gc->away = g_strdup(msg);
+        tmpmsg = g_strdup(msg);
+        for (i = 0; i < strlen(tmpmsg); i++) {
+            if (tmpmsg[i] == '\n') {
+                tmpmsg[i] = ' ';
+            }
+        }
+        tmpmsg = g_strstrip(tmpmsg);
+
+        gc->away = g_strndup(tmpmsg, MAX_BIO_LEN);
         gaym_set_info(gc, NULL);
+        g_free(tmpmsg);
     } else {
         if (gaym && gaym->bio) {
             bio = g_strdup(gaym->bio);

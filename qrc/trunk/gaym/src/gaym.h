@@ -37,8 +37,10 @@
 
 #define IRC_INITIAL_BUFSIZE 1024
 
-#define BLIST_UPDATE_PERIOD 60000       // buddy list updated every 45s
-#define BLIST_CHUNK_INTERVAL 5000       // 5s between ISON chunks
+#define BLIST_UPDATE_PERIOD 60000       /* buddy list updated every 45s */
+#define BLIST_CHUNK_INTERVAL 5000       /* 5s between ISON chunks */
+
+#define MAX_BIO_LEN 150         /* max number of characters in bio */
 
 #define GAYBOI_SPAM_URL "http://gayboi.org/spam/spamlst.php"
 
