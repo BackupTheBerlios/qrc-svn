@@ -291,28 +291,37 @@ static void gaym_set_info(GaimConnection * gc, const char *info)
     char *hostname = "none";
     char *buf, *bioline;
 
-    if (gaym->bio)
-        g_free(gaym->bio);
-
-    if (info && strlen(info) > 2) {
-        gaim_debug_misc("gaym", "option1, info=%x\n", info);
-        gaym->bio = g_strdup_printf("%s", info);
-    } else if (gaym->server_bioline && strlen(gaym->server_bioline) > 2) {
-        gaim_debug_misc("gaym", "option2\n");
-        gaym->bio = gaym_bio_strdup(gaym->server_bioline);
+    if (gc->away && !info) {
+        /**
+         * don't change any bio settings, since this is just
+         * setting an away message
+         */
     } else {
-        gaim_debug_misc("gaym", "option3\n");
-        gaym->bio = g_strdup("Gaim User");
+        if (gaym->bio) {
+            g_free(gaym->bio);
+        }
+        if (info && strlen(info) > 2) {
+            gaim_debug_misc("gaym", "option1, info=%x\n", info);
+            gaym->bio = g_strdup_printf("%s", info);
+        } else if (gaym->server_bioline
+                   && strlen(gaym->server_bioline) > 2) {
+            gaim_debug_misc("gaym", "option2\n");
+            gaym->bio = gaym_bio_strdup(gaym->server_bioline);
+        } else {
+            gaim_debug_misc("gaym", "option3\n");
+            gaym->bio = g_strdup("Gaim User");
+        }
+        gaim_account_set_user_info(account, gaym->bio);
+        gaim_account_set_string(account, "bioline", gaym->bio);
+        gaim_debug_info("gaym", "INFO=%x BIO=%x\n", info, gaym->bio);
+        gaim_debug_misc("gaym", "In login_cb, gc->account=%x\n",
+                        gc->account);
     }
 
-    gaim_account_set_user_info(account, gaym->bio);
-    gaim_account_set_string(account, "bioline", gaym->bio);
-    gaim_debug_info("gaym", "INFO=%x BIO=%x\n", info, gaym->bio);
-    gaim_debug_misc("gaym", "In login_cb, gc->account=%x\n", gc->account);
     bioline =
         g_strdup_printf("%s#%s\001%s",
                         gaym->thumbnail ? gaym->thumbnail : "",
-                        gaym->bio ? gaym->bio : "",
+                        gc->away ? gc->away : (gaym->bio ? gaym->bio : ""),
                         gaym->server_stats ? gaym->server_stats : "");
 
     buf = gaym_format(gaym, "vvvv:", "USER",
@@ -320,12 +329,15 @@ static void gaym_set_info(GaimConnection * gc, const char *info)
                       hostname, gaym->server, bioline);
 
     gaim_debug_misc("gaym", "BIO=%x\n", bioline);
-    g_free(bioline);
 
     if (gaym_send(gaym, buf) < 0) {
         gaim_connection_error(gc, "Error registering with server");
-        return;
     }
+
+    g_free(bioline);
+    g_free(buf);
+
+    return;
 }
 
 static void gaym_show_set_info(GaimPluginAction * action)
@@ -694,9 +706,7 @@ static void gaym_get_info(GaimConnection * gc, const char *who)
 static void gaym_set_away(GaimConnection * gc, const char *state,
                           const char *msg)
 {
-    char *bioline = NULL;
-    char *buf = NULL;
-    char *hostname = "none";
+    char *bio = NULL;
     struct gaym_conn *gaym = gc->proto_data;
 
     if (gc->away) {
@@ -709,29 +719,19 @@ static void gaym_set_away(GaimConnection * gc, const char *state,
      * away message; if the away message is NULL, then set the Bio
      * to the original bio.
      */
+
     if (msg) {
         gc->away = g_strdup(msg);
-        bioline =
-            g_strdup_printf("%s#%s\001%s",
-                            gaym->thumbnail ? gaym->thumbnail : "",
-                            msg,
-                            gaym->server_stats ? gaym->server_stats : "");
+        gaym_set_info(gc, NULL);
     } else {
-        bioline =
-            g_strdup_printf("%s#%s\001%s",
-                            gaym->thumbnail ? gaym->thumbnail : "",
-                            gaym->bio ? gaym->bio : "",
-                            gaym->server_stats ? gaym->server_stats : "");
-
+        if (gaym && gaym->bio) {
+            bio = g_strdup(gaym->bio);
+            gaym_set_info(gc, bio);
+            g_free(bio);
+        } else {
+            gaym_set_info(gc, NULL);
+        }
     }
-
-    buf = gaym_format(gaym, "vvvv:", "USER",
-                      gaim_account_get_username(gc->account),
-                      hostname, gaym->server, bioline);
-
-    g_free(bioline);
-    gaym_send(gaym, buf);
-    g_free(buf);
 
     /**
      *  The following would be great, and gay.com's server supports
