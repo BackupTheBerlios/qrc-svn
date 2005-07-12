@@ -488,7 +488,11 @@ gaym_weblogin_step5(gpointer session, const char *text, size_t len)
 
 
 
-
+	gaym->server_stats=NULL;
+	gaym->hash_pw=NULL;
+	gaym->server_bioline=NULL;
+	gaym->thumbnail=NULL;
+	
         // First, look for password
         match = "password\" value=\"";
         temp = strstr(text, match);
@@ -534,9 +538,13 @@ gaym_weblogin_step5(gpointer session, const char *text, size_t len)
                     || (gaym->server_bioline = NULL);
                 g_free(bio);
 
-            }
-            // We have established a session. Call session callback.
-
+		//Parse out stats part of bio.
+		temp2 = strchr(result, (char)0x01);
+		if(temp2++) {
+		    gaim_debug_misc("gaym", "Stats: %s\n", temp2);
+		    gaym->server_stats = g_strdup(temp2);
+		}
+	    }
         } else {
             // gaim_connection_error(
             // gaim_account_get_connection(((struct
@@ -703,6 +711,18 @@ gaym_get_hash_from_weblogin(GaimAccount * account,
         }
 
     }
+}
+
+void gaym_try_cached_password(GaimAccount * account,
+                            void (*callback) (GaimAccount * account))
+{
+
+    const char* pw;
+    pw=gaim_account_get_string(account, "password", NULL);
+    if (pw==NULL)
+        gaym_get_hash_from_weblogin(account, callback);
+    
+
 }
 
 /**

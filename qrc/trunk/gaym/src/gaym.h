@@ -77,6 +77,7 @@ struct gaym_conn {
     char *thumbnail;
     char *hash_pw;
     char *server_bioline;
+    char *server_stats;
     char *roomlist_filter;
     char *bio;
 
@@ -122,9 +123,6 @@ struct gaym_buddy {
     gboolean online;            /* is online */
     char *bio;                  /* bio string */
     char *thumbnail;            /* thumbnail string */
-    char *sex;                  /* sex string */
-    char *age;                  /* age string */
-    char *location;             /* location string */
 };
 
 typedef int (*IRCCmdCallback) (struct gaym_conn * gaym, const char *cmd,
