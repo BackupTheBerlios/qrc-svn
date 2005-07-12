@@ -2,9 +2,11 @@
 	New Features:
 	- Bio displays in the buddy list status area
 	- Buddy list tooltip shows sex, age, location, and bio
+	- Your Bio is set to the Away Message when you are Away.
 
 	Bug Fixes:
 	- Better refreshing of stale buddy list photos
+	- Bio no longer replaces sex, age, and location values
 
 	Preference Changes:
 	- none
