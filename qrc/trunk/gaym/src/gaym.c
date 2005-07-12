@@ -37,12 +37,12 @@
 #include "privacy.h"
 
 #include "helpers.h"
+#include "gayminfo.h"
 #include "gaympriv.h"
 #include "configtxt.h"
 #include "botfilter.h"
 #include "gaym.h"
 
-char *gaym_mask_bio(const char *biostring);
 static const char *gaym_blist_icon(GaimAccount * a, GaimBuddy * b);
 static void gaym_blist_emblems(GaimBuddy * b, char **se, char **sw,
                                char **nw, char **ne);
@@ -202,18 +202,22 @@ static char *gaym_status_text(GaimBuddy * buddy)
         (struct gaym_conn *) buddy->account->gc->proto_data;
 
     if (!gaym) {
-        return g_strdup("");
+        return g_strdup(_("Offline"));
     }
 
     struct gaym_buddy *ib =
         g_hash_table_lookup(gaym->buddies, buddy->name);
 
     if (!ib) {
-        return g_strdup("");
+        return g_strdup(_("Offline"));
+    }
+
+    if (!ib->online) {
+        return g_strdup(_("Offline"));
     }
 
     if (!ib->bio) {
-        return g_strdup("");
+        return NULL;
     }
 
     status = g_markup_escape_text(ib->bio, strlen(ib->bio));
@@ -223,32 +227,56 @@ static char *gaym_status_text(GaimBuddy * buddy)
 
 static char *gaym_tooltip_text(GaimBuddy * buddy)
 {
-    char *escaped, *tooltip;
-
     struct gaym_conn *gaym =
         (struct gaym_conn *) buddy->account->gc->proto_data;
 
     if (!gaym) {
-        return g_strdup("");
+        return NULL;
     }
 
     struct gaym_buddy *ib =
         g_hash_table_lookup(gaym->buddies, buddy->name);
 
     if (!ib) {
-        return g_strdup("");
+        return NULL;
     }
 
-    if (!ib->bio) {
-        return g_strdup("");
+    char *escaped;
+    GString *tooltip = g_string_new("");
+
+    if (ib->sex) {
+        escaped = g_markup_escape_text(ib->sex, strlen(ib->sex));
+        g_string_append_printf(tooltip, _("\n<b>%s:</b> %s"), _("Sex"),
+                               escaped);
+        g_free(escaped);
     }
 
-    escaped = g_markup_escape_text(ib->bio, strlen(ib->bio));
-    tooltip = g_strdup_printf(_("\n<b>%s:</b> %s"), _("Bio"), escaped);
+    if (ib->age) {
+        escaped = g_markup_escape_text(ib->age, strlen(ib->age));
+        g_string_append_printf(tooltip, _("\n<b>%s:</b> %s"), _("Age"),
+                               escaped);
+        g_free(escaped);
+    }
 
-    g_free(escaped);
+    if (ib->location) {
+        escaped = g_markup_escape_text(ib->location, strlen(ib->location));
+        g_string_append_printf(tooltip, _("\n<b>%s:</b> %s"),
+                               _("Location"), escaped);
+        g_free(escaped);
+    }
 
-    return tooltip;
+    if (ib->bio) {
+        escaped = g_markup_escape_text(ib->bio, strlen(ib->bio));
+        g_string_append_printf(tooltip, _("\n<b>%s:</b> %s"), _("Bio"),
+                               escaped);
+        g_free(escaped);
+    }
+
+    if (tooltip->len == 0) {
+        return g_string_free(tooltip, TRUE);
+    }
+
+    return g_string_free(tooltip, FALSE);
 }
 
 static GList *gaym_away_states(GaimConnection * gc)
@@ -258,7 +286,6 @@ static GList *gaym_away_states(GaimConnection * gc)
 
 static void gaym_set_info(GaimConnection * gc, const char *info)
 {
-
     struct gaym_conn *gaym = gc->proto_data;
     GaimAccount *account = gaim_connection_get_account(gc);
     char *hostname = "none";
@@ -269,10 +296,10 @@ static void gaym_set_info(GaimConnection * gc, const char *info)
 
     if (info && strlen(info) > 2) {
         gaim_debug_misc("gaym", "option1, info=%x\n", info);
-        gaym->bio = g_strdup_printf("%s",info);
+        gaym->bio = g_strdup_printf("%s", info);
     } else if (gaym->server_bioline && strlen(gaym->server_bioline) > 2) {
         gaim_debug_misc("gaym", "option2\n");
-        gaym->bio = g_strdup(gaym_mask_bio(gaym->server_bioline));
+        gaym->bio = gaym_bio_strdup(gaym->server_bioline);
     } else {
         gaim_debug_misc("gaym", "option3\n");
         gaym->bio = g_strdup("Gaim User");
@@ -283,9 +310,10 @@ static void gaym_set_info(GaimConnection * gc, const char *info)
     gaim_debug_info("gaym", "INFO=%x BIO=%x\n", info, gaym->bio);
     gaim_debug_misc("gaym", "In login_cb, gc->account=%x\n", gc->account);
     bioline =
-        g_strdup_printf("%s#%s\001%s", gaym->thumbnail ? gaym->thumbnail : "",
+        g_strdup_printf("%s#%s\001%s",
+                        gaym->thumbnail ? gaym->thumbnail : "",
                         gaym->bio ? gaym->bio : "",
-			gaym->server_stats ? gaym->server_stats : "");
+                        gaym->server_stats ? gaym->server_stats : "");
 
     buf = gaym_format(gaym, "vvvv:", "USER",
                       gaim_account_get_username(account),
@@ -467,10 +495,11 @@ static void gaym_login(GaimAccount * account)
     gaim_connection_update_progress(gc, buf, 1, 6);
     g_free(buf);
 
-    
-    //Making a change to try cached password first.
-    //gaym_try_cached_password(account, gaym_login_with_hash);
-   
+
+    /**
+     * Making a change to try cached password first.
+     * gaym_try_cached_password(account, gaym_login_with_hash);
+     */
     gaym_get_hash_from_weblogin(account, gaym_login_with_hash);
 }
 
@@ -553,12 +582,13 @@ static void gaym_login_cb(gpointer data, gint source,
                         "In login_cb, user_bioline: %x, gc->account=%x\n",
                         user_bioline, gc->account);
 
-        login_name = 
+        login_name =
             gaym_nick_to_gcom_strdup(gaim_connection_get_display_name(gc));
         bioline = g_strdup_printf("%s#%s\001%s",
-                                gaym->thumbnail,
-                                user_bioline ? user_bioline : "",
-                                gaym->server_stats ? gaym->server_stats : "");
+                                  gaym->thumbnail,
+                                  user_bioline ? user_bioline : "",
+                                  gaym->server_stats ? gaym->
+                                  server_stats : "");
 
         buf = gaym_format(gaym, "vn", "NICK", login_name);
         gaim_debug_misc("gaym", "Command: %s\n", buf);
@@ -630,7 +660,7 @@ static int gaym_im_send(GaimConnection * gc, const char *who,
     struct gaym_conn *gaym = gc->proto_data;
     const char *args[2];
     const char *awaymsg = NULL;
-    const char *stripped_msg = NULL;
+    char *stripped_msg = NULL;
     if (strchr(status_chars, *who) != NULL)
         args[0] = who + 1;
     else
@@ -638,10 +668,10 @@ static int gaym_im_send(GaimConnection * gc, const char *who,
 
 
     if (flags & GAIM_CONV_IM_AUTO_RESP) {
-	stripped_msg = gaim_markup_strip_html(what);
+        stripped_msg = gaim_markup_strip_html(what);
         awaymsg = g_strdup_printf("<Auto-response> %s", stripped_msg);
-	g_free(stripped_msg);
-	gaim_debug_misc("gaym: sending away message -- %s\n",awaymsg);
+        g_free(stripped_msg);
+        gaim_debug_misc("gaym: sending away message -- %s\n", awaymsg);
         args[1] = awaymsg;
 
     } else
@@ -674,10 +704,19 @@ static void gaym_set_away(GaimConnection * gc, const char *state,
         gc->away = NULL;
     }
 
+    /**
+     * FIXME:  set the Bio to the away message; if the away message
+     * is NULL, then set the Bio to the original bio.
+     */
+
     if (msg)
         gc->away = g_strdup(msg);
 
     /**
+     *  The following would be great, and gay.com's server supports
+     *  it, but gay.com's clients don't see the result.  So even though
+     *  we can see the result, we won't bother.
+     *
      * args[0] = msg;
      * gaym_cmd_away(gaym, "away", NULL, args);
      */
@@ -686,9 +725,15 @@ static void gaym_set_away(GaimConnection * gc, const char *state,
 static void gaym_add_buddy(GaimConnection * gc, GaimBuddy * buddy,
                            GaimGroup * group)
 {
-    buddy->name = g_strstrip(buddy->name);
-    buddy->alias = g_strstrip(buddy->alias);
-    buddy->server_alias = g_strstrip(buddy->server_alias);
+    if (buddy->name) {
+        buddy->name = g_strstrip(buddy->name);
+    }
+    if (buddy->alias) {
+        buddy->alias = g_strstrip(buddy->alias);
+    }
+    if (buddy->server_alias) {
+        buddy->server_alias = g_strstrip(buddy->server_alias);
+    }
     struct gaym_conn *gaym = (struct gaym_conn *) gc->proto_data;
     struct gaym_buddy *ib = g_new0(struct gaym_buddy, 1);
     ib->name = g_strdup(buddy->name);
@@ -696,6 +741,9 @@ static void gaym_add_buddy(GaimConnection * gc, GaimBuddy * buddy,
     ib->online = FALSE;
     ib->bio = NULL;
     ib->thumbnail = NULL;
+    ib->sex = NULL;
+    ib->age = NULL;
+    ib->location = NULL;
     g_hash_table_replace(gaym->buddies, ib->name, ib);
     gaim_debug_misc("gaym", "Add buddy: %s\n", buddy->name);
     /**
@@ -956,6 +1004,9 @@ static void gaym_buddy_free(struct gaym_buddy *ib)
     g_free(ib->name);
     g_free(ib->bio);
     g_free(ib->thumbnail);
+    g_free(ib->sex);
+    g_free(ib->age);
+    g_free(ib->location);
     g_free(ib);
 }
 
@@ -1137,10 +1188,32 @@ static void gaym_get_photo_info(GaimConversation * conv)
     if (strncmp(conv->account->protocol_id, "prpl-gaym", 9) == 0
         && gaim_conversation_get_type(conv) == GAIM_CONV_IM) {
 
+        /**
+         * First check to see if we already have the photo via
+         * the buddy list process.
+         */
+
         struct gaym_conn *gaym;
 
         GaimConnection *gc = gaim_conversation_get_gc(conv);
+
         gaym = (struct gaym_conn *) gc->proto_data;
+
+        if (!gaym) {
+            return;
+        }
+
+        struct gaym_buddy *ib =
+            g_hash_table_lookup(gaym->buddies, conv->name);
+
+        if (ib) {
+            return;
+        }
+
+        /**
+         * Since this person isn't in our buddy list, go ahead
+         * with the WHOIS to get the photo for the IM thumbnail
+         */
 
         gaym->info_window_needed = FALSE;
 
