@@ -78,6 +78,21 @@ gchar *ascii2native(const gchar * str);
  */
 gboolean gaym_nick_check(const char *nick);
 
+/**
+ * Build a GHashTable from a string that contains the contents of java
+ * properties file.
+ *
+ * This is built with g_hash_table_new_full() so when finished with
+ * the GHashTable, use only g_hash_table_destroy() to clean up.
+ *
+ * To retrieve a property, use g_hash_table_lookup().
+ *
+ * @param str The contents of the java properties file
+ *
+ * @return The GHashTable containing the properties
+ */
+GHashTable *gaym_properties_new(const char *str);
+
 #endif                          /* _GAIM_GAYM_HELPERS_H_ */
 
 /**

@@ -203,6 +203,52 @@ gboolean gaym_nick_check(const char *nick)
     return retval;
 }
 
+GHashTable *gaym_properties_new(const gchar * str)
+{
+    gchar *tmpstr = NULL;
+    gchar **tmparr = NULL;
+    gchar **proparr = NULL;
+    int i = 0;
+
+    GHashTable *props =
+        g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
+
+    tmpstr = ascii2native(str);
+
+    tmparr = g_strsplit(tmpstr, "\\\n", -1);
+
+    g_free(tmpstr);
+
+    tmpstr = g_strjoinv(NULL, tmparr);
+
+    g_strfreev(tmparr);
+
+    tmparr = g_strsplit(tmpstr, "\n", -1);
+
+    for (i = 0; tmparr[i] != NULL; i++) {
+        /* do nothing if this is a blank line */
+        if (strlen(g_strstrip(tmparr[i])) == 0) {
+            continue;
+        }
+        /* do nothing if this is a comment line */
+        if (tmparr[i][0] == '#') {
+            continue;
+        }
+        /* this must be a property=value string */
+        proparr = g_strsplit(tmparr[i], "=", 2);
+        if (proparr[0] && strlen(g_strstrip(proparr[0])) > 0
+            && proparr[1] && strlen(g_strstrip(proparr[1])) > 0) {
+            g_hash_table_insert(props, g_strdup(proparr[0]),
+                                g_strdup(proparr[1]));
+            g_strfreev(proparr);
+        }
+    }
+
+    g_strfreev(tmparr);
+
+    return props;
+}
+
 /**
  * vim:tabstop=4:shiftwidth=4:expandtab:
  */
