@@ -19,14 +19,26 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-#include "internal.h"
+
+/* config.h */
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+/* system headers */
+#include <glib.h>
+
+/* gaim headers for this plugin */
+#include "account.h"
 #include "debug.h"
 #include "privacy.h"
 #include "util.h"
 
-#include "gaympriv.h"
+/* local headers for this plugin */
 #include "botfilter.h"
 #include "gaym.h"
+#include "gaympriv.h"
+#include "helpers.h"
 
 gboolean gaym_privacy_check(GaimConnection * gc, const char *nick)
 {
@@ -199,6 +211,73 @@ void gaym_server_store_deny(GaimConnection * gc, const char *name,
                    gaym_server_change_deny_status_cb, NULL);
 
     g_free(url);
+    return;
+}
+
+void synchronize_deny_list(GaimConnection * gc, GHashTable * confighash)
+{
+    char *srvdeny = NULL;
+    gchar **srvdenylist = NULL;
+    GSList *list;
+    gint i = 0;
+    gboolean needsync = FALSE;
+
+    srvdeny =
+        g_hash_table_lookup(confighash, "connect-list.ignore.members");
+    if (!srvdeny) {
+        srvdeny = "";
+    }
+    srvdenylist = g_strsplit(srvdeny, ",", -1);
+
+    /**
+     * The nicks come in here as if they came from the IRC server
+     * so they need to be converted to GayM format
+     */
+    for (i = 0; srvdenylist[i]; i++) {
+        gcom_nick_to_gaym(srvdenylist[i]);
+    }
+
+    /* Add server deny list from config.txt to local deny list */
+    for (i = 0; srvdenylist[i]; i++) {
+        needsync = TRUE;
+        for (list = gc->account->deny; list != NULL; list = list->next) {
+            if (!gaim_utf8_strcasecmp
+                (srvdenylist[i],
+                 gaim_normalize(gc->account, (char *) list->data))) {
+                needsync = FALSE;
+                break;
+            }
+        }
+        if (needsync) {
+            if (!gaim_privacy_deny_add(gc->account, srvdenylist[i], TRUE)) {
+                gaim_debug_error("gaym",
+                                 "Failed to add %s to local deny list from server.\n",
+                                 srvdenylist[i]);
+            } else {
+                gaim_debug_misc("gaym",
+                                "Added %s to local deny list from server.\n",
+                                srvdenylist[i]);
+            }
+        }
+    }
+
+    /* Add local deny list not found in config.txt to server deny list */
+    for (list = gc->account->deny; list != NULL; list = list->next) {
+        needsync = TRUE;
+        for (i = 0; srvdenylist[i]; i++) {
+            if (!gaim_utf8_strcasecmp
+                (srvdenylist[i],
+                 gaim_normalize(gc->account, (char *) list->data))) {
+                needsync = FALSE;
+                break;
+            }
+        }
+        if (needsync) {
+            gaym_server_store_deny(gc, (char *) list->data, TRUE);
+        }
+    }
+
+    g_strfreev(srvdenylist);
     return;
 }
 

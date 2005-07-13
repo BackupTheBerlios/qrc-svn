@@ -39,7 +39,6 @@
 #include "helpers.h"
 #include "gayminfo.h"
 #include "gaympriv.h"
-#include "configtxt.h"
 #include "botfilter.h"
 #include "gaym.h"
 
@@ -550,9 +549,17 @@ static void gaym_get_configtxt_cb(gpointer proto_data,
     if (!gaym->configtxt) {
         gaim_debug(GAIM_DEBUG_ERROR, "gaym",
                    "Could not convert config.txt to utf-8.\n");
-    } else {
-        process_configtxt(gc, gaym->configtxt);
     }
+
+    gaym->confighash = gaym_properties_new(config_text);
+
+    if (!gaym->confighash) {
+        gaim_debug(GAIM_DEBUG_ERROR, "gaym",
+                   "Could not convert config.txt to hash table.\n");
+    } else {
+        synchronize_deny_list(gc, gaym->confighash);
+    }
+
     return;
 }
 

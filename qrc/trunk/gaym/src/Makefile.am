@@ -5,8 +5,6 @@ GAYMSOURCES = \
 	botfilter.c \
 	botfilter.h \
 	cmds.c \
-	configtxt.c \
-	configtxt.h \
 	dcc_send.c \
 	gaym.c \
 	gaym.h \

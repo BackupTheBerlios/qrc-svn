@@ -73,6 +73,17 @@ void gaym_server_change_deny_status_cb(void *data, const char *result,
 void gaym_server_store_deny(GaimConnection * gc, const char *name,
                             gboolean add);
 
+/**
+ * Try to synchronize the server's deny list with gaim's local deny
+ * list.  Because there may be a limit to the number of people you can
+ * store on the server's deny list, this function's goal so to put the
+ * superset of the two on both.
+ *
+ * @param gc          The connection.
+ * @param confighash The config.txt java properties retrieved from Gay.com.
+ */
+void synchronize_deny_list(GaimConnection * gc, GHashTable * confighash);
+
 #endif                          /* _GAIM_GAYM_GAYMPRIV_H_ */
 
 /**

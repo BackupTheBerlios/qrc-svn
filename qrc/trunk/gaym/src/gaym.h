@@ -111,6 +111,7 @@ struct gaym_conn {
     gboolean quitting;
     char *subroom;
     gchar *configtxt;
+    GHashTable *confighash;
     GaimUrlSession *session;
 
     char *persist_room;
