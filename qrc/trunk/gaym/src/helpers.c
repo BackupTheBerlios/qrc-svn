@@ -213,28 +213,65 @@ GHashTable *gaym_properties_new(const gchar * str)
     GHashTable *props =
         g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
 
+    /**
+     * convert ascii-escaped to native
+     */
     tmpstr = ascii2native(str);
 
+    /**
+     * replace $[0-9] with %s, so we can use printf style
+     * processing with the provided property values
+     */
+    for (i = 0; i < strlen(tmpstr); i++) {
+        if (tmpstr[i] == '$') {
+            if (g_ascii_isdigit(tmpstr[i + 1])) {
+                tmpstr[i] = '%';
+                tmpstr[i + 1] = 's';
+                i++;
+            }
+        }
+    }
+
+    /**
+     * strip out continuation character followed by newline 
+     */
     tmparr = g_strsplit(tmpstr, "\\\n", -1);
-
     g_free(tmpstr);
-
     tmpstr = g_strjoinv(NULL, tmparr);
-
     g_strfreev(tmparr);
 
+    /**
+     * We're getting close.  Now we need an array as follows:
+     *
+     * property=value
+     * property=value
+     * ...
+     */
     tmparr = g_strsplit(tmpstr, "\n", -1);
 
     for (i = 0; tmparr[i] != NULL; i++) {
-        /* do nothing if this is a blank line */
+        /**
+         * do nothing if this is a blank line
+         */
         if (strlen(g_strstrip(tmparr[i])) == 0) {
             continue;
         }
-        /* do nothing if this is a comment line */
+        /**
+         * do nothing if this is a comment line
+         */
         if (tmparr[i][0] == '#') {
             continue;
         }
-        /* this must be a property=value string */
+        /**
+         * this must be a property=value string, so we make
+         * it into a 2-element array:
+         *
+         * property
+         * value
+         *
+         * but we won't store it in our hash table unless both
+         * have real values after stripping whitespace
+         */
         proparr = g_strsplit(tmparr[i], "=", 2);
         if (proparr[0] && strlen(g_strstrip(proparr[0])) > 0
             && proparr[1] && strlen(g_strstrip(proparr[1])) > 0) {
