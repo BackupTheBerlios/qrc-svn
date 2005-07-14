@@ -286,6 +286,148 @@ GHashTable *gaym_properties_new(const gchar * str)
     return props;
 }
 
+int roomlist_level_strip(char *description)
+{
+    int val = 0;
+    int i = 0;
+
+    if (!description) {
+        return val;
+    }
+
+    for (i = 0; i < strlen(description); i++) {
+        if (description[i] == '+') {
+            description[i] = ' ';
+        } else {
+            break;
+        }
+        val++;
+    }
+
+    description = g_strchug(description);
+
+    return val;
+}
+
+GaimRoomlistRoom *find_parent(int level, int old_level,
+                              GaimRoomlistRoom * last_room)
+{
+    GaimRoomlistRoom *parent = NULL;
+    int i = 0;
+
+    if (level == 0) {
+        /* do nothing */
+    } else if (level == old_level) {
+        parent = last_room->parent;
+    } else if (level > old_level) {
+        parent = last_room;
+    } else if (level < old_level) {
+        parent = last_room;
+        for (i = old_level - level; i >= 0; i--) {
+            parent = parent->parent;
+        }
+    }
+    return parent;
+}
+
+void build_roomlist_from_config(GaimRoomlist * roomlist,
+                                GHashTable * confighash)
+{
+    gchar **roominst = NULL;
+    gchar *altname = NULL;
+    gchar *altchan = NULL;
+    int level = 0;
+    int old_level = 0;
+    int i = 0;
+    int j = 0;
+    GaimRoomlistRoom *room = NULL;
+    GaimRoomlistRoom *parent = NULL;
+
+    if (!roomlist || !confighash) {
+        return;
+    }
+
+    int max = gaim_prefs_get_int("/plugins/prpl/gaym/chat_room_instances");
+
+    gchar *roomstr = g_hash_table_lookup(confighash, "roomlist");
+    if (!roomstr) {
+        return;
+    }
+
+    gchar **roomarr = g_strsplit(roomstr, "|", -1);
+
+    /**
+     * We need to skip the first instance, because they start
+     * with a "|", which we've just split by, leaving a blank
+     * at the beginning of the list
+     */
+    for (i = 1; roomarr[i] != NULL; i++) {
+        if (roomarr[i][0] == '#') {
+            /**
+             * This is an actual room string, break it into its
+             * component parts, determine the level and the parent,
+             * and add the room as a cateory
+             */
+            roominst = g_strsplit(roomarr[i], " ", 2);
+            level = roomlist_level_strip(roominst[1]);
+            parent = find_parent(level, old_level, room);
+            room =
+                gaim_roomlist_room_new(GAIM_ROOMLIST_ROOMTYPE_CATEGORY,
+                                       roominst[1], parent);
+            gaim_roomlist_room_add(roomlist, room);
+            old_level = level;
+
+            /**
+             * Now add the 999=* instance of the room as a child
+             * of the category we just added
+             */
+            level++;
+            parent = find_parent(level, old_level, room);
+            altname = g_strdup_printf("%s:*", roominst[1]);
+            room = gaim_roomlist_room_new(GAIM_ROOMLIST_ROOMTYPE_ROOM,
+                                          altname, parent);
+            gaim_roomlist_room_add_field(roomlist, room, altname);
+            gaim_roomlist_room_add_field(roomlist, room, roominst[0]);
+            gaim_roomlist_room_add(roomlist, room);
+            g_free(altname);
+
+            /**
+             * And finally add the 999=1, 999=2, ... instances
+             * as siblings of the above room, based on the user's
+             * configuration of how many instances need to be
+             * represented
+             */
+            for (j = 1; j <= max; j++) {
+                altname = g_strdup_printf("%s:%d", roominst[1], j);
+                altchan =
+                    g_strdup_printf("%.*s%d", strlen(roominst[0]) - 1,
+                                    roominst[0], j);
+                room = gaim_roomlist_room_new(GAIM_ROOMLIST_ROOMTYPE_ROOM,
+                                              altname, parent);
+                gaim_roomlist_room_add_field(roomlist, room, altname);
+                gaim_roomlist_room_add_field(roomlist, room, altchan);
+                gaim_roomlist_room_add(roomlist, room);
+                g_free(altname);
+                g_free(altchan);
+            }
+            g_strfreev(roominst);
+        } else {
+            /**
+             * This is a plain category, determine the level and
+             * the parent and add it.
+             */
+            level = roomlist_level_strip(roomarr[i]);
+            parent = find_parent(level, old_level, room);
+            room =
+                gaim_roomlist_room_new(GAIM_ROOMLIST_ROOMTYPE_CATEGORY,
+                                       roomarr[i], parent);
+            gaim_roomlist_room_add(roomlist, room);
+        }
+        old_level = level;
+    }
+    g_strfreev(roomarr);
+}
+
 /**
  * vim:tabstop=4:shiftwidth=4:expandtab:
  */

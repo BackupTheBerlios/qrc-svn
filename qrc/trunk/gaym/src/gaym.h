@@ -110,7 +110,6 @@ struct gaym_conn {
     GList **node_menu;
     gboolean quitting;
     char *subroom;
-    gchar *configtxt;
     GHashTable *confighash;
     GaimUrlSession *session;
 

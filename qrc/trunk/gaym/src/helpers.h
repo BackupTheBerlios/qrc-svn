@@ -26,6 +26,8 @@
 
 #include <glib.h>
 
+#include "roomlist.h"
+
 char *return_string_between(const char *startbit, const char *endbit,
                             const char *source);
 
@@ -92,6 +94,45 @@ gboolean gaym_nick_check(const char *nick);
  * @return The GHashTable containing the properties
  */
 GHashTable *gaym_properties_new(const char *str);
+
+/**
+ * Gay.com provides a java property that contains instructions for
+ * building a hierarchical roomlist.  The level is shown by
+ * appending a number of '+' characters to the beginning of the
+ * room description.  This function strips the '+' characters
+ * and also returns the number of '+' characters found.
+ *
+ * @param description The string to strip and from which to calculate
+ *                    the level.
+ *
+ * @return The level (number of '+' characters found).
+ */
+int roomlist_level_strip(char *description);
+
+/**
+ * Take the level of the room to be added, the level of the last
+ * added room, and the last added room; and return the roomlist
+ * parent of the room to be added.
+ *
+ * @param level The level of the room to be added.
+ * @param old_level The level of the last added room.
+ * @param last_room The last added room.
+ *
+ * @return The parent of the room to be added.
+ */
+GaimRoomlistRoom *find_parent(int level, int old_level,
+                              GaimRoomlistRoom * last_room);
+
+/**
+ * Build the portion of the roomlist that is provided in the
+ * config.txt java properties file within the property "roomlist".
+ *
+ * @param roomlist The GaimRoomlist that these rooms should be loaded
+ *                 into.
+ * @param confighash The GHashTable that config.txt was converted into
+ */
+void build_roomlist_from_config(GaimRoomlist * roomlist,
+                                GHashTable * confighash);
 
 #endif                          /* _GAIM_GAYM_HELPERS_H_ */
 

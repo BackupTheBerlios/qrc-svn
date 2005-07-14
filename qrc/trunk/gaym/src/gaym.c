@@ -541,15 +541,6 @@ static void gaym_get_configtxt_cb(gpointer proto_data,
                    "Could not retrieve config.txt.\n");
         return;
     }
-    /**
-     * Call Jason's cool function to do away with java madness
-     */
-    gaym->configtxt = ascii2native(config_text);
-
-    if (!gaym->configtxt) {
-        gaim_debug(GAIM_DEBUG_ERROR, "gaym",
-                   "Could not convert config.txt to utf-8.\n");
-    }
 
     gaym->confighash = gaym_properties_new(config_text);
 
