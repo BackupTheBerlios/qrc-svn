@@ -203,6 +203,25 @@ gboolean gaym_nick_check(const char *nick)
     return retval;
 }
 
+void replace_dollar_n(gpointer key, gpointer value, gpointer user_data)
+{
+    int i = 0;
+    gchar *tmpstr = (gchar *) value;
+    /**
+     * replace $[0-9] with %s, so we can use printf style
+     * processing with the provided property values
+     */
+    for (i = 0; i < strlen(tmpstr); i++) {
+        if (tmpstr[i] == '$') {
+            if (g_ascii_isdigit(tmpstr[i + 1])) {
+                tmpstr[i] = '%';
+                tmpstr[i + 1] = 's';
+                i++;
+            }
+        }
+    }
+}
+
 GHashTable *gaym_properties_new(const gchar * str)
 {
     gchar *tmpstr = NULL;
@@ -217,20 +236,6 @@ GHashTable *gaym_properties_new(const gchar * str)
      * convert ascii-escaped to native
      */
     tmpstr = ascii2native(str);
-
-    /**
-     * replace $[0-9] with %s, so we can use printf style
-     * processing with the provided property values
-     */
-    for (i = 0; i < strlen(tmpstr); i++) {
-        if (tmpstr[i] == '$') {
-            if (g_ascii_isdigit(tmpstr[i + 1])) {
-                tmpstr[i] = '%';
-                tmpstr[i + 1] = 's';
-                i++;
-            }
-        }
-    }
 
     /**
      * strip out continuation character followed by newline 
@@ -282,6 +287,8 @@ GHashTable *gaym_properties_new(const gchar * str)
     }
 
     g_strfreev(tmparr);
+
+    g_hash_table_foreach(props, replace_dollar_n, NULL);
 
     return props;
 }

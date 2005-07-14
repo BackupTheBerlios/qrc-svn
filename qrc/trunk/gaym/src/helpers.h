@@ -81,6 +81,18 @@ gchar *ascii2native(const gchar * str);
 gboolean gaym_nick_check(const char *nick);
 
 /**
+ * This function is for use by g_hash_table_foreach() from within
+ * gaym_properties_new().  It is to replace $0, $1, ... with %s
+ * so we can use printf style processing with the provided property
+ * values.
+ *
+ * @param key       Not used.
+ * @param value     The string to search/replace.
+ * @param user_data Not used.
+ */
+void replace_dollar_n(gpointer key, gpointer value, gpointer user_data);
+
+/**
  * Build a GHashTable from a string that contains the contents of java
  * properties file.
  *
