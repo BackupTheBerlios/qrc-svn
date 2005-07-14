@@ -373,37 +373,38 @@ void build_roomlist_from_config(GaimRoomlist * roomlist,
             /**
              * This is an actual room string, break it into its
              * component parts, determine the level and the parent,
-             * and add the room as a cateory
+             * and add this as both a room and a category
              */
             roominst = g_strsplit(roomarr[i], " ", 2);
             level = roomlist_level_strip(roominst[1]);
             parent = find_parent(level, old_level, room);
-            room =
-                gaim_roomlist_room_new(GAIM_ROOMLIST_ROOMTYPE_CATEGORY,
-                                       roominst[1], parent);
-            gaim_roomlist_room_add(roomlist, room);
-            old_level = level;
-
-            /**
-             * Now add the 999=* instance of the room as a child
-             * of the category we just added
-             */
-            level++;
-            parent = find_parent(level, old_level, room);
             altname = g_strdup_printf("%s:*", roominst[1]);
-            room = gaim_roomlist_room_new(GAIM_ROOMLIST_ROOMTYPE_ROOM,
-                                          altname, parent);
+            if (max == 0) {
+                room =
+                    gaim_roomlist_room_new(GAIM_ROOMLIST_ROOMTYPE_ROOM,
+                                           altname, parent);
+            } else {
+                room =
+                    gaim_roomlist_room_new(GAIM_ROOMLIST_ROOMTYPE_CATEGORY
+                                           | GAIM_ROOMLIST_ROOMTYPE_ROOM,
+                                           altname, parent);
+            }
             gaim_roomlist_room_add_field(roomlist, room, altname);
             gaim_roomlist_room_add_field(roomlist, room, roominst[0]);
             gaim_roomlist_room_add(roomlist, room);
             g_free(altname);
+            old_level = level;
 
             /**
              * And finally add the 999=1, 999=2, ... instances
-             * as siblings of the above room, based on the user's
+             * as children of the above room, based on the user's
              * configuration of how many instances need to be
              * represented
              */
+            if (max > 0) {
+                level++;
+                parent = find_parent(level, old_level, room);
+            }
             for (j = 1; j <= max; j++) {
                 altname = g_strdup_printf("%s:%d", roominst[1], j);
                 altchan =

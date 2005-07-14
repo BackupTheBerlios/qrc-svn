@@ -2,7 +2,11 @@
 	New Features:
 	- Bio displays in the buddy list status area
 	- Buddy list tooltip shows sex, age, location, and bio
-	- Your Bio is set to the Away Message when you are Away.
+	- Your Bio is set to the Away Message when you are Away
+	- Improvement to the Room List layout:  First Available Room
+	  (Room Name:*) is both a Category (which can be expanded) and a
+	  Room (which can be joined), with the individual Room Instances
+	  as children
 
 	Bug Fixes:
 	- Better refreshing of stale buddy list photos
