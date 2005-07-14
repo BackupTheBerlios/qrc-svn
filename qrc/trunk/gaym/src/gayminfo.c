@@ -121,12 +121,15 @@ void gaym_buddy_status(struct gaym_conn *gaym, char *name,
         if ((ib && gaim_utf8_strcasecmp(thumbnail, ib->thumbnail))
             || (gaym->whois.nick
                 && !gaim_utf8_strcasecmp(gaym->whois.nick, name))) {
+            char *hashurl = NULL;
+            hashurl =
+                g_hash_table_lookup(gaym->confighash,
+                                    "mini-profile-panel.thumbnail-prefix");
+            g_return_if_fail(hashurl != NULL);
             data = g_new0(struct gaym_fetch_thumbnail_data, 1);
             data->gc = gaim_account_get_connection(gaym->account);
             data->who = g_strdup(name);
-            url =
-                g_strdup_printf
-                ("http://gay.com/images/personals/pictures%s", thumbnail);
+            url = g_strdup_printf("%s%s", hashurl, thumbnail);
             gaim_url_fetch(url, FALSE, "Mozilla/4.0", FALSE,
                            gaym_fetch_thumbnail_cb, data);
             g_free(url);

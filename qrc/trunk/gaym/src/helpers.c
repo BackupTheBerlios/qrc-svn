@@ -350,16 +350,13 @@ void build_roomlist_from_config(GaimRoomlist * roomlist,
     GaimRoomlistRoom *room = NULL;
     GaimRoomlistRoom *parent = NULL;
 
-    if (!roomlist || !confighash) {
-        return;
-    }
+    g_return_if_fail(roomlist != NULL);
+    g_return_if_fail(confighash != NULL);
 
     int max = gaim_prefs_get_int("/plugins/prpl/gaym/chat_room_instances");
 
     gchar *roomstr = g_hash_table_lookup(confighash, "roomlist");
-    if (!roomstr) {
-        return;
-    }
+    g_return_if_fail(roomstr != NULL);
 
     gchar **roomarr = g_strsplit(roomstr, "|", -1);
 

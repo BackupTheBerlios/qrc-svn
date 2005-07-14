@@ -116,27 +116,33 @@ static void gaym_fetch_photo_cb(void *user_data, const char *info_data,
 
     char *info, *t;
 
+    struct gaym_conn *gaym = d->gc->proto_data;
+
+    char *hashurl =
+        g_hash_table_lookup(gaym->confighash, "view-profile-url");
+    g_return_if_fail(hashurl != NULL);
+
     int id = gaim_imgstore_add(info_data, len, NULL);
     if (d->stats && d->bio)
         info =
             g_strdup_printf
-            ("<b>Stats:</b> %s<br><b>Bio:</b> %s<br><img id=%d><br><a href='http://my.gay.com/%s'>Full Profile</a>",
-             d->stats, d->bio, id, d->who);
+            ("<b>Stats:</b> %s<br><b>Bio:</b> %s<br><img id=%d><br><a href='%s%s'>Full Profile</a>",
+             d->stats, d->bio, id, hashurl, d->who);
     else if (d->stats)
         info =
             g_strdup_printf
-            ("<b>Stats:</b> %s<br><img id=%d><br><a href='http://my.gay.com/%s'>Full Profile</a>",
-             d->stats, id, d->who);
+            ("<b>Stats:</b> %s<br><img id=%d><br><a href='%s%s'>Full Profile</a>",
+             d->stats, id, hashurl, d->who);
     else if (d->bio)
         info =
             g_strdup_printf
-            ("<b>Bio:</b> %s<br><img id=%d><br><a href='http://my.gay.com/%s'>Full Profile</a>",
-             d->bio, id, d->who);
+            ("<b>Bio:</b> %s<br><img id=%d><br><a href='%s%s'>Full Profile</a>",
+             d->bio, id, hashurl, d->who);
     else
         info =
             g_strdup_printf
-            ("No Info Found<br><img id=%d><br><a href='http://my.gay.com/%s'>Full Profile</a>",
-             id, d->who);
+            ("No Info Found<br><img id=%d><br><a href='%s%s'>Full Profile</a>",
+             id, hashurl, d->who);
 
     gaim_notify_userinfo(d->gc, d->who,
                          t = g_strdup_printf("Gay.com - %s", d->who),
@@ -163,26 +169,32 @@ static void gaym_fetch_info_cb(void *user_data, const char *info_data,
     char *info, *t;
     char *match = "pictures.0.url=";
 
+    struct gaym_conn *gaym = d->gc->proto_data;
+
+    char *hashurl =
+        g_hash_table_lookup(gaym->confighash, "view-profile-url");
+    g_return_if_fail(hashurl != NULL);
+
     if (d->stats && d->bio)
         info =
             g_strdup_printf
-            ("<b>Stats:</b> %s<br><b>Bio:</b> %s<br><a href='http://my.gay.com/%s'>Full Profile</a>",
-             d->stats, d->bio, d->who);
+            ("<b>Stats:</b> %s<br><b>Bio:</b> %s<br><a href='%s%s'>Full Profile</a>",
+             d->stats, d->bio, hashurl, d->who);
     else if (d->stats)
         info =
             g_strdup_printf
-            ("<b>Stats:</b> %s<br><a href='http://my.gay.com/%s'>Full Profile</a>",
-             d->stats, d->who);
+            ("<b>Stats:</b> %s<br><a href='%s%s'>Full Profile</a>",
+             d->stats, hashurl, d->who);
     else if (d->bio)
         info =
             g_strdup_printf
-            ("<b>Bio:</b> %s<br><a href='http://my.gay.com/%s'>Full Profile</a>",
-             d->bio, d->who);
+            ("<b>Bio:</b> %s<br><a href='%s%s'>Full Profile</a>",
+             d->bio, hashurl, d->who);
     else
         info =
             g_strdup_printf
-            ("No Info Found<br><a href='http://my.gay.com/%s'>Full Profile</a>",
-             d->who);
+            ("No Info Found<br><a href='%s%s'>Full Profile</a>",
+             hashurl, d->who);
 
     picpath = return_string_between(match, "\n", info_data);
     if (!picpath || strlen(picpath) == 0) {
@@ -222,10 +234,14 @@ void gaym_msg_no_such_nick(struct gaym_conn *gaym, const char *name,
         gaym->info_window_needed = 0;
         char *buf;
 
+        char *hashurl =
+            g_hash_table_lookup(gaym->confighash, "view-profile-url");
+        g_return_if_fail(hashurl != NULL);
+
         buf =
             g_strdup_printf
-            ("That user is not logged on. Check <a href='http://my.gay.com/%s'>here</a> to see if that user has a profile.",
-             args[1]);
+            ("That user is not logged on. Check <a href='%s%s'>here</a> to see if that user has a profile.",
+             hashurl, args[1]);
         gaim_notify_userinfo(gaim_account_get_connection(gaym->account),
                              NULL, NULL, "No such user", NULL, buf, NULL,
                              NULL);
@@ -249,16 +265,18 @@ void gaym_msg_whois(struct gaym_conn *gaym, const char *name,
 
     struct gaym_fetch_thumbnail_data *data;
     if (gaym->info_window_needed == TRUE) {
+        char *hashurl = g_hash_table_lookup(gaym->confighash,
+                                            "ohm.profile-url");
+        g_return_if_fail(hashurl != NULL);
         gaym->info_window_needed = 0;
         data = g_new0(struct gaym_fetch_thumbnail_data, 1);
         data->gc = gaim_account_get_connection(gaym->account);
         data->who = g_strdup(gaym->whois.nick);
         data->bio = gaym_bio_strdup(args[5]);
         data->stats = gaym_stats_strdup(args[5]);
-        char *infourl =
-            g_strdup_printf
-            ("http://www.gay.com/messenger/get-profile.txt?pw=%s&name=%s",
-             gaym->hash_pw, gaym->whois.nick);
+
+        char *infourl = g_strdup_printf("%s?pw=%s&name=%s", hashurl,
+                                        gaym->hash_pw, gaym->whois.nick);
         if (infourl) {
             gaim_url_fetch(infourl, FALSE,
                            "Mozilla/4.0 (compatible; MSIE 5.0)", FALSE,

@@ -536,20 +536,12 @@ static void gaym_get_configtxt_cb(gpointer proto_data,
     struct gaym_conn *gaym = (struct gaym_conn *) proto_data;
     GaimConnection *gc = gaim_account_get_connection(gaym->account);
 
-    if (!config_text) {
-        gaim_debug(GAIM_DEBUG_ERROR, "gaym",
-                   "Could not retrieve config.txt.\n");
-        return;
-    }
+    g_return_if_fail(config_text != NULL);
 
     gaym->confighash = gaym_properties_new(config_text);
+    g_return_if_fail(gaym->confighash != NULL);
 
-    if (!gaym->confighash) {
-        gaim_debug(GAIM_DEBUG_ERROR, "gaym",
-                   "Could not convert config.txt to hash table.\n");
-    } else {
-        synchronize_deny_list(gc, gaym->confighash);
-    }
+    synchronize_deny_list(gc, gaym->confighash);
 
     return;
 }

@@ -197,13 +197,14 @@ void gaym_server_store_deny(GaimConnection * gc, const char *name,
     }
 
     struct gaym_conn *gaym = gc->proto_data;
-    const char *server =
-        gaim_account_get_string(gc->account, "server", IRC_DEFAULT_SERVER);
+
+    char *hashurl =
+        g_hash_table_lookup(gaym->confighash, "list-operations-url");
+    g_return_if_fail(hashurl != NULL);
 
     char *url =
-        g_strdup_printf
-        ("http://%s/messenger/lists.txt?name=%s&key=%s&list=ignore&op=%s",
-         server, name, gaym->hash_pw, action);
+        g_strdup_printf("%s?name=%s&key=%s&list=ignore&op=%s", hashurl,
+                        name, gaym->hash_pw, action);
 
     char *user_agent = "Mozilla/4.0";
 
@@ -221,6 +222,8 @@ void synchronize_deny_list(GaimConnection * gc, GHashTable * confighash)
     GSList *list;
     gint i = 0;
     gboolean needsync = FALSE;
+
+    g_return_if_fail(confighash != NULL);
 
     srvdeny =
         g_hash_table_lookup(confighash, "connect-list.ignore.members");
