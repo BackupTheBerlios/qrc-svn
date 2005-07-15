@@ -518,7 +518,7 @@ static void gaym_login(GaimAccount * account)
     gaym->msgs = g_hash_table_new(g_str_hash, g_str_equal);
     gaym_msg_table_build(gaym);
     gaym->info_window_needed =
-        g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+        g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
 
     buf = g_strdup_printf(_("Signon: %s"), username);
     gaim_connection_update_progress(gc, buf, 1, 6);
