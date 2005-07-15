@@ -685,26 +685,26 @@ static int gaym_im_send(GaimConnection * gc, const char *who,
 {
     struct gaym_conn *gaym = gc->proto_data;
     const char *args[2];
-    const char *awaymsg = NULL;
+    char *automsg = NULL;
     char *stripped_msg = NULL;
-    if (strchr(status_chars, *who) != NULL)
+    if (strchr(status_chars, *who) != NULL) {
         args[0] = who + 1;
-    else
+    } else {
         args[0] = who;
-
-
+    }
     if (flags & GAIM_CONV_IM_AUTO_RESP) {
         stripped_msg = gaim_markup_strip_html(what);
-        awaymsg = g_strdup_printf("<Auto-response> %s", stripped_msg);
+        automsg = g_strdup_printf("<AUTO-REPLY> %s", stripped_msg);
         g_free(stripped_msg);
-        gaim_debug_misc("gaym: sending away message -- %s\n", awaymsg);
-        args[1] = awaymsg;
+        args[1] = automsg;
 
-    } else
+    } else {
         args[1] = what;
-
+    }
     gaym_cmd_privmsg(gaym, "msg", NULL, args);
-    g_free((char *) awaymsg);
+    if (automsg) {
+        g_free(automsg);
+    }
     return 1;
 }
 
