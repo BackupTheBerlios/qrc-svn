@@ -264,6 +264,8 @@ void gaym_msg_whois(struct gaym_conn *gaym, const char *name,
         return;
     }
 
+    gcom_nick_to_gaym(args[1]);
+
     gaym_buddy_status(gaym, args[1], TRUE, args[5]);
 
     char *normalized = g_strdup(gaim_normalize(gaym->account, args[1]));
