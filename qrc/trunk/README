@@ -1,3 +1,21 @@
+An explanation of the symbols that display next to users in a chat
+room:
+
+   Circular symbol:
+      User has a profile and a G-rated photo.
+
+   Star:
+      User has a profile and an X-rated photo.
+
+   Half Star:
+      User has a profile but no photo.
+
+   Triangle:
+      Unknown:  please report a bug.
+
+   No Symbol:
+      User has no profile and no photo.
+
 An explanation of privacy settings as implemented in GayM:
 
 Gaim Privacy Setting Options (only one of the following may be selected):
