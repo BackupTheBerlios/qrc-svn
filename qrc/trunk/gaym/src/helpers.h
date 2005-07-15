@@ -146,6 +146,16 @@ GaimRoomlistRoom *find_parent(int level, int old_level,
 void build_roomlist_from_config(GaimRoomlist * roomlist,
                                 GHashTable * confighash);
 
+/**
+ * Determine the correct GaimConvChatBuddyFlags based on the "extra"
+ * information that is provided during join, whois, etc.
+ *
+ * @param extra The string containing the information about the flags.
+ *
+ * @return The correct GaimConvChatBuddyFlags.
+ */
+GaimConvChatBuddyFlags chat_pecking_order(const char *extra);
+
 #endif                          /* _GAIM_GAYM_HELPERS_H_ */
 
 /**

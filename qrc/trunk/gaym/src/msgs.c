@@ -717,12 +717,7 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name,
         g_free(bio);
     }
 
-    if (strstr(args[1], "thumb.jpg#")) {
-        if (args[1][1] == '9')
-            flags = GAIM_CBFLAGS_HALFOP;
-        else
-            flags = GAIM_CBFLAGS_OP;
-    }
+    flags = chat_pecking_order(args[1]);
 
     gboolean gaym_privacy_permit = gaym_privacy_check(gc, nick);
     gboolean show_join =
@@ -1275,12 +1270,8 @@ void gaym_msg_richnames_list(struct gaym_conn *gaym, const char *name,
         return;
     }
 
-    if (strstr(extra, "thumb.jpg#")) {
-        if (extra[1] == '9')
-            flags = GAIM_CBFLAGS_HALFOP;
-        else
-            flags = GAIM_CBFLAGS_OP;
-    }
+    flags = chat_pecking_order(extra);
+
     gaim_conv_chat_add_user(GAIM_CONV_CHAT(convo), nick, NULL, flags,
                             FALSE);
 

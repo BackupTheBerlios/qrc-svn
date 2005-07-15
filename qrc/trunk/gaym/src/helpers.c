@@ -433,6 +433,28 @@ void build_roomlist_from_config(GaimRoomlist * roomlist,
     g_strfreev(roomarr);
 }
 
+GaimConvChatBuddyFlags chat_pecking_order(const char *extra)
+{
+    GaimConvChatBuddyFlags flags = GAIM_CBFLAGS_NONE;
+    if (extra[0] == '1' && extra[1] == '8') {
+        /* profile and g-rated photo */
+        flags = GAIM_CBFLAGS_FOUNDER;
+    } else if (extra[0] == '1' && extra[1] == '9') {
+        /* profile and x-rated photo */
+        flags = GAIM_CBFLAGS_OP;
+    } else if (extra[0] == '8') {
+        /* profile but no photo */
+        flags = GAIM_CBFLAGS_HALFOP;
+    } else if (extra[0] == '0') {
+        /* no profile and no photo */
+        flags = GAIM_CBFLAGS_NONE;
+    } else {
+        /* unknown */
+        flags = GAIM_CBFLAGS_VOICE;
+    }
+    return flags;
+}
+
 /**
  * vim:tabstop=4:shiftwidth=4:expandtab:
  */
