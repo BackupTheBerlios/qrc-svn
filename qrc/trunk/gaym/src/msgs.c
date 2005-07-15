@@ -230,18 +230,10 @@ void gaym_msg_no_such_nick(struct gaym_conn *gaym, const char *name,
 
     gaym_buddy_status(gaym, args[1], FALSE, NULL);
 
-    gboolean info_needed = FALSE;
-    gchar *orig_key = NULL;
-    gchar *value = NULL;
     char *normalized = g_strdup(gaim_normalize(gaym->account, args[1]));
-    info_needed =
-        g_hash_table_lookup_extended(gaym->info_window_needed, normalized,
-                                     (gpointer *) orig_key,
-                                     (gpointer *) value);
 
-    if (info_needed == TRUE) {
-        info_needed =
-            g_hash_table_remove(gaym->info_window_needed, normalized);
+    if (g_hash_table_lookup(gaym->info_window_needed, normalized)) {
+        g_hash_table_remove(gaym->info_window_needed, normalized);
 
         char *hashurl =
             g_hash_table_lookup(gaym->confighash, "view-profile-url");
@@ -274,20 +266,12 @@ void gaym_msg_whois(struct gaym_conn *gaym, const char *name,
 
     gaym_buddy_status(gaym, args[1], TRUE, args[5]);
 
-    gboolean info_needed = FALSE;
-    gchar *orig_key = NULL;
-    gchar *value = NULL;
     char *normalized = g_strdup(gaim_normalize(gaym->account, args[1]));
-    info_needed = g_hash_table_lookup_extended(gaym->info_window_needed,
-                                               normalized,
-                                               (gpointer *) orig_key,
-                                               (gpointer *) value);
 
     struct gaym_fetch_thumbnail_data *data;
 
-    if (info_needed == TRUE) {
-        info_needed =
-            g_hash_table_remove(gaym->info_window_needed, normalized);
+    if (g_hash_table_lookup(gaym->info_window_needed, normalized)) {
+        g_hash_table_remove(gaym->info_window_needed, normalized);
         char *hashurl = g_hash_table_lookup(gaym->confighash,
                                             "ohm.profile-url");
         g_return_if_fail(hashurl != NULL);

@@ -517,8 +517,13 @@ static void gaym_login(GaimAccount * account)
     gaym_cmd_table_build(gaym);
     gaym->msgs = g_hash_table_new(g_str_hash, g_str_equal);
     gaym_msg_table_build(gaym);
+    /**
+     * The last parameter needs to be NULL here, since the same
+     * field is added for both the key and the value (and if we
+     * free it twice, thats bad and causes crashing!).
+     */
     gaym->info_window_needed =
-        g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
+        g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
 
     buf = g_strdup_printf(_("Signon: %s"), username);
     gaim_connection_update_progress(gc, buf, 1, 6);
@@ -709,7 +714,13 @@ static void gaym_get_info(GaimConnection * gc, const char *who)
     const char *args[1];
     args[0] = who;
     char *normalized = g_strdup(gaim_normalize(gc->account, who));
-    g_hash_table_insert(gaym->info_window_needed, normalized, NULL);
+    /**
+     * We are adding the same char* to both the key and the value.
+     * If this changes, we need to change the corresponding
+     * g_hash_table_new_full() so that things are properly cleaned
+     * up during the remove/destroy phase.
+     */
+    g_hash_table_insert(gaym->info_window_needed, normalized, normalized);
     gaym_cmd_whois(gaym, "whois", NULL, args);
 }
 
