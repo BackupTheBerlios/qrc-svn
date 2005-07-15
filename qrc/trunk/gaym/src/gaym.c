@@ -517,6 +517,8 @@ static void gaym_login(GaimAccount * account)
     gaym_cmd_table_build(gaym);
     gaym->msgs = g_hash_table_new(g_str_hash, g_str_equal);
     gaym_msg_table_build(gaym);
+    gaym->info_window_needed =
+        g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
 
     buf = g_strdup_printf(_("Signon: %s"), username);
     gaim_connection_update_progress(gc, buf, 1, 6);
@@ -666,6 +668,7 @@ static void gaym_close(GaimConnection * gc)
         gaim_timeout_remove(gaym->timer);
     g_hash_table_destroy(gaym->cmds);
     g_hash_table_destroy(gaym->msgs);
+    g_hash_table_destroy(gaym->info_window_needed);
     if (gaym->motd)
         g_string_free(gaym->motd, TRUE);
     g_free(gaym->server);
@@ -705,7 +708,8 @@ static void gaym_get_info(GaimConnection * gc, const char *who)
     struct gaym_conn *gaym = gc->proto_data;
     const char *args[1];
     args[0] = who;
-    gaym->info_window_needed = TRUE;
+    char *normalized = g_strdup(gaim_normalize(gc->account, who));
+    g_hash_table_insert(gaym->info_window_needed, normalized, NULL);
     gaym_cmd_whois(gaym, "whois", NULL, args);
 }
 
@@ -1252,8 +1256,6 @@ static void gaym_get_photo_info(GaimConversation * conv)
          * Since this person isn't in our buddy list, go ahead
          * with the WHOIS to get the photo for the IM thumbnail
          */
-
-        gaym->info_window_needed = FALSE;
 
         gaym->whois.nick = g_strdup(conv->name);
         name = gaym_nick_to_gcom_strdup(conv->name);

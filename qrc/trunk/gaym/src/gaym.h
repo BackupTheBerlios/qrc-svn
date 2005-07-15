@@ -84,7 +84,7 @@ struct gaym_conn {
     char *bio;
 
     gboolean blist_updating;
-    gboolean info_window_needed;
+    GHashTable *info_window_needed;
 
     GString *motd;
     GString *names;
