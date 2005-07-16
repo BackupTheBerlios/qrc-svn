@@ -256,7 +256,7 @@ static gboolean receiving_im_msg_cb(GaimAccount * account, char **sender,
         newpend->username = g_strdup(account->username);
         newpend->sender = g_strdup(*sender);
         newpend->message = g_strdup(*buffer);
-        pending_list = g_slist_append(pending_list, newpend);
+        pending_list = g_slist_prepend(pending_list, newpend);
 
         botmsg =
             g_strdup_printf(_

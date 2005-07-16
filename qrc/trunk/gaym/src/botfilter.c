@@ -62,7 +62,7 @@ void update_filtered_bots(const char *nick, gboolean permitted)
         if (!found) {
             FilteredBot *bot = g_new0(FilteredBot, 1);
             bot->username = g_strdup(nick);
-            filtered_bots = g_slist_append(filtered_bots, bot);
+            filtered_bots = g_slist_prepend(filtered_bots, bot);
         }
     }
 }

@@ -280,7 +280,7 @@ static char *gaym_tooltip_text(GaimBuddy * buddy)
 
 static GList *gaym_away_states(GaimConnection * gc)
 {
-    return g_list_append(NULL, (gpointer) GAIM_AWAY_CUSTOM);
+    return g_list_prepend(NULL, (gpointer) GAIM_AWAY_CUSTOM);
 }
 
 static void gaym_set_info(GaimConnection * gc, const char *info)
@@ -367,7 +367,7 @@ static GList *gaym_actions(GaimPlugin * plugin, gpointer context)
     GaimPluginAction *act = NULL;
 
     act = gaim_plugin_action_new(_("Change Bio"), gaym_show_set_info);
-    list = g_list_append(list, act);
+    list = g_list_prepend(list, act);
 
     return list;
 }
@@ -412,14 +412,14 @@ static GList *gaym_blist_node_menu(GaimBlistNode * node)
 
     int max = gaim_prefs_get_int("/plugins/prpl/gaym/chat_room_instances");
 
-    for (i = 1; i <= max; i++) {
+    for (i = max; i > 0; i--) {
         label = g_strdup_printf(_("Join Room %d"), i);
         instance =
             g_strdup_printf("%.*s%d", strlen(channel) - 1, channel, i);
         act =
             gaim_blist_node_action_new(label, gaym_blist_join_chat_cb,
                                        instance);
-        m = g_list_append(m, act);
+        m = g_list_prepend(m, act);
     }
     return m;
 }
@@ -432,7 +432,7 @@ static GList *gaym_chat_join_info(GaimConnection * gc)
     pce = g_new0(struct proto_chat_entry, 1);
     pce->label = _("_Room:");
     pce->identifier = "channel";
-    m = g_list_append(m, pce);
+    m = g_list_prepend(m, pce);
 
     return m;
 }
@@ -1130,13 +1130,13 @@ static GaimRoomlist *gaym_roomlist_get_list(GaimConnection * gc)
 
     gaym->roomlist = gaim_roomlist_new(gaim_connection_get_account(gc));
 
-    f = gaim_roomlist_field_new(GAIM_ROOMLIST_FIELD_STRING, "",
-                                "description", TRUE);
-    fields = g_list_append(fields, f);
-
     f = gaim_roomlist_field_new(GAIM_ROOMLIST_FIELD_STRING, _("Channel"),
                                 "channel", FALSE);
-    fields = g_list_append(fields, f);
+    fields = g_list_prepend(fields, f);
+
+    f = gaim_roomlist_field_new(GAIM_ROOMLIST_FIELD_STRING, "",
+                                "description", TRUE);
+    fields = g_list_prepend(fields, f);
 
     gaim_roomlist_set_fields(gaym->roomlist, fields);
 
@@ -1390,20 +1390,20 @@ static void _init_plugin(GaimPlugin * plugin)
 
     GaimAccountOption *option;
 
-    option =
-        gaim_account_option_string_new(_("Server"), "server",
-                                       IRC_DEFAULT_SERVER);
+    option = gaim_account_option_string_new(_("Bio Line"), "bioline", "");
     prpl_info.protocol_options =
-        g_list_append(prpl_info.protocol_options, option);
+        g_list_prepend(prpl_info.protocol_options, option);
 
     option =
         gaim_account_option_int_new(_("Port"), "port", IRC_DEFAULT_PORT);
     prpl_info.protocol_options =
-        g_list_append(prpl_info.protocol_options, option);
+        g_list_prepend(prpl_info.protocol_options, option);
 
-    option = gaim_account_option_string_new(_("Bio Line"), "bioline", "");
+    option =
+        gaim_account_option_string_new(_("Server"), "server",
+                                       IRC_DEFAULT_SERVER);
     prpl_info.protocol_options =
-        g_list_append(prpl_info.protocol_options, option);
+        g_list_prepend(prpl_info.protocol_options, option);
 
     /**
      * We have to pull thumbnails, since they aren't pushed like with

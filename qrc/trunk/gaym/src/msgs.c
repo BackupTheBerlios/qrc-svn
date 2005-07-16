@@ -461,12 +461,14 @@ void gaym_msg_names(struct gaym_conn *gaym, const char *name,
                     cur++;
                 }
                 tmp = g_strndup(cur, end - cur);
-                users = g_list_append(users, tmp);
-                flags = g_list_append(flags, GINT_TO_POINTER(f));
+                users = g_list_prepend(users, tmp);
+                flags = g_list_prepend(flags, GINT_TO_POINTER(f));
                 cur = end;
                 if (*cur)
                     cur++;
             }
+            users = g_list_reverse(users);
+            flags = g_list_reverse(flags);
 
             if (users != NULL) {
                 GList *l;
