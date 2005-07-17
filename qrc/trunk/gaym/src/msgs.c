@@ -158,6 +158,7 @@ static void gaym_fetch_photo_cb(void *user_data, const char *info_data,
             g_free(d->stats);
         g_free(d);
     }
+    gaim_imgstore_unref(id);
 }
 
 static void gaym_fetch_info_cb(void *user_data, const char *info_data,

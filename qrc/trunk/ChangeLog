@@ -17,6 +17,7 @@
 	  changes something)
 	- Fixed a bug where certain "Get Info" requests were lost or
 	  returned info for the wrong person
+	- Addressed several memory leaks
 
 	Preference Changes:
 	- none
