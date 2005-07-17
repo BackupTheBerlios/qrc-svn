@@ -85,25 +85,12 @@ struct gaym_conn {
 
     gboolean blist_updating;
     GHashTable *info_window_needed;
+    GHashTable *im_thumbnail_needed;
 
     GString *motd;
     GString *names;
     char *nameconv;
     char *traceconv;
-
-    struct _whois {
-        char *nick;
-        char *away;
-        char *userhost;
-        char *name;
-        char *server;
-        char *serverinfo;
-        char *channels;
-        int gaymop;
-        int identified;
-        int idle;
-        time_t signon;
-    } whois;
 
     GaimRoomlist *roomlist;
 

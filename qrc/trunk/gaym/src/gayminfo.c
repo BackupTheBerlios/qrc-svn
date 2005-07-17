@@ -117,10 +117,14 @@ void gaym_buddy_status(struct gaym_conn *gaym, char *name,
 
     struct gaym_buddy *ib = g_hash_table_lookup(gaym->buddies, name);
 
+    char *normalized = g_strdup(gaim_normalize(gaym->account, name));
+    char *im_thumbnail =
+        g_hash_table_lookup(gaym->im_thumbnail_needed, normalized);
+
     if (thumbnail) {
         if ((ib && gaim_utf8_strcasecmp(thumbnail, ib->thumbnail))
-            || (gaym->whois.nick
-                && !gaim_utf8_strcasecmp(gaym->whois.nick, name))) {
+            || im_thumbnail) {
+
             char *hashurl = NULL;
             hashurl =
                 g_hash_table_lookup(gaym->confighash,
@@ -135,6 +139,11 @@ void gaym_buddy_status(struct gaym_conn *gaym, char *name,
             g_free(url);
         }
     }
+
+    if (im_thumbnail) {
+        g_hash_table_remove(gaym->im_thumbnail_needed, normalized);
+    }
+    g_free(normalized);
 
     if (ib) {
         g_free(ib->bio);

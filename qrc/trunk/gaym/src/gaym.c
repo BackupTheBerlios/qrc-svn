@@ -525,6 +525,14 @@ static void gaym_login(GaimAccount * account)
     gaym->info_window_needed =
         g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
 
+    /**
+     * This is similar to gaym->info_window_needed, except this is
+     * for thumbails inside the IM conversation window if the
+     * person is not already on the buddy list
+     */
+    gaym->im_thumbnail_needed =
+        g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+
     buf = g_strdup_printf(_("Signon: %s"), username);
     gaim_connection_update_progress(gc, buf, 1, 6);
     g_free(buf);
@@ -674,6 +682,7 @@ static void gaym_close(GaimConnection * gc)
     g_hash_table_destroy(gaym->cmds);
     g_hash_table_destroy(gaym->msgs);
     g_hash_table_destroy(gaym->info_window_needed);
+    g_hash_table_destroy(gaym->im_thumbnail_needed);
     if (gaym->motd)
         g_string_free(gaym->motd, TRUE);
     g_free(gaym->server);
@@ -713,6 +722,7 @@ static void gaym_get_info(GaimConnection * gc, const char *who)
     struct gaym_conn *gaym = gc->proto_data;
     const char *args[1];
     args[0] = who;
+
     char *normalized = g_strdup(gaim_normalize(gc->account, who));
     /**
      * We are adding the same char* to both the key and the value.
@@ -1305,7 +1315,11 @@ static void gaym_get_photo_info(GaimConversation * conv)
          * with the WHOIS to get the photo for the IM thumbnail
          */
 
-        gaym->whois.nick = g_strdup(conv->name);
+        char *normalized =
+            g_strdup(gaim_normalize(gc->account, conv->name));
+        g_hash_table_insert(gaym->im_thumbnail_needed, normalized,
+                            normalized);
+
         name = gaym_nick_to_gcom_strdup(conv->name);
         buf = gaym_format(gaym, "vn", "WHOIS", name);
         gaim_debug_misc("gaym", "Conversation triggered command: %s\n",

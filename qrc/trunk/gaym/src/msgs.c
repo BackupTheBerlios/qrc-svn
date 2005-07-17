@@ -280,12 +280,12 @@ void gaym_msg_whois(struct gaym_conn *gaym, const char *name,
         g_return_if_fail(hashurl != NULL);
         data = g_new0(struct gaym_fetch_thumbnail_data, 1);
         data->gc = gaim_account_get_connection(gaym->account);
-        data->who = g_strdup(gaym->whois.nick);
+        data->who = g_strdup(args[1]);
         data->bio = gaym_bio_strdup(args[5]);
         data->stats = gaym_stats_strdup(args[5]);
 
         char *infourl = g_strdup_printf("%s?pw=%s&name=%s", hashurl,
-                                        gaym->hash_pw, gaym->whois.nick);
+                                        gaym->hash_pw, args[1]);
         if (infourl) {
             gaim_url_fetch(infourl, FALSE,
                            "Mozilla/4.0 (compatible; MSIE 5.0)", FALSE,
@@ -560,12 +560,6 @@ void gaym_msg_nonick(struct gaym_conn *gaym, const char *name,
         if ((gc = gaim_account_get_connection(gaym->account)) == NULL)
             return;
         gaim_notify_error(gc, NULL, _("No such nick or channel"), args[1]);
-    }
-
-    if (gaym->whois.nick
-        && !gaim_utf8_strcasecmp(gaym->whois.nick, args[1])) {
-        g_free(gaym->whois.nick);
-        gaym->whois.nick = NULL;
     }
 }
 
