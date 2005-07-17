@@ -378,9 +378,7 @@ void gaym_msg_list(struct gaym_conn *gaym, const char *name,
      * This is our trigger to add the static rooms
      */
     if (!strcmp(name, "323")) {
-        gaim_roomlist_set_in_progress(gaym->roomlist, TRUE);
         build_roomlist_from_config(gaym->roomlist, gaym->confighash);
-        gaim_roomlist_set_in_progress(gaym->roomlist, FALSE);
         return;
     }
 }

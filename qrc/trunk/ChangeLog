@@ -10,6 +10,7 @@
 
 	Bug Fixes:
 	- Better refreshing of stale buddy list photos
+	- Room List performance fixes
 	- Bio no longer replaces sex, age, and location values
 	- Less hard-coded information, more use of Gay.com's own
 	  configuration file (less susceptible to breakage if Gay.com

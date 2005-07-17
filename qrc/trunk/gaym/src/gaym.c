@@ -1153,7 +1153,7 @@ static GaimRoomlist *gaym_roomlist_get_list(GaimConnection * gc)
     return gaym->roomlist;
 }
 
-static void gaym_roomlist_cancel(GaimRoomlist * list)
+static void gaym_roomlist_cancel(struct _GaimRoomlist *list)
 {
     GaimConnection *gc = gaim_account_get_connection(list->account);
     struct gaym_conn *gaym;
@@ -1170,6 +1170,43 @@ static void gaym_roomlist_cancel(GaimRoomlist * list)
         gaym->roomlist = NULL;
         gaim_roomlist_unref(list);
     }
+}
+
+void gaym_roomlist_expand_category(struct _GaimRoomlist *list,
+                                   struct _GaimRoomlistRoom *category)
+{
+    GaimRoomlistRoom *room = NULL;
+    gchar *altname = NULL;
+    gchar *altchan = NULL;
+    int i = 0;
+
+    if (category->type & GAIM_ROOMLIST_ROOMTYPE_ROOM
+        && !category->expanded_once) {
+
+        category->expanded_once = TRUE;
+
+        int max =
+            gaim_prefs_get_int("/plugins/prpl/gaym/chat_room_instances");
+
+        gchar *name = category->fields->data;
+        gchar *chan = category->fields->next->data;
+
+        for (i = 1; i <= max; i++) {
+            altname = g_strdup_printf("%.*s%d", strlen(name) - 1, name, i);
+            altchan = g_strdup_printf("%.*s%d", strlen(chan) - 1, chan, i);
+
+            room =
+                gaim_roomlist_room_new(GAIM_ROOMLIST_ROOMTYPE_ROOM,
+                                       altname, category);
+
+            gaim_roomlist_room_add_field(list, room, altname);
+            gaim_roomlist_room_add_field(list, room, altchan);
+            gaim_roomlist_room_add(list, room);
+            g_free(altname);
+            g_free(altchan);
+        }
+    }
+    gaim_roomlist_set_in_progress(list, FALSE);
 }
 
 static GaimPluginProtocolInfo prpl_info = {
@@ -1228,7 +1265,7 @@ static GaimPluginProtocolInfo prpl_info = {
     gaym_find_blist_chat,       /* find_blist_chat */
     gaym_roomlist_get_list,     /* roomlist_get_list */
     gaym_roomlist_cancel,       /* roomlist_cancel */
-    NULL,                       /* roomlist_expand_category */
+    gaym_roomlist_expand_category,      /* roomlist_expand_category */
     NULL,                       /* can_receive_file */
     gaym_dccsend_send_file      /* send_file */
 };

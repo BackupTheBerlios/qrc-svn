@@ -342,11 +342,9 @@ void build_roomlist_from_config(GaimRoomlist * roomlist,
 {
     gchar **roominst = NULL;
     gchar *altname = NULL;
-    gchar *altchan = NULL;
     int level = 0;
     int old_level = 0;
     int i = 0;
-    int j = 0;
     GaimRoomlistRoom *room = NULL;
     GaimRoomlistRoom *parent = NULL;
 
@@ -391,30 +389,6 @@ void build_roomlist_from_config(GaimRoomlist * roomlist,
             gaim_roomlist_room_add(roomlist, room);
             g_free(altname);
             old_level = level;
-
-            /**
-             * And finally add the 999=1, 999=2, ... instances
-             * as children of the above room, based on the user's
-             * configuration of how many instances need to be
-             * represented
-             */
-            if (max > 0) {
-                level++;
-                parent = find_parent(level, old_level, room);
-            }
-            for (j = 1; j <= max; j++) {
-                altname = g_strdup_printf("%s:%d", roominst[1], j);
-                altchan =
-                    g_strdup_printf("%.*s%d", strlen(roominst[0]) - 1,
-                                    roominst[0], j);
-                room = gaim_roomlist_room_new(GAIM_ROOMLIST_ROOMTYPE_ROOM,
-                                              altname, parent);
-                gaim_roomlist_room_add_field(roomlist, room, altname);
-                gaim_roomlist_room_add_field(roomlist, room, altchan);
-                gaim_roomlist_room_add(roomlist, room);
-                g_free(altname);
-                g_free(altchan);
-            }
             g_strfreev(roominst);
         } else {
             /**
@@ -431,6 +405,8 @@ void build_roomlist_from_config(GaimRoomlist * roomlist,
         old_level = level;
     }
     g_strfreev(roomarr);
+    gaim_roomlist_set_in_progress(roomlist, FALSE);
+
 }
 
 GaimConvChatBuddyFlags chat_pecking_order(const char *extra)
