@@ -37,6 +37,7 @@ struct gaym_fetch_thumbnail_data {
     char *who;
     char *bio;
     char *stats;
+    char *thumbnail;
 };
 void gaym_fetch_thumbnail_cb(void *user_data, const char *pic_data,
                              size_t len);
