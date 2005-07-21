@@ -53,16 +53,7 @@ struct _BListWhois {
 enum { IRC_USEROPT_SERVER, IRC_USEROPT_PORT, IRC_USEROPT_CHARSET };
 enum gaym_state { IRC_STATE_NEW, IRC_STATE_ESTABLISHED };
 
-typedef struct {
 
-    char *cookies;
-    void (*session_cb) (GaimAccount *);
-    GaimAccount *account;
-    char *username;
-    char *password;
-    gboolean hasFormData;
-
-} GaimUrlSession;
 struct gaym_conn {
     GaimAccount *account;
     GHashTable *msgs;
@@ -98,13 +89,26 @@ struct gaym_conn {
     gboolean quitting;
     char *subroom;
     GHashTable *confighash;
-    GaimUrlSession *session;
 
     char *persist_room;
     gboolean cancelling_persist;
     void *hammer_cancel_dialog;
 
 };
+
+typedef struct {
+
+    char *cookies;
+    void (*session_cb) (GaimAccount *);
+    GaimAccount *account;
+    char *username;
+    char *password;
+    struct gaym_conn *gaym;
+    gboolean hasFormData;
+    
+
+} GaimUrlSession;
+
 
 struct gaym_buddy {
     char *name;                 /* gaym formatted nick */

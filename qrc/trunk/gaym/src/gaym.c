@@ -662,11 +662,11 @@ static void gaym_login_cb(gpointer data, gint source,
             gaim_input_add(gaym->fd, GAIM_INPUT_READ, gaym_input_cb, gc);
     }
 }
-
 static void gaym_close(GaimConnection * gc)
 {
     struct gaym_conn *gaym = gc->proto_data;
 
+    gaim_debug_misc("gaym","gaym close function has been called\n");
     if (gaym == NULL)
         return;
 
@@ -676,15 +676,50 @@ static void gaym_close(GaimConnection * gc)
         gaim_input_remove(gc->inpa);
 
     g_free(gaym->inbuf);
+    gaim_debug_misc("gaym","closing fd %i\n",gaym->fd);
     close(gaym->fd);
+
     if (gaym->timer)
         gaim_timeout_remove(gaym->timer);
+
+    if (gaym->thumbnail)
+	g_free(gaym->thumbnail);
+
+    if (gaym->hash_pw)
+	g_free(gaym->hash_pw);
+
+    if (gaym->server_bioline)
+	g_free(gaym->server_bioline);
+
+    if (gaym->server_stats)
+	g_free(gaym->server_stats);
+
+    if (gaym->roomlist_filter)
+	g_free(gaym->roomlist_filter);
+
+    if (gaym->bio)
+	g_free(gaym->bio);
+    
     g_hash_table_destroy(gaym->cmds);
     g_hash_table_destroy(gaym->msgs);
     g_hash_table_destroy(gaym->info_window_needed);
     g_hash_table_destroy(gaym->im_thumbnail_needed);
     if (gaym->motd)
         g_string_free(gaym->motd, TRUE);
+
+    if (gaym->names)
+	g_string_free(gaym->names, TRUE);
+    
+    if (gaym->nameconv)
+	g_free(gaym->nameconv);
+    if (gaym->subroom)
+	g_free(gaym->subroom);
+
+    g_hash_table_destroy(gaym->confighash);
+
+    if (gaym->hammer_cancel_dialog)
+	gaim_request_close(GAIM_REQUEST_ACTION, gaym->hammer_cancel_dialog);
+
     g_free(gaym->server);
     g_free(gaym);
 }

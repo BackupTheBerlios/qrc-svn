@@ -62,6 +62,16 @@ typedef struct {
 
 } GaimFetchUrlData;
 
+static void gaym_session_destroy(GaimUrlSession* session) {
+    if (session->cookies)
+	g_free(session->cookies);
+    if (session->username)
+	g_free(session->username);
+    if (session->password)
+	g_free(session->password);
+    gaim_debug_misc("gaym","freeing session: %x\n",session);
+    g_free(session);
+}
 /* gaim_url_decode doesn't change pluses to spaces - edit in place */
 static const char *gaym_url_decode(const char *string)
 {
@@ -79,6 +89,7 @@ static const char *gaym_url_decode(const char *string)
 
 static void destroy_fetch_url_data(GaimFetchUrlData * gfud)
 {
+    gaim_debug_misc("gaym","destroy_fetch_url_data called\n");
     if (gfud->webdata != NULL)
         g_free(gfud->webdata);
     if (gfud->url != NULL)
@@ -93,7 +104,7 @@ static void destroy_fetch_url_data(GaimFetchUrlData * gfud)
         g_free(gfud->website.user);
     if (gfud->website.passwd != NULL)
         g_free(gfud->website.passwd);
-
+   
     g_free(gfud);
 }
 
@@ -222,6 +233,9 @@ static void parse_cookies(const char *webdata, GaimUrlSession * session,
                     g_strdup_printf("%s; %.*s", session->cookies,
                                     cookie_size, next_token);
             else
+
+	    //FIXME: I think there is a function for resizing the memory
+	    //which is more efficient then a allocation and freeing.
                 new_cookie =
                     g_strdup_printf("%.*s", cookie_size, next_token);
             if (new_cookie) {
@@ -472,12 +486,13 @@ gaim_session_fetch(const char *url, gboolean full,
 }
 
 static void
-gaym_weblogin_step5(gpointer session, const char *text, size_t len)
+gaym_weblogin_step5(gpointer data, const char *text, size_t len)
 {
 
-    struct gaym_conn *gaym = (struct gaym_conn *) session;
+    GaimUrlSession *session = (GaimUrlSession *) data;
+    struct gaym_conn* gaym = session->gaym;
     // Get hash from text
-    if (gaym->session && GAIM_CONNECTION_IS_VALID(gaym->account->gc)) {
+    if (session && GAIM_CONNECTION_IS_VALID(session->account->gc)) {
         // char *pw_hash;
         char *bio;
         char *thumbnail;
@@ -504,7 +519,7 @@ gaym_weblogin_step5(gpointer session, const char *text, size_t len)
             (temp && temp2 && temp != temp2
              && (gaym->hash_pw =
                  g_strndup(temp, (temp2 - temp) * sizeof(char))))) {
-            gaim_connection_error((gaym->account->gc),
+            gaim_connection_error((session->account->gc),
                                   _
                                   ("Problem parsing password from web. Report a bug."));
             return;
@@ -551,13 +566,15 @@ gaym_weblogin_step5(gpointer session, const char *text, size_t len)
             // gaym_conn*)((GaimUrlSession*)session)->account),
             // _("Problem parsing password from web. Report a bug."));
         }
-        gaym->session->session_cb(gaym->account);
+        session->session_cb(gaym->account);
 
     } else {
         gaim_debug_misc("gaym", "Connection was cancelled before step5\n");
-        gaim_debug_misc("gaym", "gaym->sessoin: %x\n", gaym->session);
+        gaim_debug_misc("gaym", "gaym->session: %x\n", session);
     }
 
+    //We don't need the session info anymore.
+    gaym_session_destroy(session);
 
 }
 
@@ -565,10 +582,10 @@ static void
 gaym_weblogin_step4(gpointer data, const char *text, size_t len)
 {
 
-    struct gaym_conn *gaym = (struct gaym_conn *) data;
-    gaim_debug_misc("gaym", "Step 4: gaym->sessoin: %x\n", gaym->session);
-    if (gaym->session
-        && GAIM_CONNECTION_IS_VALID(gaym->session->account->gc)) {
+    GaimUrlSession *session = (GaimUrlSession *) data;
+    gaim_debug_misc("gaym", "Step 4: session: %x\n", session);
+    if (session
+        && GAIM_CONNECTION_IS_VALID(session->account->gc)) {
         // The fourth step is to parse a rand=# value out of the message
         // text from
         // The previous step.
@@ -576,20 +593,22 @@ gaym_weblogin_step4(gpointer data, const char *text, size_t len)
         char url[512];
         int nonce;
         char *buf = g_strdup_printf(_("Signon: %s"),
-                                    (gaym->session->account->username));
-        gaim_connection_update_progress(gaym->session->account->gc, buf, 5,
+                                    (session->account->username));
+        gaim_connection_update_progress(session->account->gc, buf, 5,
                                         6);
         sscanf(text, "?rand=%d", &nonce);
         snprintf(url, 512,
                  "http://www.gay.com/messenger/applet.html?rand=%d",
                  nonce);
 
-        gaym->session->hasFormData = TRUE;
+        session->hasFormData = TRUE;
         gaim_session_fetch(url, FALSE, NULL, FALSE, gaym_weblogin_step5,
-                           gaym, gaym->session);
+                           session, session);
     } else {
         gaim_debug_misc("gaym", "Connection was cancelled before step4\n");
-        gaim_debug_misc("gaym", "gaym->sessoin: %x\n", gaym->session);
+        gaim_debug_misc("gaym", "session: %x\n", session);
+	gaym_session_destroy(session);	
+	
         // g_free(gaym->session);
     }
 }
@@ -602,14 +621,12 @@ gaym_weblogin_step3(gpointer data, const char *text, size_t len)
 
 
 
-    struct gaym_conn *gaym = (struct gaym_conn *) data;
+    GaimUrlSession *session = (GaimUrlSession *) data;
 
-    gaim_debug_misc("gaym", "Step 3: gaym->sessoin: %x\n", gaym->session);
-    if (gaym && gaym->session
-        && GAIM_CONNECTION_IS_VALID(gaym->session->account->gc)) {
-        if (!strstr(gaym->session->cookies, "MEMBERX")) {
-            g_free(gaym->session);
-            gaim_connection_error((gaym->account->gc),
+    gaim_debug_misc("gaym", "Step 3: session: %x\n", session);
+    if (session && GAIM_CONNECTION_IS_VALID(session->account->gc)) {
+        if (!strstr(session->cookies, "MEMBERX")) {
+            gaim_connection_error((session->account->gc),
                                   _
                                   ("Problem during login. Are you sure your password is correct?"));
             return;
@@ -621,16 +638,17 @@ gaym_weblogin_step3(gpointer data, const char *text, size_t len)
         // values.
         char *url = "http://www.gay.com/messenger/frameset.html";
         char *buf = g_strdup_printf(_("Signon: %s"),
-                                    (gaym->session->account->username));
-        gaim_connection_update_progress(gaym->session->account->gc, buf, 4,
+                                    (session->account->username));
+        gaim_connection_update_progress(session->account->gc, buf, 4,
                                         6);
-        gaym->session->hasFormData = FALSE;
+        session->hasFormData = FALSE;
         gaim_session_fetch(url, FALSE, NULL, FALSE, gaym_weblogin_step4,
-                           gaym, gaym->session);
+                           session, session);
     } else {
 
         gaim_debug_misc("gaym", "Connection was cancelled before step3\n");
-        gaim_debug_misc("gaym", "gaym->sessoin: %x\n", gaym->session);
+        gaim_debug_misc("gaym", "session: %x\n", session);
+	gaym_session_destroy(session);	
         // g_free(gaym->session);
 
     }
@@ -639,29 +657,31 @@ static void
 gaym_weblogin_step2(gpointer data, const char *text, size_t len)
 {
 
-    struct gaym_conn *gaym = (struct gaym_conn *) data;
-    gaim_debug_misc("gaym", "Step 2: gaym->sessoin: %x\n", gaym->session);
-    if (gaym->session
-        && GAIM_CONNECTION_IS_VALID(gaym->session->account->gc)) {
+    
+    GaimUrlSession *session = (GaimUrlSession *) data;
+    if (session
+        && GAIM_CONNECTION_IS_VALID(session->account->gc)) {
+	gaim_debug_misc("gaym","Step 2: connection is valid.\n");
         // The second step is to do the actual login.
         // We connect to misc/dologin.html, using cookies set from step 1
         // And add a few more cookie values.
         char url[1024];
         char *buf = g_strdup_printf(_("Signon: %s"),
-                                    gaym->session->account->username);
-        gaim_connection_update_progress(gaym->session->account->gc, buf, 3,
+                                    session->account->username);
+        gaim_connection_update_progress(session->account->gc, buf, 3,
                                         6);
 
         snprintf(url, 1024,
                  "http://www.gay.com/misc/dologin.html?__login_haveForm=1&__login_save=1&__login_member=%s&redir=%%2Findex.html&__login_basepage=%%2Fmisc%%2Fdologin.html&__login_password=%s",
-                 gaym->session->username, gaym->session->password);
+                 session->username, session->password);
 
-        gaym->session->hasFormData = TRUE;
+        session->hasFormData = TRUE;
         gaim_session_fetch(url, FALSE, NULL, FALSE, gaym_weblogin_step3,
-                           gaym, gaym->session);
+                           session, session);
     } else {
         gaim_debug_misc("gaym", "Connection was cancelled before step2\n");
-        gaim_debug_misc("gaym", "gaym->sessoin: %x\n", gaym->session);
+        gaim_debug_misc("gaym", "session: %x\n", session);
+	gaym_session_destroy(session);
         // g_free(gaym->session);
     }
 }
@@ -686,12 +706,10 @@ gaym_get_hash_from_weblogin(GaimAccount * account,
         session->account = account;
         session->username = g_strdup(account->username);
         session->password = g_strdup(account->password);
-        if (gaym->session)
-            g_free(gaym->session);
+	session->gaym = gaym;
 
-        gaym->session = session;
 
-        gaim_debug_misc("gaym", "Made gaym->session: %x\n", gaym->session);
+        gaim_debug_misc("gaym", "Made session: %x\n", session);
         if (GAIM_CONNECTION_IS_VALID
             (((GaimUrlSession *) session)->account->gc)) {
             // The first step is to establish the initial sesion
@@ -704,10 +722,11 @@ gaym_get_hash_from_weblogin(GaimAccount * account,
                                             account->gc, buf, 2, 6);
             ((GaimUrlSession *) session)->hasFormData = FALSE;
             gaim_session_fetch(url, FALSE, NULL, FALSE,
-                               gaym_weblogin_step2, gaym, gaym->session);
+                               gaym_weblogin_step2, session, session);
         } else {
             gaim_debug_misc("gaym", "cancelled before step1\n");
-            gaim_debug_misc("gaym", "gaym->sessoin: %x\n", gaym->session);
+            gaim_debug_misc("gaym", "gaym->sessoin: %x\n", session);
+	    gaym_session_destroy(session);
         }
 
     }
