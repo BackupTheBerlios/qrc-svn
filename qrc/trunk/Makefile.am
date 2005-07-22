@@ -2,6 +2,10 @@ if COND_BOT_CHALLENGER
 MAYBE_BOT_CHALLENGER = bot-challenger
 endif
 
+if COND_CHATICON
+MAYBE_CHATICON = chaticon
+endif
+
 if COND_CHATSORT
 MAYBE_CHATSORT = chatsort
 endif
@@ -21,6 +25,7 @@ EXTRA_DIST = \
 SUBDIRS = \
 	nsis \
 	$(MAYBE_BOT_CHALLENGER) \
+	$(MAYBE_CHATICON) \
 	$(MAYBE_CHATSORT) \
 	$(MAYBE_GAYM) \
 	$(MAYBE_ROOMBROWSE)
