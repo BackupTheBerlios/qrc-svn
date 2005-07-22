@@ -200,19 +200,20 @@ static void gaym_fetch_info_cb(void *user_data, const char *info_data,
     picpath = return_string_between(match, "\n", info_data);
     if (!picpath || strlen(picpath) == 0) {
 
-	if(d->thumbnail) {
+        if (d->thumbnail) {
             hashurl =
                 g_hash_table_lookup(gaym->confighash,
                                     "mini-profile-panel.thumbnail-prefix");
-	    picurl = g_strdup_printf("%s%s",hashurl,d->thumbnail);
-	    if(picurl) {
-		gaim_url_fetch(picurl, FALSE, "Mozilla/4.0 (compatible; MSIE 5.0)",
-                       FALSE, gaym_fetch_photo_cb, user_data);
-	    
-		return; 
-	    }
-	    
-	}
+            picurl = g_strdup_printf("%s%s", hashurl, d->thumbnail);
+            if (picurl) {
+                gaim_url_fetch(picurl, FALSE,
+                               "Mozilla/4.0 (compatible; MSIE 5.0)", FALSE,
+                               gaym_fetch_photo_cb, user_data);
+
+                return;
+            }
+
+        }
         gaim_notify_userinfo(d->gc, d->who,
                              t = g_strdup_printf("Gay.com - %s", d->who),
                              d->who, NULL, info, NULL, NULL);
@@ -221,7 +222,7 @@ static void gaym_fetch_info_cb(void *user_data, const char *info_data,
     }
 
     picurl = g_strdup_printf("http://www.gay.com%s", picpath);
-   
+
     if (picurl) {
         gaim_url_fetch(picurl, FALSE, "Mozilla/4.0 (compatible; MSIE 5.0)",
                        FALSE, gaym_fetch_photo_cb, user_data);
@@ -298,7 +299,7 @@ void gaym_msg_whois(struct gaym_conn *gaym, const char *name,
         data->who = g_strdup(args[1]);
         data->bio = gaym_bio_strdup(args[5]);
         data->stats = gaym_stats_strdup(args[5]);
-	data->thumbnail = gaym_thumbnail_strdup(args[5]);
+        data->thumbnail = gaym_thumbnail_strdup(args[5]);
 
         char *infourl = g_strdup_printf("%s?pw=%s&name=%s", hashurl,
                                         gaym->hash_pw, args[1]);
@@ -459,32 +460,37 @@ void gaym_msg_names(struct gaym_conn *gaym, const char *name,
         } else {
             GList *users = NULL;
 
-	    gaim_debug_misc("gaym","Using names for initial list population");
-	    while (*cur) {
+            gaim_debug_misc("gaym",
+                            "Using names for initial list population");
+            while (*cur) {
                 end = strchr(cur, ' ');
-                //if (!end)
-                //    end = cur + strlen(cur);
-                //if (*cur == '@') {
-                //    f = GAIM_CBFLAGS_OP;
-                //    cur++;
-                //} else if (*cur == '%') {
-                //    f = GAIM_CBFLAGS_HALFOP;
-                //    cur++;
-                //} else if (*cur == '+') {
-                //    f = GAIM_CBFLAGS_VOICE;
-                //    cur++;
-                // }
+                /**
+                 * if (!end)
+                 * end = cur + strlen(cur);
+                 * if (*cur == '@') {
+                 * f = GAIM_CBFLAGS_OP;
+                 * cur++;
+                 * } else if (*cur == '%') {
+                 * f = GAIM_CBFLAGS_HALFOP;
+                 * cur++;
+                 * } else if (*cur == '+') {
+                 * f = GAIM_CBFLAGS_VOICE;
+                 * cur++;
+                 * }
+                 */
                 tmp = g_strndup(cur, end - cur);
 
-		gcom_nick_to_gaym(tmp);
+                gcom_nick_to_gaym(tmp);
                 users = g_list_prepend(users, tmp);
-                //flags = g_list_prepend(flags, GINT_TO_POINTER(f));
+                /* flags = g_list_prepend(flags, GINT_TO_POINTER(f)); */
                 cur = end;
                 if (*cur)
                     cur++;
             }
-	    //users = g_list_reverse(users);
-            //flags = g_list_reverse(flags);
+            /**
+             * users = g_list_reverse(users);
+             * flags = g_list_reverse(flags);
+             */
 
             if (users != NULL) {
                 GList *l;
@@ -492,13 +498,13 @@ void gaym_msg_names(struct gaym_conn *gaym, const char *name,
                 gaim_conv_chat_add_users(GAIM_CONV_CHAT(convo), users,
                                          gaym->join_flags);
 
-		
+
                 for (l = users; l != NULL; l = l->next)
                     g_free(l->data);
 
                 g_list_free(users);
                 g_list_free(gaym->join_flags);
-		gaym->join_flags=NULL;
+                gaym->join_flags = NULL;
             }
         }
         g_free(names);
@@ -708,8 +714,8 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name,
         }
 
         serv_got_joined_chat(gc, id++, args[0]);
-	
-	gaym_cmd_names(gaym, "names", NULL, args);
+
+        gaym_cmd_names(gaym, "names", NULL, (const char **)args);
         g_free(nick);
         return;
     }
@@ -1287,11 +1293,16 @@ void gaym_msg_richnames_list(struct gaym_conn *gaym, const char *name,
     }
 
     flags = chat_pecking_order(extra);
-    
-    //g_hash_table_insert(gaym->join_flags, g_strdup(nick), flags);
-    gaym->join_flags=g_list_prepend(gaym->join_flags, GINT_TO_POINTER(flags));
-    //gaim_conv_chat_add_user(GAIM_CONV_CHAT(convo), nick, NULL, flags,
-    //                        FALSE);
+
+    /**
+     * g_hash_table_insert(gaym->join_flags, g_strdup(nick), flags);
+     */
+    gaym->join_flags =
+        g_list_prepend(gaym->join_flags, GINT_TO_POINTER(flags));
+    /**
+     * gaim_conv_chat_add_user(GAIM_CONV_CHAT(convo), nick, NULL, flags,
+     * FALSE);
+     */
 
     /**
      * Make the ignore.png icon appear next to the nick.
