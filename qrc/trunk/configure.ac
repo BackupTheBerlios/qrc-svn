@@ -38,42 +38,33 @@ AC_ARG_ENABLE([bot-challenger],
 	[AS_HELP_STRING(--enable-bot-challenger,build the bot-challenger plugin @<:@default=yes@:>@)],,
 	[enable_bot_challenger="yes"])
 
-AC_ARG_ENABLE([chaticon],
-	[AS_HELP_STRING(--enable-chaticon,build the chaticon plugin @<:@default=no@:>@)],,
-	[enable_chaticon="no"])
-
 AC_ARG_ENABLE([gaym],
 	[AS_HELP_STRING(--enable-gaym,build the gaym plugin @<:@default=yes@:>@)],,
 	[enable_gaym="yes"])
 
-AC_ARG_ENABLE([roombrowse],
-	[AS_HELP_STRING(--enable-roombrowse,build the roombrowse plugin @<:@default=no@:>@)],,
-	[enable_roombrowse="no"])
+AC_ARG_ENABLE([gaym-extras],
+	[AS_HELP_STRING(--enable-gaym-extras,build the gaym-extras plugin @<:@default=yes@:>@)],,
+	[enable_gaym_extras="yes"])
 
 AM_CONDITIONAL([COND_BOT_CHALLENGER], [test "$enable_bot_challenger" = "yes"])
-AM_CONDITIONAL([COND_CHATICON], [test "$enable_chaticon" = "yes"])
 AM_CONDITIONAL([COND_GAYM], [test "$enable_gaym" = "yes"])
-AM_CONDITIONAL([COND_ROOMBROWSE], [test "$enable_roombrowse" = "yes"])
+AM_CONDITIONAL([COND_GAYM_EXTRAS], [test "$enable_gaym_extras" = "yes"])
 
 if test "$enable_bot_challenger" != "yes" ; then
 	enable_bot_challener="no"
-fi
-
-if test "$enable_chaticon" != "yes" ; then
-	enable_chaticon="no"
 fi
 
 if test "$enable_gaym" != "yes" ; then
 	enable_gaym="no"
 fi
 
-if test "$enable_roombrowse" != "yes" ; then
-	enable_roombrowse="no"
+if test "$enable_gaym_extras" != "yes" ; then
+	enable_gaym_extras="no"
 fi
 
 # Checks for libraries.
 PKG_PROG_PKG_CONFIG([$REQUIRED_PKG_CONFIG])
-if test "$enable_chaticon" = "yes" -o "$enable_roombrowse" = "yes"; then
+if test "$enable_gaym_extras" = "yes" ; then
 	PKG_CHECK_MODULES([GTK], [$REQUIRED_GTK],
 		[
 		AC_SUBST(GTK_CFLAGS)
@@ -126,22 +117,20 @@ AC_SUBST(CFLAGS)
 
 AC_CONFIG_FILES([Makefile
                  bot-challenger/Makefile
-                 chaticon/Makefile
                  gaym/Makefile
                  gaym/pixmaps/Makefile
                  gaym/src/Makefile
+                 gaym-extras/Makefile
                  nsis/Makefile
-		 nsis/locale/Makefile
-                 roombrowse/Makefile])
+		 nsis/locale/Makefile])
 AC_OUTPUT
 
 echo
 echo $PACKAGE $VERSION
 echo
 echo Build bot-challenger plugin...... : $enable_bot_challenger
-echo Build chaticon plugin............ : $enable_chaticon
 echo Build gaym plugin................ : $enable_gaym
-echo Build roombrowse plugin.......... : $enable_roombrowse
+echo Build gaym-extras plugin......... : $enable_gaym_extras
 echo
 echo Installation directory........... : $GAIM_LIBDIR/gaim
 echo
