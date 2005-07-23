@@ -671,14 +671,10 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name,
 
         serv_got_joined_chat(gc, id++, args[0]);
 
-        ChatSort *chat_sort = g_new0(ChatSort, 1);
+        gint *entry = g_new(gint, 1);
+        *entry = MAX_CHANNEL_MEMBERS;
+        g_hash_table_insert(gaym->entry_order, g_strdup(args[0]), entry);
 
-        chat_sort->type =
-            gaim_prefs_get_int("/plugins/prpl/gaym/chat_member_sorting");
-        chat_sort->counter = MAX_CHANNEL_MEMBERS;
-
-        g_hash_table_insert(gaym->entry_order, g_strdup(args[0]),
-                            chat_sort);
         g_free(nick);
         return;
     }
@@ -691,8 +687,8 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name,
         return;
     }
 
-    ChatSort *chat_sort = g_hash_table_lookup(gaym->entry_order, args[0]);
-    g_return_if_fail(chat_sort != NULL);
+    gint *entry = g_hash_table_lookup(gaym->entry_order, args[0]);
+    g_return_if_fail(entry != NULL);
 
     gaym_buddy_status(gaym, nick, TRUE, args[1]);
 
@@ -705,15 +701,12 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name,
         g_free(bio);
     }
 
-    if (chat_sort->counter <= MAX_CHANNEL_MEMBERS) {
-        chat_sort->counter = MAX_CHANNEL_MEMBERS + 1;
+    if (*entry <= MAX_CHANNEL_MEMBERS) {
+        *entry = MAX_CHANNEL_MEMBERS + 1;
     }
 
     flags = chat_pecking_order(args[1]);
-
-    if (chat_sort->type == GAYM_CHAT_SORT_TIME) {
-        flags = include_chat_entry_order(flags, chat_sort->counter++);
-    }
+    flags = include_chat_entry_order(flags, (*entry)++);
 
     gboolean gaym_privacy_permit = gaym_privacy_check(gc, nick);
     gboolean show_join =
@@ -1268,14 +1261,11 @@ void gaym_msg_richnames_list(struct gaym_conn *gaym, const char *name,
         return;
     }
 
-    ChatSort *chat_sort = g_hash_table_lookup(gaym->entry_order, channel);
-    g_return_if_fail(chat_sort != NULL);
+    gint *entry = g_hash_table_lookup(gaym->entry_order, channel);
+    g_return_if_fail(entry != NULL);
 
     flags = chat_pecking_order(extra);
-
-    if (chat_sort->type == GAYM_CHAT_SORT_TIME) {
-        flags = include_chat_entry_order(flags, chat_sort->counter--);
-    }
+    flags = include_chat_entry_order(flags, (*entry)--);
 
     gaim_conv_chat_add_user(GAIM_CONV_CHAT(convo), nick, NULL, flags,
                             FALSE);
