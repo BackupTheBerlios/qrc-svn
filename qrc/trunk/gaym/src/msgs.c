@@ -310,7 +310,7 @@ void gaym_msg_list(struct gaym_conn *gaym, const char *name,
     /**
      * Begin result of member created room list
      */
-    if (!strcmp(name, "321")) {
+    if (!strcmp(name, "321") && gaym->roomlist_filter == NULL) {
         GaimRoomlistRoom *room;
         room = gaim_roomlist_room_new(GAIM_ROOMLIST_ROOMTYPE_CATEGORY,
                                       _("Member Created"), NULL);
@@ -364,13 +364,22 @@ void gaym_msg_list(struct gaym_conn *gaym, const char *name,
          */
         field_name[i - 2] = ':';
 
-        room = gaim_roomlist_room_new(GAIM_ROOMLIST_ROOMTYPE_ROOM,
-                                      field_name,
-                                      g_list_nth_data(gaym->roomlist->
-                                                      rooms, 0));
-        gaim_roomlist_room_add_field(gaym->roomlist, room, field_name);
-        gaim_roomlist_room_add_field(gaym->roomlist, room, args[1]);
-        gaim_roomlist_room_add(gaym->roomlist, room);
+        gchar *lowercase = g_utf8_strdown(field_name, -1);
+        gchar *normalized =
+            g_utf8_normalize(lowercase, -1, G_NORMALIZE_ALL);
+        g_free(lowercase);
+        if (gaym->roomlist_filter == NULL ||
+            g_strstr_len(normalized, -1, gaym->roomlist_filter) != NULL) {
+
+            room = gaim_roomlist_room_new(GAIM_ROOMLIST_ROOMTYPE_ROOM,
+                                          field_name,
+                                          g_list_nth_data(gaym->roomlist->
+                                                          rooms, 0));
+            gaim_roomlist_room_add_field(gaym->roomlist, room, field_name);
+            gaim_roomlist_room_add_field(gaym->roomlist, room, args[1]);
+            gaim_roomlist_room_add(gaym->roomlist, room);
+        }
+        g_free(normalized);
         g_free(field_name);
     }
 
@@ -379,7 +388,12 @@ void gaym_msg_list(struct gaym_conn *gaym, const char *name,
      * This is our trigger to add the static rooms
      */
     if (!strcmp(name, "323")) {
-        build_roomlist_from_config(gaym->roomlist, gaym->confighash);
+        build_roomlist_from_config(gaym->roomlist, gaym->confighash,
+                                   gaym->roomlist_filter);
+        if (gaym->roomlist_filter) {
+            g_free(gaym->roomlist_filter);
+            gaym->roomlist_filter = NULL;
+        }
         return;
     }
 }

@@ -338,10 +338,13 @@ GaimRoomlistRoom *find_parent(int level, int old_level,
 }
 
 void build_roomlist_from_config(GaimRoomlist * roomlist,
-                                GHashTable * confighash)
+                                GHashTable * confighash, gchar * pattern)
 {
     gchar **roominst = NULL;
     gchar *altname = NULL;
+    gchar *normalized = NULL;
+    gchar *lowercase = NULL;
+    gchar *found = NULL;
     int level = 0;
     int old_level = 0;
     int i = 0;
@@ -370,27 +373,38 @@ void build_roomlist_from_config(GaimRoomlist * roomlist,
              * component parts, determine the level and the parent,
              * and add this as both a room and a category
              */
-            roominst = g_strsplit(roomarr[i], " ", 2);
-            level = roomlist_level_strip(roominst[1]);
-            parent = find_parent(level, old_level, room);
-            altname = g_strdup_printf("%s:*", roominst[1]);
-            if (max == 0) {
-                room =
-                    gaim_roomlist_room_new(GAIM_ROOMLIST_ROOMTYPE_ROOM,
-                                           altname, parent);
-            } else {
-                room =
-                    gaim_roomlist_room_new(GAIM_ROOMLIST_ROOMTYPE_CATEGORY
-                                           | GAIM_ROOMLIST_ROOMTYPE_ROOM,
-                                           altname, parent);
+            if (pattern != NULL) {
+                lowercase = g_utf8_strdown(roomarr[i], -1);
+                normalized =
+                    g_utf8_normalize(lowercase, -1, G_NORMALIZE_ALL);
+                found = g_strstr_len(normalized, -1, pattern);
+                g_free(normalized);
+                g_free(lowercase);
             }
-            gaim_roomlist_room_add_field(roomlist, room, altname);
-            gaim_roomlist_room_add_field(roomlist, room, roominst[0]);
-            gaim_roomlist_room_add(roomlist, room);
-            g_free(altname);
-            old_level = level;
-            g_strfreev(roominst);
-        } else {
+            if (found != NULL || pattern == NULL) {
+                found = NULL;
+                roominst = g_strsplit(roomarr[i], " ", 2);
+                level = roomlist_level_strip(roominst[1]);
+                parent = find_parent(level, old_level, room);
+                altname = g_strdup_printf("%s:*", roominst[1]);
+                if (max == 0) {
+                    room =
+                        gaim_roomlist_room_new(GAIM_ROOMLIST_ROOMTYPE_ROOM,
+                                               altname, parent);
+                } else {
+                    room =
+                        gaim_roomlist_room_new
+                        (GAIM_ROOMLIST_ROOMTYPE_CATEGORY |
+                         GAIM_ROOMLIST_ROOMTYPE_ROOM, altname, parent);
+                }
+                gaim_roomlist_room_add_field(roomlist, room, altname);
+                gaim_roomlist_room_add_field(roomlist, room, roominst[0]);
+                gaim_roomlist_room_add(roomlist, room);
+                g_free(altname);
+                g_strfreev(roominst);
+                old_level = level;
+            }
+        } else if (pattern == NULL) {
             /**
              * This is a plain category, determine the level and
              * the parent and add it.
@@ -406,7 +420,6 @@ void build_roomlist_from_config(GaimRoomlist * roomlist,
     }
     g_strfreev(roomarr);
     gaim_roomlist_set_in_progress(roomlist, FALSE);
-
 }
 
 GaimConvChatBuddyFlags chat_pecking_order(const char *extra)
@@ -431,10 +444,13 @@ GaimConvChatBuddyFlags chat_pecking_order(const char *extra)
     return flags;
 }
 
-GaimConvChatBuddyFlags include_chat_entry_order(GaimConvChatBuddyFlags flags, gint entry) {
-    
+GaimConvChatBuddyFlags include_chat_entry_order(GaimConvChatBuddyFlags
+                                                flags, gint entry)
+{
+
     return (flags | (entry << 4));
 }
+
 /**
  * vim:tabstop=4:shiftwidth=4:expandtab:
  */

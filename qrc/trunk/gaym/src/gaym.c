@@ -517,6 +517,7 @@ static void gaym_login(GaimAccount * account)
     gaym_cmd_table_build(gaym);
     gaym->msgs = g_hash_table_new(g_str_hash, g_str_equal);
     gaym_msg_table_build(gaym);
+    gaym->roomlist_filter = NULL;
     /**
      * The last parameter needs to be NULL here, since the same
      * field is added for both the key and the value (and if we
@@ -1220,6 +1221,11 @@ static void gaym_roomlist_cancel(struct _GaimRoomlist *list)
         g_list_free(g_list_nth_data(list->rooms, 0));
         gaym->roomlist = NULL;
         gaim_roomlist_unref(list);
+    }
+
+    if (gaym->roomlist_filter) {
+        g_free(gaym->roomlist_filter);
+        gaym->roomlist_filter = NULL;
     }
 }
 

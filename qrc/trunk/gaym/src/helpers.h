@@ -142,9 +142,10 @@ GaimRoomlistRoom *find_parent(int level, int old_level,
  * @param roomlist The GaimRoomlist that these rooms should be loaded
  *                 into.
  * @param confighash The GHashTable that config.txt was converted into
+ * @param pattern The pattern to match against or NULL for everythying
  */
 void build_roomlist_from_config(GaimRoomlist * roomlist,
-                                GHashTable * confighash);
+                                GHashTable * confighash, gchar * pattern);
 
 /**
  * Determine the correct GaimConvChatBuddyFlags based on the "extra"
@@ -156,7 +157,8 @@ void build_roomlist_from_config(GaimRoomlist * roomlist,
  */
 GaimConvChatBuddyFlags chat_pecking_order(const char *extra);
 
-GaimConvChatBuddyFlags include_chat_entry_order(GaimConvChatBuddyFlags flags, gint entry);
+GaimConvChatBuddyFlags include_chat_entry_order(GaimConvChatBuddyFlags
+                                                flags, gint entry);
 #endif                          /* _GAIM_GAYM_HELPERS_H_ */
 
 /**
