@@ -156,6 +156,7 @@ void build_roomlist_from_config(GaimRoomlist * roomlist,
  */
 GaimConvChatBuddyFlags chat_pecking_order(const char *extra);
 
+GaimConvChatBuddyFlags include_chat_entry_order(GaimConvChatBuddyFlags flags, gint entry);
 #endif                          /* _GAIM_GAYM_HELPERS_H_ */
 
 /**

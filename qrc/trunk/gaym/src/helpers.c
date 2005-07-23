@@ -431,6 +431,10 @@ GaimConvChatBuddyFlags chat_pecking_order(const char *extra)
     return flags;
 }
 
+GaimConvChatBuddyFlags include_chat_entry_order(GaimConvChatBuddyFlags flags, gint entry) {
+    
+    return (flags | (entry << 4));
+}
 /**
  * vim:tabstop=4:shiftwidth=4:expandtab:
  */

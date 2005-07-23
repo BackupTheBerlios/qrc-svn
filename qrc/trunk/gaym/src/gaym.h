@@ -89,6 +89,7 @@ struct gaym_conn {
     gboolean quitting;
     char *subroom;
     GHashTable *confighash;
+    GHashTable *entry_order;
 
     char *persist_room;
     gboolean cancelling_persist;

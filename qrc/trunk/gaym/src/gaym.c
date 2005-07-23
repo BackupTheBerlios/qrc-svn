@@ -524,6 +524,10 @@ static void gaym_login(GaimAccount * account)
      */
     gaym->info_window_needed =
         g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+    
+    gaym->entry_order =
+	g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
+	
 
     /**
      * This is similar to gaym->info_window_needed, except this is

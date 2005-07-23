@@ -715,8 +715,12 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name,
 
         serv_got_joined_chat(gc, id++, args[0]);
 
-        gaym_cmd_names(gaym, "names", NULL, (const char **)args);
-        g_free(nick);
+	gint* entry=g_new(gint, 1);
+	gaim_debug_misc("gaym","Made int: %x\n",entry);
+	*entry=200;
+	
+        g_hash_table_insert(gaym->entry_order, g_strdup(args[0]), entry); 
+	g_free(nick);
         return;
     }
 
@@ -739,7 +743,13 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name,
         g_free(bio);
     }
 
+    gint* entry=g_hash_table_lookup(gaym->entry_order, args[0]);
+
+    if (*entry<201)
+	*entry=201;
+    
     flags = chat_pecking_order(args[1]);
+    flags = include_chat_entry_order(flags, (*entry)++);
 
     gboolean gaym_privacy_permit = gaym_privacy_check(gc, nick);
     gboolean show_join =
@@ -907,6 +917,8 @@ void gaym_msg_part(struct gaym_conn *gaym, const char *name,
 
     gcom_nick_to_gaym(nick);
     if (!gaim_utf8_strcasecmp(nick, gaim_connection_get_display_name(gc))) {
+
+	g_hash_table_remove(gaym->entry_order, args[0]);
         msg = g_strdup_printf(_("You have parted the channel"));
 
         gaim_conv_chat_write(GAIM_CONV_CHAT(convo), args[0], msg,
@@ -1293,16 +1305,21 @@ void gaym_msg_richnames_list(struct gaym_conn *gaym, const char *name,
     }
 
     flags = chat_pecking_order(extra);
+    gint* entry = g_hash_table_lookup(gaym->entry_order, channel);
 
+    gaim_debug_misc("gaym","looked up int: %x, %i\n",entry,*entry);
+    flags = include_chat_entry_order(flags, (*entry)--);
+    
+    gaim_debug_misc("gaym","flags: %i\n",flags);
     /**
      * g_hash_table_insert(gaym->join_flags, g_strdup(nick), flags);
      */
-    gaym->join_flags =
-        g_list_prepend(gaym->join_flags, GINT_TO_POINTER(flags));
-    /**
-     * gaim_conv_chat_add_user(GAIM_CONV_CHAT(convo), nick, NULL, flags,
-     * FALSE);
-     */
+    //gaym->join_flags =
+    //    g_list_prepend(gaym->join_flags, GINT_TO_POINTER(flags));
+   
+    gaim_conv_chat_add_user(GAIM_CONV_CHAT(convo), nick, NULL, flags,
+      FALSE);
+     
 
     /**
      * Make the ignore.png icon appear next to the nick.
