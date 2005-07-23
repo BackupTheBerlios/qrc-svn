@@ -442,44 +442,28 @@ void gaym_msg_names(struct gaym_conn *gaym, const char *name,
             gaym->nameconv = NULL;
         } else {
             GList *users = NULL;
-            GList *flags = NULL;
 
             while (*cur) {
-                GaimConvChatBuddyFlags f = GAIM_CBFLAGS_NONE;
                 end = strchr(cur, ' ');
-                if (!end)
-                    end = cur + strlen(cur);
-                if (*cur == '@') {
-                    f = GAIM_CBFLAGS_OP;
-                    cur++;
-                } else if (*cur == '%') {
-                    f = GAIM_CBFLAGS_HALFOP;
-                    cur++;
-                } else if (*cur == '+') {
-                    f = GAIM_CBFLAGS_VOICE;
-                    cur++;
-                }
                 tmp = g_strndup(cur, end - cur);
+                gcom_nick_to_gaym(tmp);
                 users = g_list_prepend(users, tmp);
-                flags = g_list_prepend(flags, GINT_TO_POINTER(f));
                 cur = end;
                 if (*cur)
                     cur++;
             }
             users = g_list_reverse(users);
-            flags = g_list_reverse(flags);
 
             if (users != NULL) {
                 GList *l;
 
                 gaim_conv_chat_add_users(GAIM_CONV_CHAT(convo), users,
-                                         flags);
+                                         NULL);
 
                 for (l = users; l != NULL; l = l->next)
                     g_free(l->data);
 
                 g_list_free(users);
-                g_list_free(flags);
             }
         }
         g_free(names);
