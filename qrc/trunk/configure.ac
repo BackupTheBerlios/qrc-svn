@@ -42,10 +42,6 @@ AC_ARG_ENABLE([chaticon],
 	[AS_HELP_STRING(--enable-chaticon,build the chaticon plugin @<:@default=no@:>@)],,
 	[enable_chaticon="no"])
 
-AC_ARG_ENABLE([chatsort],
-	[AS_HELP_STRING(--enable-chatsort,build the chatsort plugin @<:@default=no@:>@)],,
-	[enable_chatsort="no"])
-
 AC_ARG_ENABLE([gaym],
 	[AS_HELP_STRING(--enable-gaym,build the gaym plugin @<:@default=yes@:>@)],,
 	[enable_gaym="yes"])
@@ -56,7 +52,6 @@ AC_ARG_ENABLE([roombrowse],
 
 AM_CONDITIONAL([COND_BOT_CHALLENGER], [test "$enable_bot_challenger" = "yes"])
 AM_CONDITIONAL([COND_CHATICON], [test "$enable_chaticon" = "yes"])
-AM_CONDITIONAL([COND_CHATSORT], [test "$enable_chatsort" = "yes"])
 AM_CONDITIONAL([COND_GAYM], [test "$enable_gaym" = "yes"])
 AM_CONDITIONAL([COND_ROOMBROWSE], [test "$enable_roombrowse" = "yes"])
 
@@ -66,10 +61,6 @@ fi
 
 if test "$enable_chaticon" != "yes" ; then
 	enable_chaticon="no"
-fi
-
-if test "$enable_chatsort" != "yes" ; then
-	enable_chatsort="no"
 fi
 
 if test "$enable_gaym" != "yes" ; then
@@ -82,7 +73,7 @@ fi
 
 # Checks for libraries.
 PKG_PROG_PKG_CONFIG([$REQUIRED_PKG_CONFIG])
-if test "$enable_chaticon" = "yes" -o "$enable_chatsort" = "yes" -o "$enable_roombrowse" = "yes"; then
+if test "$enable_chaticon" = "yes" -o "$enable_roombrowse" = "yes"; then
 	PKG_CHECK_MODULES([GTK], [$REQUIRED_GTK],
 		[
 		AC_SUBST(GTK_CFLAGS)
@@ -136,7 +127,6 @@ AC_SUBST(CFLAGS)
 AC_CONFIG_FILES([Makefile
                  bot-challenger/Makefile
                  chaticon/Makefile
-                 chatsort/Makefile
                  gaym/Makefile
                  gaym/pixmaps/Makefile
                  gaym/src/Makefile
@@ -150,7 +140,6 @@ echo $PACKAGE $VERSION
 echo
 echo Build bot-challenger plugin...... : $enable_bot_challenger
 echo Build chaticon plugin............ : $enable_chaticon
-echo Build chatsort plugin............ : $enable_chatsort
 echo Build gaym plugin................ : $enable_gaym
 echo Build roombrowse plugin.......... : $enable_roombrowse
 echo

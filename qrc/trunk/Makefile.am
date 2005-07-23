@@ -6,10 +6,6 @@ if COND_CHATICON
 MAYBE_CHATICON = chaticon
 endif
 
-if COND_CHATSORT
-MAYBE_CHATSORT = chatsort
-endif
-
 if COND_GAYM
 MAYBE_GAYM = gaym
 endif
@@ -26,6 +22,5 @@ SUBDIRS = \
 	nsis \
 	$(MAYBE_BOT_CHALLENGER) \
 	$(MAYBE_CHATICON) \
-	$(MAYBE_CHATSORT) \
 	$(MAYBE_GAYM) \
 	$(MAYBE_ROOMBROWSE)
