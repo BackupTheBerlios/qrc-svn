@@ -648,6 +648,8 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name,
                    const char *from, char **args)
 {
     GaimConnection *gc = gaim_account_get_connection(gaym->account);
+    g_return_if_fail(gc != NULL);
+
     char *nick = gaym_mask_nick(from);
 
     GaimConversation *convo;
@@ -655,11 +657,6 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name,
     char *bio = NULL;
     char *bio_markedup = NULL;
     static int id = 1;
-
-    if (!gc) {
-        g_free(nick);
-        return;
-    }
 
     gcom_nick_to_gaym(nick);
     if (!gaim_utf8_strcasecmp(nick, gaim_connection_get_display_name(gc))) {
@@ -674,11 +671,14 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name,
 
         serv_got_joined_chat(gc, id++, args[0]);
 
-        gint *entry = g_new(gint, 1);
-        gaim_debug_misc("gaym", "Made int: %x\n", entry);
-        *entry = 200;
+        ChatSort *chat_sort = g_new0(ChatSort, 1);
 
-        g_hash_table_insert(gaym->entry_order, g_strdup(args[0]), entry);
+        chat_sort->type =
+            gaim_prefs_get_int("/plugins/prpl/gaym/chat_member_sorting");
+        chat_sort->counter = MAX_CHANNEL_MEMBERS;
+
+        g_hash_table_insert(gaym->entry_order, g_strdup(args[0]),
+                            chat_sort);
         g_free(nick);
         return;
     }
@@ -691,6 +691,9 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name,
         return;
     }
 
+    ChatSort *chat_sort = g_hash_table_lookup(gaym->entry_order, args[0]);
+    g_return_if_fail(chat_sort != NULL);
+
     gaym_buddy_status(gaym, nick, TRUE, args[1]);
 
     gboolean gaym_botfilter_permit =
@@ -702,13 +705,15 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name,
         g_free(bio);
     }
 
-    gint *entry = g_hash_table_lookup(gaym->entry_order, args[0]);
-
-    if (*entry < 201)
-        *entry = 201;
+    if (chat_sort->counter <= MAX_CHANNEL_MEMBERS) {
+        chat_sort->counter = MAX_CHANNEL_MEMBERS + 1;
+    }
 
     flags = chat_pecking_order(args[1]);
-    flags = include_chat_entry_order(flags, (*entry)++);
+
+    if (chat_sort->type == GAYM_CHAT_SORT_TIME) {
+        flags = include_chat_entry_order(flags, chat_sort->counter++);
+    }
 
     gboolean gaym_privacy_permit = gaym_privacy_check(gc, nick);
     gboolean show_join =
@@ -1263,17 +1268,17 @@ void gaym_msg_richnames_list(struct gaym_conn *gaym, const char *name,
         return;
     }
 
+    ChatSort *chat_sort = g_hash_table_lookup(gaym->entry_order, channel);
+    g_return_if_fail(chat_sort != NULL);
+
     flags = chat_pecking_order(extra);
-    gint *entry = g_hash_table_lookup(gaym->entry_order, channel);
 
-    gaim_debug_misc("gaym", "looked up int: %x, %i\n", entry, *entry);
-    flags = include_chat_entry_order(flags, (*entry)--);
-
-    gaim_debug_misc("gaym", "flags: %i\n", flags);
+    if (chat_sort->type == GAYM_CHAT_SORT_TIME) {
+        flags = include_chat_entry_order(flags, chat_sort->counter--);
+    }
 
     gaim_conv_chat_add_user(GAIM_CONV_CHAT(convo), nick, NULL, flags,
                             FALSE);
-
 
     /**
      * Make the ignore.png icon appear next to the nick.

@@ -42,7 +42,20 @@
 
 #define MAX_BIO_LEN 150         /* max number of characters in bio */
 
+#define MAX_CHANNEL_MEMBERS 200
+
 #define GAYBOI_SPAM_URL "http://gayboi.org/spam/spamlst.php"
+
+typedef enum {
+    GAYM_CHAT_SORT_TIME = 1,    /* Entrance time */
+    GAYM_CHAT_SORT_FLAGS        /* Category + Nick/Name */
+} GaymChatSortType;
+
+typedef struct _ChatSort ChatSort;
+struct _ChatSort {
+    gint type;
+    gint counter;
+};
 
 typedef struct _BListWhois BListWhois;
 struct _BListWhois {

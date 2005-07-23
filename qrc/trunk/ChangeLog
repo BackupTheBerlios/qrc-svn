@@ -7,6 +7,8 @@
 	  (Room Name:*) is both a Category (which can be expanded) and a
 	  Room (which can be joined), with the individual Room Instances
 	  as children
+	- Room members can now be sorted by length of time in the
+	  room (longest in the room at the bottom)
 
 	Bug Fixes:
 	- Better refreshing of stale buddy list photos
@@ -20,7 +22,7 @@
 	- Addressed several memory leaks
 
 	Preference Changes:
-	- none
+	- Sort chat room members by entrance time or category + name
 
 0.34.1:
 	Bug Fixes:

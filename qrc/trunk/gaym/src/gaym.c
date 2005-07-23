@@ -1399,6 +1399,18 @@ static GaimPluginPrefFrame *get_plugin_pref_frame(GaimPlugin * plugin)
 
     ppref =
         gaim_plugin_pref_new_with_name_and_label
+        ("/plugins/prpl/gaym/chat_member_sorting",
+         _
+         ("Sort members by\n\t(changes do not affect rooms you are already in)"));
+    gaim_plugin_pref_set_type(ppref, GAIM_PLUGIN_PREF_CHOICE);
+    gaim_plugin_pref_add_choice(ppref, _("Entrance time"),
+                                GINT_TO_POINTER(1));
+    gaim_plugin_pref_add_choice(ppref, _("Category + Name"),
+                                GINT_TO_POINTER(2));
+    gaim_plugin_pref_frame_add(frame, ppref);
+
+    ppref =
+        gaim_plugin_pref_new_with_name_and_label
         ("/plugins/prpl/gaym/chat_room_instances",
          _("Number of chat room instances to display"));
     gaim_plugin_pref_set_bounds(ppref, 0, 9);
@@ -1506,6 +1518,7 @@ static void _init_plugin(GaimPlugin * plugin)
                         GAIM_CALLBACK(gaym_get_photo_info), NULL);
 
     gaim_prefs_add_none("/plugins/prpl/gaym");
+    gaim_prefs_add_int("/plugins/prpl/gaym/chat_member_sorting", 1);
     gaim_prefs_add_int("/plugins/prpl/gaym/chat_room_instances", 4);
     gaim_prefs_add_bool("/plugins/prpl/gaym/show_join", TRUE);
     gaim_prefs_add_bool("/plugins/prpl/gaym/show_part", TRUE);
