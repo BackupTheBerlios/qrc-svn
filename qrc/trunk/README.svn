@@ -16,4 +16,15 @@ not needed if you use a normal source package (qrc-x.y.z.tar.bz2):
    libtool    1.5.6  (not needed by source packages)
    pkg-config 0.17.2 (source packages may use pkg-config >= 0.15.0)
 
+Before committing your work or submitting a patch, please make sure you have
+only used c-style comments, and run indent on any .c or .h files you are
+committing with the following options (you can put these in your
+~/.indent.pro file):
+
+   -kr
+   -lc75
+   -fc1
+   -fca
+   -nut
+
 # this README.svn should not be included in the source package
