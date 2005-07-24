@@ -87,7 +87,7 @@ void gaym_update_channel_member(struct gaym_conn *gaym, const char *nick,
     GaymChannelMember *cm = gaym_get_channel_member_reference(gaym, nick);
     if (!cm) {
         gaim_debug_error("gaym",
-                         "ERROR: A member has joined a channel, but we were unable to add the member to the internal management structure. Report a bug.");
+                         "ERROR: A member has joined a channel, or a conversation was opened, but we were unable to add the member to the internal management structure. Report a bug.");
         return;
     } else {
         gchar *stats = gaym_stats_strdup(info);

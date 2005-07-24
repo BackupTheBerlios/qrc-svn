@@ -277,16 +277,24 @@ void gaym_msg_whois(struct gaym_conn *gaym, const char *name,
 
     struct gaym_fetch_thumbnail_data *data;
 
+    // Update, but then release the reference. It was already opened
+    // during conversation-created.
+    gaym_update_channel_member(gaym, args[1], args[5]);
+    gaym_unreference_channel_member(gaym, args[1]);
+    gaim_signal_emit(gaim_accounts_get_handle(), "info-updated",
+                     gaym->account, args[1]);
+
     if (g_hash_table_lookup(gaym->info_window_needed, normalized)) {
-        g_hash_table_remove(gaym->info_window_needed, normalized);
-        char *hashurl = g_hash_table_lookup(gaym->confighash,
-                                            "ohm.profile-url");
-        g_return_if_fail(hashurl != NULL);
+
         data = g_new0(struct gaym_fetch_thumbnail_data, 1);
         data->gc = gaim_account_get_connection(gaym->account);
         data->who = g_strdup(args[1]);
         data->bio = gaym_bio_strdup(args[5]);
         data->stats = gaym_stats_strdup(args[5]);
+        g_hash_table_remove(gaym->info_window_needed, normalized);
+        char *hashurl = g_hash_table_lookup(gaym->confighash,
+                                            "ohm.profile-url");
+        g_return_if_fail(hashurl != NULL);
 
         char *infourl = g_strdup_printf("%s?pw=%s&name=%s", hashurl,
                                         gaym->hash_pw, args[1]);
@@ -709,6 +717,7 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name,
     g_return_if_fail(entry != NULL);
 
     gaym_buddy_status(gaym, nick, TRUE, args[1]);
+
 
     gboolean gaym_botfilter_permit =
         gaym_botfilter_check(gc, nick, bio, FALSE);

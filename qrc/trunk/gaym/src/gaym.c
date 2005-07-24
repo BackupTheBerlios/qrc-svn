@@ -848,8 +848,13 @@ GaymChannelMember *gaym_get_channel_member_reference(struct gaym_conn
         channel_member->ref_count = 1;
         g_hash_table_insert(gaym->channel_members, g_strdup(name),
                             channel_member);
+        gaim_debug_misc("gaym", "Creating channel_members entry for %s\n",
+                        name);
         return g_hash_table_lookup(gaym->channel_members, name);
     } else {
+        gaim_debug_misc("gaym",
+                        "Adding reference to channel_members entry for %s\n",
+                        name);
         (channel_member->ref_count)++;
         return channel_member;
     }
@@ -874,8 +879,11 @@ gboolean gaym_unreference_channel_member(struct gaym_conn * gaym,
 
         channel_member->ref_count--;
 
-        if (channel_member->ref_count == 0)
+        if (channel_member->ref_count == 0) {
+            gaim_debug_misc("gaym", "Removing %s from channel_members\n",
+                            name);
             return g_hash_table_remove(gaym->channel_members, name);
+        }
         return FALSE;
     }
 }
@@ -1412,13 +1420,23 @@ void deref_one_user(gpointer * user, gpointer * data)
 }
 static void gaym_clean_channel_members(GaimConversation * conv)
 {
-    GaimConvChat *chat = gaim_conversation_get_chat_data(conv);
-    GaimConnection *gc = gaim_conversation_get_gc(conv);
-    struct gaym_conn *gaym = gc->proto_data;
-    GList *users = gaim_conv_chat_get_users(chat);
-    gaim_debug_misc("gaym", "got userlist %x length %i\n", users,
-                    g_list_length(users));
-    g_list_foreach(users, (GFunc) deref_one_user, gaym);
+
+    g_return_if_fail(conv != NULL);
+
+    if (conv->type == GAIM_CONV_CHAT) {
+        GaimConvChat *chat = gaim_conversation_get_chat_data(conv);
+        GaimConnection *gc = gaim_conversation_get_gc(conv);
+        struct gaym_conn *gaym = gc->proto_data;
+        GList *users = gaim_conv_chat_get_users(chat);
+        gaim_debug_misc("gaym", "got userlist %x length %i\n", users,
+                        g_list_length(users));
+        g_list_foreach(users, (GFunc) deref_one_user, gaym);
+    } else if (conv->type == GAIM_CONV_IM) {
+        gaim_debug_misc("gaym", "removing reference to %s\n", conv->name);
+        GaimConnection *gc = gaim_conversation_get_gc(conv);
+        struct gaym_conn *gaym = gc->proto_data;
+        gaym_unreference_channel_member(gaym, conv->name);
+    }
 }
 static void gaym_get_photo_info(GaimConversation * conv)
 {
@@ -1436,7 +1454,6 @@ static void gaym_get_photo_info(GaimConversation * conv)
         struct gaym_conn *gaym;
 
         GaimConnection *gc = gaim_conversation_get_gc(conv);
-
         gaym = (struct gaym_conn *) gc->proto_data;
 
         if (!gaym) {
@@ -1465,8 +1482,11 @@ static void gaym_get_photo_info(GaimConversation * conv)
         gaim_debug_misc("gaym", "Conversation triggered command: %s\n",
                         buf);
         gaym_send(gaym, buf);
+        gaym_get_channel_member_reference(gaym, name);
         g_free(name);
         g_free(buf);
+        // Opens a reference in channel_members.
+
     }
 }
 
@@ -1606,10 +1626,16 @@ static void _init_plugin(GaimPlugin * plugin)
 
 
     gaim_signal_connect(gaim_conversations_get_handle(),
-                        "chat-left", plugin,
+                        "deleting-conversation", plugin,
                         GAIM_CALLBACK(gaym_clean_channel_members), NULL);
 
-
+    gaim_signal_register(gaim_accounts_get_handle(),
+                         "info-updated",
+                         gaim_marshal_VOID__POINTER_POINTER, NULL, 3,
+                         gaim_value_new(GAIM_TYPE_SUBTYPE,
+                                        GAIM_SUBTYPE_ACCOUNT),
+                         gaim_value_new(GAIM_TYPE_POINTER,
+                                        GAIM_TYPE_CHAR));
 
     gaim_prefs_add_none("/plugins/prpl/gaym");
     gaim_prefs_add_int("/plugins/prpl/gaym/chat_room_instances", 4);

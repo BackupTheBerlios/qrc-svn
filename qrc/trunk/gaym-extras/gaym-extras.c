@@ -23,6 +23,7 @@
 
 GHashTable *icons;
 GHashTable *pending_updates;
+GHashTable *im_window_bios;
 
 typedef struct _GaymChatIcon {
 
@@ -221,6 +222,9 @@ void fetch_thumbnail_cb(void *user_data, const char *pic_data, size_t len)
 static void changed_cb(GtkTreeSelection * selection, gpointer conv)
 {
 
+    g_return_if_fail(selection != NULL);
+    g_return_if_fail(conv != NULL);
+
     GaimConversation *c = (GaimConversation *) conv;
     GaymChannelMember *cm;
     struct gaym_conn *gaym = c->account->gc->proto_data;
@@ -228,7 +232,9 @@ static void changed_cb(GtkTreeSelection * selection, gpointer conv)
     GtkTreeModel *model;
     gchar *name;
 
-    gtk_tree_selection_get_selected(selection, &model, &iter);
+    if (!gtk_tree_selection_get_selected(selection, &model, &iter))
+        return;
+
     gtk_tree_model_get(model, &iter, CHAT_USERS_NAME_COLUMN, &name, -1);
 
     /* Remove the current icon stuff */
@@ -242,7 +248,18 @@ static void changed_cb(GtkTreeSelection * selection, gpointer conv)
     gaim_debug_misc("chaticon", "got thumbnail url %s for %s\n",
                     cm->thumbnail, name);
 
-    gtk_label_set_text(GTK_LABEL(icon_data->bio_area), cm->bio);
+    char *buf;
+    buf = g_strdup_printf(" ");
+    if (cm->age)
+        buf = g_strdup_printf("Age: %s", cm->age);
+    if (cm->location)
+        buf = g_strdup_printf("%s Location: %s", buf, cm->location);
+    if (cm->bio)
+        buf = g_strdup_printf("%s\nBio: %s", buf, cm->bio);
+
+    gtk_label_set_text(GTK_LABEL(icon_data->bio_area), buf);
+    gtk_label_set_line_wrap(GTK_LABEL(icon_data->bio_area), TRUE);
+    g_free(buf);
     // Fetch thumbnail.
 
     struct gaym_fetch_thumbnail_data *data;
@@ -258,6 +275,60 @@ static void changed_cb(GtkTreeSelection * selection, gpointer conv)
 
     // Add entry to hash table for tracking.
     g_hash_table_replace(pending_updates, c, name);
+
+}
+
+static void clean_im_bio(GaimConversation * c)
+{
+
+    g_return_if_fail(c->type == GAIM_CONV_IM);
+    g_hash_table_remove(im_window_bios, c->name);
+
+}
+
+static void update_im_bio(GaimAccount * account, gchar * name)
+{
+    gaim_debug_misc("chaticon", "update bio area: %s\n", name);
+    g_return_if_fail(name != NULL);
+    g_return_if_fail(account != NULL);
+
+    GaimConversation *c =
+        gaim_find_conversation_with_account(name, account);
+
+    g_return_if_fail(c != NULL);
+
+    gaim_debug_misc("chaticon", "got conversation\n");
+    g_return_if_fail(c->type == GAIM_CONV_IM);
+
+    GaimGtkConversation *gtkconv = GAIM_GTK_CONVERSATION(c);
+    struct gaym_conn *gaym = account->gc->proto_data;
+    GaymChannelMember *cm = gaym_get_channel_member_info(gaym, c->name);
+
+    g_return_if_fail(cm != NULL);
+
+    gaim_debug_misc("chaticon", "got cm\n");
+    GtkBox *vbox_big = GTK_BOX(gtkconv->lower_hbox->parent);
+
+    GtkWidget *bio_area = g_hash_table_lookup(im_window_bios, c->name);
+    if (!bio_area) {
+        bio_area = gtk_label_new(_(" "));
+        g_hash_table_insert(im_window_bios, c, bio_area);
+        gtk_box_pack_start(vbox_big, bio_area, TRUE, TRUE, 0);
+        gtk_widget_show(bio_area);
+    }
+    gaim_debug_misc("chaticon", "Populating bio area with cm %x\n", cm);
+    char *buf;
+    buf = g_strdup_printf(" ");
+    if (cm->age)
+        buf = g_strdup_printf("Age: %s", cm->age);
+    if (cm->location)
+        buf = g_strdup_printf("%s Location: %s", buf, cm->location);
+    if (cm->bio)
+        buf = g_strdup_printf("%s\nBio: %s", buf, cm->bio);
+
+    gtk_label_set_text(GTK_LABEL(bio_area), buf);
+    gtk_label_set_line_wrap(GTK_LABEL(bio_area), TRUE);
+    g_free(buf);
 
 }
 
@@ -320,7 +391,7 @@ static void redochatwindow(GaimConversation * c)
     gtk_widget_show(icon_data->event);
 
     icon_data->bio_area = gtk_label_new(_(""));
-    gtk_box_pack_start(vbox_big, icon_data->bio_area, FALSE, FALSE, 0);
+    gtk_box_pack_start(vbox_big, icon_data->bio_area, TRUE, TRUE, 0);
     gtk_widget_show(icon_data->bio_area);
 
     g_hash_table_insert(icons, c, icon_data);
@@ -331,9 +402,17 @@ static gboolean plugin_load(GaimPlugin * plugin)
 {
     icons = g_hash_table_new(g_direct_hash, g_direct_equal);
     pending_updates = g_hash_table_new(g_direct_hash, g_direct_equal);
+    im_window_bios =
+        g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL,
+                              (GDestroyNotify) gtk_widget_destroy);
 
     gaim_signal_connect(gaim_conversations_get_handle(), "chat-joined",
                         plugin, GAIM_CALLBACK(redochatwindow), NULL);
+    gaim_signal_connect(gaim_accounts_get_handle(), "info-updated",
+                        plugin, GAIM_CALLBACK(update_im_bio), NULL);
+    gaim_signal_connect(gaim_conversations_get_handle(),
+                        "deleting-conversation", plugin,
+                        GAIM_CALLBACK(clean_im_bio), NULL);
 
     return TRUE;
 }
