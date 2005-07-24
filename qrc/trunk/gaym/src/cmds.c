@@ -215,8 +215,7 @@ int gaym_cmd_list(struct gaym_conn *gaym, const char *cmd,
 {
     if (args[0]) {
         gchar *tmp = g_utf8_strdown(args[0], -1);
-        gaym->roomlist_filter =
-            g_utf8_normalize(args[0], -1, G_NORMALIZE_ALL);
+        gaym->roomlist_filter = g_utf8_normalize(tmp, -1, G_NORMALIZE_ALL);
         g_free(tmp);
     } else {
         gaym->roomlist_filter = NULL;
