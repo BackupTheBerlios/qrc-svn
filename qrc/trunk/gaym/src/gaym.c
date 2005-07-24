@@ -63,6 +63,7 @@ static void gaym_input_cb(gpointer data, gint source,
 static guint gaym_nick_hash(const char *nick);
 static gboolean gaym_nick_equal(const char *nick1, const char *nick2);
 static void gaym_buddy_free(struct gaym_buddy *ib);
+static void gaym_channel_member_free(GaymChannelMember * cm);
 
 static void gaym_buddy_append(char *name, struct gaym_buddy *ib,
                               BListWhois * blist_whois);
@@ -514,6 +515,12 @@ static void gaym_login(GaimAccount * account)
         g_hash_table_new_full((GHashFunc) gaym_nick_hash,
                               (GEqualFunc) gaym_nick_equal, NULL,
                               (GDestroyNotify) gaym_buddy_free);
+
+    gaym->channel_members =
+        g_hash_table_new_full((GHashFunc) gaym_nick_hash,
+                              (GEqualFunc) gaym_nick_equal, NULL,
+                              (GDestroyNotify) gaym_channel_member_free);
+
     gaym->cmds = g_hash_table_new(g_str_hash, g_str_equal);
     gaym_cmd_table_build(gaym);
     gaym->msgs = g_hash_table_new(g_str_hash, g_str_equal);
@@ -827,6 +834,58 @@ static void gaym_set_away(GaimConnection * gc, const char *state,
      */
 }
 
+GaymChannelMember *gaym_get_channel_member_reference(struct gaym_conn
+                                                     *gaym,
+                                                     const gchar * name)
+{
+
+    GaymChannelMember *channel_member =
+        (GaymChannelMember *) g_hash_table_lookup(gaym->channel_members,
+                                                  name);
+
+    if (!channel_member) {
+        channel_member = g_new0(struct channel_member, 1);
+        channel_member->ref_count = 1;
+        g_hash_table_insert(gaym->channel_members, g_strdup(name),
+                            channel_member);
+        return g_hash_table_lookup(gaym->channel_members, name);
+    } else {
+        (channel_member->ref_count)++;
+        return channel_member;
+    }
+
+}
+
+gboolean gaym_unreference_channel_member(struct gaym_conn * gaym,
+                                         gchar * name)
+{
+
+    GaymChannelMember *channel_member;
+    channel_member =
+        (GaymChannelMember *) g_hash_table_lookup(gaym->channel_members,
+                                                  name);
+    if (!channel_member)
+        return FALSE;
+    else {
+
+        if (channel_member->ref_count <= 0)
+            gaim_debug_error("gaym",
+                             "****Reference counting error with channel members struct.\n");
+
+        channel_member->ref_count--;
+
+        if (channel_member->ref_count == 0)
+            return g_hash_table_remove(gaym->channel_members, name);
+        return FALSE;
+    }
+}
+
+GaymChannelMember *gaym_get_channel_member_info(struct gaym_conn * gaym,
+                                                gchar * name)
+{
+    return g_hash_table_lookup(gaym->channel_members, name);
+}
+
 static void gaym_add_buddy(GaimConnection * gc, GaimBuddy * buddy,
                            GaimGroup * group)
 {
@@ -1105,6 +1164,17 @@ static gboolean gaym_nick_equal(const char *nick1, const char *nick2)
     return (gaim_utf8_strcasecmp(nick1, nick2) == 0);
 }
 
+static void gaym_channel_member_free(GaymChannelMember * cm)
+{
+    g_free(cm->name);
+    g_free(cm->bio);
+    g_free(cm->thumbnail);
+    g_free(cm->sex);
+    g_free(cm->age);
+    g_free(cm->location);
+    g_free(cm);
+}
+
 static void gaym_buddy_free(struct gaym_buddy *ib)
 {
     g_free(ib->name);
@@ -1271,7 +1341,7 @@ static GaimPluginProtocolInfo prpl_info = {
     0,                          /* options */
     NULL,                       /* user_splits */
     NULL,                       /* protocol_options */
-    {"jpg", 55, 75, 55, 75},    /* icon_spec */
+    {"jpg", 57, 77, 57, 77},    /* icon_spec */
     gaym_blist_icon,            /* list_icon */
     gaym_blist_emblems,         /* list_emblems */
     gaym_status_text,           /* status_text */
@@ -1328,6 +1398,28 @@ static GaimPluginProtocolInfo prpl_info = {
     gaym_dccsend_send_file      /* send_file */
 };
 
+void deref_one_user(gpointer * user, gpointer * data)
+{
+
+    struct gaym_conn *gaym = (struct gaym_conn *) data;
+    GaimConvChatBuddy *cb = (GaimConvChatBuddy *) user;
+    gaim_debug_misc("gaym", "Removing %s in %x from list\n",
+                    (char *) cb->name, cb);
+
+    gaim_debug_misc("    ", "Succes was: %i\n",
+                    gaym_unreference_channel_member(gaym, cb->name));
+
+}
+static void gaym_clean_channel_members(GaimConversation * conv)
+{
+    GaimConvChat *chat = gaim_conversation_get_chat_data(conv);
+    GaimConnection *gc = gaim_conversation_get_gc(conv);
+    struct gaym_conn *gaym = gc->proto_data;
+    GList *users = gaim_conv_chat_get_users(chat);
+    gaim_debug_misc("gaym", "got userlist %x length %i\n", users,
+                    g_list_length(users));
+    g_list_foreach(users, (GFunc) deref_one_user, gaym);
+}
 static void gaym_get_photo_info(GaimConversation * conv)
 {
     char *buf;
@@ -1512,13 +1604,11 @@ static void _init_plugin(GaimPlugin * plugin)
                         "conversation-created", plugin,
                         GAIM_CALLBACK(gaym_get_photo_info), NULL);
 
-    gaim_signal_register(gaim_accounts_get_handle(),
-                         "buddy-icon-fetched",
-                         gaim_marshal_VOID__POINTER_POINTER, NULL, 2,
-                         gaim_value_new(GAIM_TYPE_SUBTYPE,
-                                        GAIM_SUBTYPE_CONNECTION),
-                         gaim_value_new(GAIM_TYPE_SUBTYPE,
-                                        GAIM_SUBTYPE_BUDDY_ICON));
+
+    gaim_signal_connect(gaim_conversations_get_handle(),
+                        "chat-left", plugin,
+                        GAIM_CALLBACK(gaym_clean_channel_members), NULL);
+
 
 
     gaim_prefs_add_none("/plugins/prpl/gaym");
@@ -1547,6 +1637,8 @@ static void _init_plugin(GaimPlugin * plugin)
 }
 
 GAIM_INIT_PLUGIN(gaym, _init_plugin, info);
+
+
 
 /**
  * vim:tabstop=4:shiftwidth=4:expandtab:

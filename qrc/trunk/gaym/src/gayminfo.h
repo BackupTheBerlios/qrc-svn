@@ -37,6 +37,8 @@ struct gaym_fetch_thumbnail_data {
     char *who;
     char *bio;
     char *stats;
+    const char *pic_data;
+    gint pic_data_len;
 };
 void gaym_fetch_thumbnail_cb(void *user_data, const char *pic_data,
                              size_t len);
@@ -85,6 +87,9 @@ char *gaym_stats_strdup(const char *info);
 void gaym_buddy_status(struct gaym_conn *gaym, char *name,
                        gboolean online, char *info);
 
+
+void gaym_update_channel_member(struct gaym_conn *gaym, const char *nick,
+                                const char *info);
 #endif                          /* _GAIM_GAYM_GAYMINFO_H_ */
 
 /**

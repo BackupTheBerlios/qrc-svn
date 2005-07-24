@@ -24,6 +24,7 @@
 
 #include "gayminfo.h"
 #include "util.h"
+#include "debug.h"
 
 char *gaym_thumbnail_strdup(const char *info)
 {
@@ -79,6 +80,37 @@ char *gaym_stats_strdup(const char *info)
     }
 }
 
+
+void gaym_update_channel_member(struct gaym_conn *gaym, const char *nick,
+                                const char *info)
+{
+    GaymChannelMember *cm = gaym_get_channel_member_reference(gaym, nick);
+    if (!cm) {
+        gaim_debug_error("gaym",
+                         "ERROR: A member has joined a channel, but we were unable to add the member to the internal management structure. Report a bug.");
+        return;
+    } else {
+        gchar *stats = gaym_stats_strdup(info);
+        if (stats) {
+            gchar **s = g_strsplit(stats, "|", 3);
+            if (s[0] && strlen(g_strstrip(s[0])) > 0) {
+                cm->sex = g_ascii_strup(s[0], -1);
+            }
+            if (s[1] && strlen(g_strstrip(s[1])) > 0) {
+                cm->age = g_strdup(s[1]);
+            }
+            if (s[2] && strlen(g_strstrip(s[2])) > 0) {
+                cm->location = g_strdup(s[2]);
+            }
+            g_strfreev(s);
+            g_free(stats);
+        }
+        cm->name = g_strdup(nick);
+        cm->bio = gaym_bio_strdup(info);
+        cm->thumbnail = gaym_thumbnail_strdup(info);
+
+    }
+}
 void gaym_buddy_status(struct gaym_conn *gaym, char *name,
                        gboolean online, char *info)
 {

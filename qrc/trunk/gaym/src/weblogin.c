@@ -266,6 +266,7 @@ static void parse_cookies(const char *webdata, GaimUrlSession * session,
 // 
 // 
 // 
+// 
 // this
 // structure, as well.
 static void
@@ -301,6 +302,7 @@ session_fetched_cb(gpointer url_data, gint sock, GaimInputCondition cond)
                        // 
                        // 
                        // 
+                       // 
                        // (see 
                        // above)
                        (gfud->full ? "" : "/"),
@@ -311,6 +313,7 @@ session_fetched_cb(gpointer url_data, gint sock, GaimInputCondition cond)
         } else {
             g_snprintf(buf, sizeof(buf), "GET %s%s HTTP/%s\r\n" "Host: %s\r\n" "Accept-Encoding: identity\r\n" "Cookie: %s\r\n",        // (1) 
                                                                                                                                         // 
+                       // 
                        // 
                        // 
                        // 

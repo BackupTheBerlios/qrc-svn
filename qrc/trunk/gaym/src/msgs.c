@@ -101,13 +101,8 @@ void gaym_fetch_thumbnail_cb(void *user_data, const char *pic_data,
     if (GAIM_CONNECTION_IS_VALID(d->gc) && len) {
         gaim_buddy_icons_set_for_user(gaim_connection_get_account(d->gc),
                                       d->who, (void *) pic_data, len);
-        gaim_signal_emit(gaim_accounts_get_handle(), "buddy-icon-fetched",
-                         d->gc, gaim_buddy_icons_find(d->gc->account,
-                                                      d->who));
     } else {
         gaim_debug_error("gaym", "Fetching buddy icon failed.\n");
-        gaim_signal_emit(gaim_accounts_get_handle(), "buddy-icon-fetched",
-                         d->gc, NULL, d->who);
     }
 
     g_free(d->who);
@@ -758,6 +753,7 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name,
     }
     ops->chat_update_user((convo), nick);
 
+    gaym_update_channel_member(gaym, nick, args[1]);
     g_free(bio_markedup);
     g_free(nick);
 }
@@ -924,6 +920,9 @@ void gaym_msg_part(struct gaym_conn *gaym, const char *name,
                                          (gaim_conv_chat_get_users
                                           (GAIM_CONV_CHAT(convo)), cb));
                 gaim_conv_chat_cb_destroy(cb);
+                if (!gaym_unreference_channel_member(gaym, nick))
+                    gaim_debug_error("gaym",
+                                     "channel_members reference counting bug.\n");
             }
         }
     }
@@ -1315,6 +1314,7 @@ void gaym_msg_richnames_list(struct gaym_conn *gaym, const char *name,
         gaim_conv_chat_ignore(GAIM_CONV_CHAT(convo), nick);
     }
     ops->chat_update_user((convo), nick);
+    gaym_update_channel_member(gaym, nick, extra);
 }
 
 /**
