@@ -88,17 +88,26 @@ void gaym_msg_away(struct gaym_conn *gaym, const char *name,
 void gaym_fetch_thumbnail_cb(void *user_data, const char *pic_data,
                              size_t len)
 {
-    if (!user_data || !pic_data) {
+    if (!user_data)
+        return;
+    struct gaym_fetch_thumbnail_data *d = user_data;
+    if (!pic_data) {
+        gaim_signal_emit(gaim_accounts_get_handle(), "buddy-icon-fetched",
+                         d->gc, NULL, d->who);
         return;
     }
 
-    struct gaym_fetch_thumbnail_data *d = user_data;
 
     if (GAIM_CONNECTION_IS_VALID(d->gc) && len) {
         gaim_buddy_icons_set_for_user(gaim_connection_get_account(d->gc),
                                       d->who, (void *) pic_data, len);
+        gaim_signal_emit(gaim_accounts_get_handle(), "buddy-icon-fetched",
+                         d->gc, gaim_buddy_icons_find(d->gc->account,
+                                                      d->who));
     } else {
         gaim_debug_error("gaym", "Fetching buddy icon failed.\n");
+        gaim_signal_emit(gaim_accounts_get_handle(), "buddy-icon-fetched",
+                         d->gc, NULL, d->who);
     }
 
     g_free(d->who);
@@ -1235,10 +1244,22 @@ void gaym_msg_list_busy(struct gaym_conn *gaym, const char *name,
     }
     buf = g_strdup_printf(_("%s"), args[1]);
     gaim_notify_error(gc, _("Server Busy"), _("Server Busy"), buf);
-    if (gaym->roomlist) {
-        gaim_roomlist_cancel_get_list(gaym->roomlist);
-    }
+    // if (gaym->roomlist) {
+    // gaim_roomlist_cancel_get_list(gaym->roomlist);
+    // }
     g_free(buf);
+    /**
+     * Can't get member created rooms right now.
+     * This is our trigger to add the static rooms
+     */
+    build_roomlist_from_config(gaym->roomlist, gaym->confighash,
+                               gaym->roomlist_filter);
+    if (gaym->roomlist_filter) {
+        g_free(gaym->roomlist_filter);
+        gaym->roomlist_filter = NULL;
+    }
+    return;
+
 }
 
 void gaym_msg_richnames_list(struct gaym_conn *gaym, const char *name,

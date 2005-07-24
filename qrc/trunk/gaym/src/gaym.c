@@ -35,6 +35,7 @@
 #include "version.h"
 #include "request.h"
 #include "privacy.h"
+#include "signals.h"
 
 #include "helpers.h"
 #include "gayminfo.h"
@@ -1510,6 +1511,15 @@ static void _init_plugin(GaimPlugin * plugin)
     gaim_signal_connect(gaim_conversations_get_handle(),
                         "conversation-created", plugin,
                         GAIM_CALLBACK(gaym_get_photo_info), NULL);
+
+    gaim_signal_register(gaim_accounts_get_handle(),
+                         "buddy-icon-fetched",
+                         gaim_marshal_VOID__POINTER_POINTER, NULL, 2,
+                         gaim_value_new(GAIM_TYPE_SUBTYPE,
+                                        GAIM_SUBTYPE_CONNECTION),
+                         gaim_value_new(GAIM_TYPE_SUBTYPE,
+                                        GAIM_SUBTYPE_BUDDY_ICON));
+
 
     gaim_prefs_add_none("/plugins/prpl/gaym");
     gaim_prefs_add_int("/plugins/prpl/gaym/chat_room_instances", 4);
