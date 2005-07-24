@@ -22,9 +22,7 @@
 #define CHATSORT_PLUGIN_ID "gtk-chaticon"
 
 GHashTable *icons;
-GHashTable *icon_spots;
 GHashTable *pending_updates;
-GaimConvWindow *hider_window;
 
 typedef struct _GaymChatIcon {
 
@@ -39,15 +37,14 @@ typedef struct _GaymChatIcon {
     GdkPixbufAnimationIter *iter;
     gboolean animate;
     guint32 icon_timer;
+    GtkWidget *bio_area;
 
 } GaymChatIcon;
 
 
 
-void
-gaym_gtkconv_update_thumbnail(GaimConversation * conv,
-                              struct gaym_fetch_thumbnail_data
-                              *thumbnail_data)
+void gaym_gtkconv_update_thumbnail(GaimConversation * conv, struct gaym_fetch_thumbnail_data
+                                   *thumbnail_data)
 {
     GaimGtkConversation *gtkconv;
 
@@ -234,10 +231,6 @@ static void changed_cb(GtkTreeSelection * selection, gpointer conv)
     gtk_tree_selection_get_selected(selection, &model, &iter);
     gtk_tree_model_get(model, &iter, CHAT_USERS_NAME_COLUMN, &name, -1);
 
-    gaim_debug_misc("chatsort", "Click: %s\n", name);
-    gtk_button_set_label(g_hash_table_lookup(icon_spots, c), name);
-
-
     /* Remove the current icon stuff */
     GaymChatIcon *icon_data = g_hash_table_lookup(icons, c);
     if (icon_data->event != NULL)
@@ -249,6 +242,7 @@ static void changed_cb(GtkTreeSelection * selection, gpointer conv)
     gaim_debug_misc("chaticon", "got thumbnail url %s for %s\n",
                     cm->thumbnail, name);
 
+    gtk_label_set_text(GTK_LABEL(icon_data->bio_area), cm->bio);
     // Fetch thumbnail.
 
     struct gaym_fetch_thumbnail_data *data;
@@ -283,14 +277,9 @@ static void redochatwindow(GaimConversation * c)
     gtk_tree_selection_set_mode(select, GTK_SELECTION_SINGLE);
 
     oldls = gtk_tree_view_get_model(GTK_TREE_VIEW(gtkchat->list));
-    GtkBox *vbox = GTK_BOX(gtkchat->list->parent->parent);
 
     GtkBox *hbox = GTK_BOX(gtkconv->lower_hbox);
-
-    GtkWidget *button = gtk_button_new_with_label("A Button");
-    gtk_box_pack_end(vbox, GTK_WIDGET(button), FALSE, FALSE, 0);
-    gtk_widget_show(button);
-
+    GtkBox *vbox_big = GTK_BOX(gtkconv->lower_hbox->parent);
 
     g_signal_connect(G_OBJECT(select), "changed", G_CALLBACK(changed_cb),
                      c);
@@ -329,7 +318,11 @@ static void redochatwindow(GaimConversation * c)
     // g_signal_connect(G_OBJECT(icon_data->event), "button-press-event",
     // G_CALLBACK(icon_menu), conv);
     gtk_widget_show(icon_data->event);
-    g_hash_table_insert(icon_spots, c, button);
+
+    icon_data->bio_area = gtk_label_new(_(""));
+    gtk_box_pack_start(vbox_big, icon_data->bio_area, FALSE, FALSE, 0);
+    gtk_widget_show(icon_data->bio_area);
+
     g_hash_table_insert(icons, c, icon_data);
 
 }
@@ -337,7 +330,6 @@ static void redochatwindow(GaimConversation * c)
 static gboolean plugin_load(GaimPlugin * plugin)
 {
     icons = g_hash_table_new(g_direct_hash, g_direct_equal);
-    icon_spots = g_hash_table_new(g_direct_hash, g_direct_equal);
     pending_updates = g_hash_table_new(g_direct_hash, g_direct_equal);
 
     gaim_signal_connect(gaim_conversations_get_handle(), "chat-joined",
