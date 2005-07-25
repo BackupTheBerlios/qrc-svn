@@ -18,6 +18,7 @@
 
 #include "../gaym/src/gaym.h"
 #include "../gaym/src/gayminfo.h"
+#include "../gaym/src/helpers.h"
 
 #define CHATSORT_PLUGIN_ID "gtk-chaticon"
 
@@ -182,30 +183,31 @@ static void change_sort_order(GtkWidget * button, void *data)
 
 }
 static void
-get_icon_scale_size(GdkPixbufAnimation *icon, GaimBuddyIconSpec *spec, int *width, int *height)
+get_icon_scale_size(GdkPixbufAnimation * icon, GaimBuddyIconSpec * spec,
+                    int *width, int *height)
 {
-	*width = gdk_pixbuf_animation_get_width(icon);
-	*height = gdk_pixbuf_animation_get_height(icon);
+    *width = gdk_pixbuf_animation_get_width(icon);
+    *height = gdk_pixbuf_animation_get_height(icon);
 
-	/* this should eventually get smarter about preserving the aspect
-	 * ratio when scaling, but gimmie a break, I just woke up */
-	if(spec && spec->scale_rules & GAIM_ICON_SCALE_DISPLAY) {
-		if(*width < spec->min_width)
-			*width = spec->min_width;
-		else if(*width > spec->max_width)
-			*width = spec->max_width;
+    /* this should eventually get smarter about preserving the aspect
+       ratio when scaling, but gimmie a break, I just woke up */
+    if (spec && spec->scale_rules & GAIM_ICON_SCALE_DISPLAY) {
+        if (*width < spec->min_width)
+            *width = spec->min_width;
+        else if (*width > spec->max_width)
+            *width = spec->max_width;
 
-		if(*height < spec->min_height)
-			*height = spec->min_height;
-		else if(*height  > spec->max_height)
-			*height = spec->max_height;
-	}
+        if (*height < spec->min_height)
+            *height = spec->min_height;
+        else if (*height > spec->max_height)
+            *height = spec->max_height;
+    }
 
-	/* and now for some arbitrary sanity checks */
-	if(*width > 100)
-		*width = 100;
-	if(*height > 100)
-		*height = 100;
+    /* and now for some arbitrary sanity checks */
+    if (*width > 100)
+        *width = 100;
+    if (*height > 100)
+        *height = 100;
 }
 
 void gaym_gtkconv_update_thumbnail(GaimConversation * conv, struct gaym_fetch_thumbnail_data
@@ -312,14 +314,20 @@ void gaym_gtkconv_update_thumbnail(GaimConversation * conv, struct gaym_fetch_th
         buf = gdk_pixbuf_animation_iter_get_pixbuf(icon_data->iter);
     }
 
-	get_icon_scale_size(icon_data->anim, prpl_info ? &prpl_info->icon_spec :
-			NULL, &scale_width, &scale_height);
-	scale = gdk_pixbuf_scale_simple(buf,
-				MAX(gdk_pixbuf_get_width(buf) * scale_width /
-				    gdk_pixbuf_animation_get_width(icon_data->anim), 1),
-				MAX(gdk_pixbuf_get_height(buf) * scale_height /
-				    gdk_pixbuf_animation_get_height(icon_data->anim), 1),
-				GDK_INTERP_NEAREST);
+    get_icon_scale_size(icon_data->anim,
+                        prpl_info ? &prpl_info->icon_spec : NULL,
+                        &scale_width, &scale_height);
+    scale =
+        gdk_pixbuf_scale_simple(buf,
+                                MAX(gdk_pixbuf_get_width(buf) *
+                                    scale_width /
+                                    gdk_pixbuf_animation_get_width
+                                    (icon_data->anim), 1),
+                                MAX(gdk_pixbuf_get_height(buf) *
+                                    scale_height /
+                                    gdk_pixbuf_animation_get_height
+                                    (icon_data->anim), 1),
+                                GDK_INTERP_NEAREST);
 
     gdk_pixbuf_render_pixmap_and_mask(scale, &pm, &bm, 100);
     g_object_unref(G_OBJECT(scale));
@@ -394,7 +402,7 @@ static void changed_cb(GtkTreeSelection * selection, gpointer conv)
     g_return_if_fail(conv != NULL);
 
     GaimConversation *c = (GaimConversation *) conv;
-    GaymChannelMember *cm;
+    GaymBuddy *cm;
     struct gaym_conn *gaym = c->account->gc->proto_data;
     GtkTreeIter iter;
     GtkTreeModel *model;
@@ -455,7 +463,7 @@ static void update_im_bio(GaimAccount * account, gchar * name)
 
     GaimGtkConversation *gtkconv = GAIM_GTK_CONVERSATION(c);
     struct gaym_conn *gaym = account->gc->proto_data;
-    GaymChannelMember *cm = gaym_get_channel_member_info(gaym, c->name);
+    GaymBuddy *cm = gaym_get_channel_member_info(gaym, c->name);
 
     g_return_if_fail(cm != NULL);
 
@@ -594,23 +602,11 @@ static gboolean namelist_tooltip_timeout(struct timeout_cb_data *data)
 
     gtk_tree_path_free(path);
 
-    GaymChannelMember *cm = gaym_get_channel_member_info(gaym, name);
+    GaymBuddy *cm = gaym_get_channel_member_info(gaym, name);
 
+    tooltiptext = build_tooltip_text(cm);
 
-    if (!cm->age && !cm->location && !cm->bio)
-        tooltiptext = g_strdup_printf("No info");
-    else {
-        tooltiptext =
-            g_strconcat(1 ? "<b>Age: </b>" : "",
-                        cm->age ? cm->age : "?",
-                        1 ? "\n<b>Location: </b>" : "",
-                        cm->location ? cm->location : "?",
-                        cm->bio ? "\n<b>Info: </b> : " : "",
-                        cm->bio ? cm->bio : "");
-    }
-    if (!tooltiptext)
-        return FALSE;
-
+    g_return_val_if_fail(tooltiptext != NULL, FALSE);
 
     tipwindow = g_hash_table_lookup(popups, tv);
     if (tipwindow)

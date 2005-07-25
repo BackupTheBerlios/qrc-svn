@@ -64,8 +64,8 @@ struct gaym_conn {
     int fd;
     guint timer;
     GHashTable *buddies;        /* hash table of struct gaym_buddy */
-    GHashTable *channel_members;        /* hash table of
-                                           GaymChannelMembers */
+    GHashTable *channel_members;        /* hash table of struct gaym_buddy 
+                                         */
 
     char *inbuf;
     int inbuflen;
@@ -113,11 +113,12 @@ typedef struct {
 
 } GaimUrlSession;
 
-
+typedef struct gaym_buddy GaymBuddy;
 struct gaym_buddy {
     char *name;                 /* gaym formatted nick */
     gboolean done;              /* has been checked */
     gboolean online;            /* is online */
+    gint ref_count;             /* reference count for mem mngmnt */
     char *bio;                  /* bio string */
     char *thumbnail;            /* thumbnail string */
     char *sex;                  /* sex string */
@@ -125,24 +126,13 @@ struct gaym_buddy {
     char *location;             /* location string */
 };
 
-typedef struct channel_member {
-    char *name;                 /* gaym formatted nick */
-    char *bio;                  /* bio string */
-    char *thumbnail;            /* thumbnail string */
-    char *sex;                  /* sex string */
-    char *age;                  /* age string */
-    char *location;             /* location string */
-    gint ref_count;             /* reference count for mem mngmnt */
-} GaymChannelMember;
-
 gboolean gaym_unreference_channel_member(struct gaym_conn *gaym,
                                          gchar * name);
-GaymChannelMember *gaym_get_channel_member_info(struct gaym_conn *gaym,
-                                                gchar * name);
+GaymBuddy *gaym_get_channel_member_info(struct gaym_conn *gaym,
+                                        gchar * name);
 
-GaymChannelMember *gaym_get_channel_member_reference(struct gaym_conn
-                                                     *gaym,
-                                                     const char *name);
+GaymBuddy *gaym_get_channel_member_reference(struct gaym_conn
+                                             *gaym, const char *name);
 typedef int (*IRCCmdCallback) (struct gaym_conn * gaym, const char *cmd,
                                const char *target, const char **args);
 

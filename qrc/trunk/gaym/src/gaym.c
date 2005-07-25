@@ -63,7 +63,7 @@ static void gaym_input_cb(gpointer data, gint source,
 static guint gaym_nick_hash(const char *nick);
 static gboolean gaym_nick_equal(const char *nick1, const char *nick2);
 static void gaym_buddy_free(struct gaym_buddy *ib);
-static void gaym_channel_member_free(GaymChannelMember * cm);
+static void gaym_channel_member_free(GaymBuddy * cm);
 
 static void gaym_buddy_append(char *name, struct gaym_buddy *ib,
                               BListWhois * blist_whois);
@@ -799,17 +799,16 @@ static void gaym_set_away(GaimConnection * gc, const char *state,
      */
 }
 
-GaymChannelMember *gaym_get_channel_member_reference(struct gaym_conn
-                                                     *gaym,
-                                                     const gchar * name)
+GaymBuddy *gaym_get_channel_member_reference(struct gaym_conn
+                                             *gaym, const gchar * name)
 {
 
-    GaymChannelMember *channel_member =
-        (GaymChannelMember *) g_hash_table_lookup(gaym->channel_members,
-                                                  name);
+    GaymBuddy *channel_member =
+        (GaymBuddy *) g_hash_table_lookup(gaym->channel_members,
+                                          name);
 
     if (!channel_member) {
-        channel_member = g_new0(struct channel_member, 1);
+        GaymBuddy *channel_member = g_new0(GaymBuddy, 1);
         channel_member->ref_count = 1;
         g_hash_table_insert(gaym->channel_members, g_strdup(name),
                             channel_member);
@@ -830,10 +829,9 @@ gboolean gaym_unreference_channel_member(struct gaym_conn * gaym,
                                          gchar * name)
 {
 
-    GaymChannelMember *channel_member;
+    GaymBuddy *channel_member;
     channel_member =
-        (GaymChannelMember *) g_hash_table_lookup(gaym->channel_members,
-                                                  name);
+        (GaymBuddy *) g_hash_table_lookup(gaym->channel_members, name);
     if (!channel_member)
         return FALSE;
     else {
@@ -853,8 +851,8 @@ gboolean gaym_unreference_channel_member(struct gaym_conn * gaym,
     }
 }
 
-GaymChannelMember *gaym_get_channel_member_info(struct gaym_conn * gaym,
-                                                gchar * name)
+GaymBuddy *gaym_get_channel_member_info(struct gaym_conn * gaym,
+                                        gchar * name)
 {
     return g_hash_table_lookup(gaym->channel_members, name);
 }
@@ -1137,7 +1135,7 @@ static gboolean gaym_nick_equal(const char *nick1, const char *nick2)
     return (gaim_utf8_strcasecmp(nick1, nick2) == 0);
 }
 
-static void gaym_channel_member_free(GaymChannelMember * cm)
+static void gaym_channel_member_free(GaymBuddy * cm)
 {
     g_free(cm->name);
     g_free(cm->bio);
