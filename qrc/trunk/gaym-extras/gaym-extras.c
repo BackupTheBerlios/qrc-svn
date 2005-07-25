@@ -181,6 +181,32 @@ static void change_sort_order(GtkWidget * button, void *data)
     }
 
 }
+static void
+get_icon_scale_size(GdkPixbufAnimation *icon, GaimBuddyIconSpec *spec, int *width, int *height)
+{
+	*width = gdk_pixbuf_animation_get_width(icon);
+	*height = gdk_pixbuf_animation_get_height(icon);
+
+	/* this should eventually get smarter about preserving the aspect
+	 * ratio when scaling, but gimmie a break, I just woke up */
+	if(spec && spec->scale_rules & GAIM_ICON_SCALE_DISPLAY) {
+		if(*width < spec->min_width)
+			*width = spec->min_width;
+		else if(*width > spec->max_width)
+			*width = spec->max_width;
+
+		if(*height < spec->min_height)
+			*height = spec->min_height;
+		else if(*height  > spec->max_height)
+			*height = spec->max_height;
+	}
+
+	/* and now for some arbitrary sanity checks */
+	if(*width > 100)
+		*width = 100;
+	if(*height > 100)
+		*height = 100;
+}
 
 void gaym_gtkconv_update_thumbnail(GaimConversation * conv, struct gaym_fetch_thumbnail_data
                                    *thumbnail_data)
@@ -194,9 +220,11 @@ void gaym_gtkconv_update_thumbnail(GaimConversation * conv, struct gaym_fetch_th
     size_t len;
 
     GdkPixbuf *buf;
-
+    GdkPixbuf *scale;
     GdkPixmap *pm;
     GdkBitmap *bm;
+    int scale_width, scale_height;
+
 
     GaimAccount *account;
     GaimPluginProtocolInfo *prpl_info = NULL;
@@ -284,9 +312,17 @@ void gaym_gtkconv_update_thumbnail(GaimConversation * conv, struct gaym_fetch_th
         buf = gdk_pixbuf_animation_iter_get_pixbuf(icon_data->iter);
     }
 
+	get_icon_scale_size(icon_data->anim, prpl_info ? &prpl_info->icon_spec :
+			NULL, &scale_width, &scale_height);
+	scale = gdk_pixbuf_scale_simple(buf,
+				MAX(gdk_pixbuf_get_width(buf) * scale_width /
+				    gdk_pixbuf_animation_get_width(icon_data->anim), 1),
+				MAX(gdk_pixbuf_get_height(buf) * scale_height /
+				    gdk_pixbuf_animation_get_height(icon_data->anim), 1),
+				GDK_INTERP_NEAREST);
 
-    gdk_pixbuf_render_pixmap_and_mask(buf, &pm, &bm, 100);
-    // g_object_unref(G_OBJECT(buf));
+    gdk_pixbuf_render_pixmap_and_mask(scale, &pm, &bm, 100);
+    g_object_unref(G_OBJECT(scale));
 
 
     icon_data->event = gtk_event_box_new();
@@ -303,7 +339,6 @@ void gaym_gtkconv_update_thumbnail(GaimConversation * conv, struct gaym_fetch_th
     if (bm)
         g_object_unref(G_OBJECT(bm));
 
-    buf = gdk_pixbuf_animation_get_static_image(icon_data->anim);
 
 }
 static gboolean check_for_update(gpointer * conversation,
