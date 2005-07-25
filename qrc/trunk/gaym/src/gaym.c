@@ -1426,6 +1426,7 @@ static void gaym_clean_channel_members(GaimConversation * conv)
     if (conv->type == GAIM_CONV_CHAT) {
         GaimConvChat *chat = gaim_conversation_get_chat_data(conv);
         GaimConnection *gc = gaim_conversation_get_gc(conv);
+	g_return_if_fail(gc != NULL);
         struct gaym_conn *gaym = gc->proto_data;
         GList *users = gaim_conv_chat_get_users(chat);
         gaim_debug_misc("gaym", "got userlist %x length %i\n", users,
@@ -1434,7 +1435,9 @@ static void gaym_clean_channel_members(GaimConversation * conv)
     } else if (conv->type == GAIM_CONV_IM) {
         gaim_debug_misc("gaym", "removing reference to %s\n", conv->name);
         GaimConnection *gc = gaim_conversation_get_gc(conv);
+	g_return_if_fail(gc != NULL);
         struct gaym_conn *gaym = gc->proto_data;
+
         gaym_unreference_channel_member(gaym, conv->name);
     }
 }
