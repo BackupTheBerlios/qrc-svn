@@ -242,42 +242,7 @@ static char *gaym_tooltip_text(GaimBuddy * buddy)
         return NULL;
     }
 
-    char *escaped;
-    GString *tooltip = g_string_new("");
-
-    if (ib->sex) {
-        escaped = g_markup_escape_text(ib->sex, strlen(ib->sex));
-        g_string_append_printf(tooltip, _("\n<b>%s:</b> %s"), _("Sex"),
-                               escaped);
-        g_free(escaped);
-    }
-
-    if (ib->age) {
-        escaped = g_markup_escape_text(ib->age, strlen(ib->age));
-        g_string_append_printf(tooltip, _("\n<b>%s:</b> %s"), _("Age"),
-                               escaped);
-        g_free(escaped);
-    }
-
-    if (ib->location) {
-        escaped = g_markup_escape_text(ib->location, strlen(ib->location));
-        g_string_append_printf(tooltip, _("\n<b>%s:</b> %s"),
-                               _("Location"), escaped);
-        g_free(escaped);
-    }
-
-    if (ib->bio) {
-        escaped = g_markup_escape_text(ib->bio, strlen(ib->bio));
-        g_string_append_printf(tooltip, _("\n<b>%s:</b> %s"), _("Bio"),
-                               escaped);
-        g_free(escaped);
-    }
-
-    if (tooltip->len == 0) {
-        return g_string_free(tooltip, TRUE);
-    }
-
-    return g_string_free(tooltip, FALSE);
+    return build_tooltip_text(ib);
 }
 
 static GList *gaym_away_states(GaimConnection * gc)
@@ -1426,7 +1391,7 @@ static void gaym_clean_channel_members(GaimConversation * conv)
     if (conv->type == GAIM_CONV_CHAT) {
         GaimConvChat *chat = gaim_conversation_get_chat_data(conv);
         GaimConnection *gc = gaim_conversation_get_gc(conv);
-	g_return_if_fail(gc != NULL);
+        g_return_if_fail(gc != NULL);
         struct gaym_conn *gaym = gc->proto_data;
         GList *users = gaim_conv_chat_get_users(chat);
         gaim_debug_misc("gaym", "got userlist %x length %i\n", users,
@@ -1435,7 +1400,7 @@ static void gaym_clean_channel_members(GaimConversation * conv)
     } else if (conv->type == GAIM_CONV_IM) {
         gaim_debug_misc("gaym", "removing reference to %s\n", conv->name);
         GaimConnection *gc = gaim_conversation_get_gc(conv);
-	g_return_if_fail(gc != NULL);
+        g_return_if_fail(gc != NULL);
         struct gaym_conn *gaym = gc->proto_data;
 
         gaym_unreference_channel_member(gaym, conv->name);

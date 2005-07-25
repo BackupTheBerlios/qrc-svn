@@ -444,6 +444,47 @@ GaimConvChatBuddyFlags chat_pecking_order(const char *extra)
     return flags;
 }
 
+char *build_tooltip_text(struct gaym_buddy *ib)
+{
+    char *escaped;
+    GString *tooltip = g_string_new("");
+
+    g_return_val_if_fail(ib != NULL, NULL);
+
+    if (ib->sex) {
+        escaped = g_markup_escape_text(ib->sex, strlen(ib->sex));
+        g_string_append_printf(tooltip, _("\n<b>%s:</b> %s"), _("Sex"),
+                               escaped);
+        g_free(escaped);
+    }
+
+    if (ib->age) {
+        escaped = g_markup_escape_text(ib->age, strlen(ib->age));
+        g_string_append_printf(tooltip, _("\n<b>%s:</b> %s"), _("Age"),
+                               escaped);
+        g_free(escaped);
+    }
+    if (ib->location) {
+        escaped = g_markup_escape_text(ib->location, strlen(ib->location));
+        g_string_append_printf(tooltip, _("\n<b>%s:</b> %s"),
+                               _("Location"), escaped);
+        g_free(escaped);
+    }
+
+    if (ib->bio) {
+        escaped = g_markup_escape_text(ib->bio, strlen(ib->bio));
+        g_string_append_printf(tooltip, _("\n<b>%s:</b> %s"), _("Bio"),
+                               escaped);
+        g_free(escaped);
+    }
+
+    if (tooltip->len == 0) {
+        return g_string_free(tooltip, TRUE);
+    }
+
+    return g_string_free(tooltip, FALSE);
+}
+
 GaimConvChatBuddyFlags include_chat_entry_order(GaimConvChatBuddyFlags
                                                 flags, gint entry)
 {

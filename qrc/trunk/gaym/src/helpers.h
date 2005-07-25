@@ -28,6 +28,8 @@
 
 #include "roomlist.h"
 
+#include "gaym.h"
+
 char *return_string_between(const char *startbit, const char *endbit,
                             const char *source);
 
@@ -156,6 +158,15 @@ void build_roomlist_from_config(GaimRoomlist * roomlist,
  * @return The correct GaimConvChatBuddyFlags.
  */
 GaimConvChatBuddyFlags chat_pecking_order(const char *extra);
+
+/**
+ * Format and return the tooltip text for a buddy/user
+ *
+ * @param ib The stuct containing the information about the buddy
+ *
+ * @return   The correctly formatted tooltip text
+ */
+char *build_tooltip_text(struct gaym_buddy *ib);
 
 GaimConvChatBuddyFlags include_chat_entry_order(GaimConvChatBuddyFlags
                                                 flags, gint entry);
