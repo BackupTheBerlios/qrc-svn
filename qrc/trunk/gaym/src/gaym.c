@@ -1125,9 +1125,11 @@ static int gaym_chat_send(GaimConnection * gc, int id, const char *what)
 
 static guint gaym_nick_hash(const char *nick)
 {
-    char *lc;
+    char *lc=NULL;
     guint bucket;
-
+    
+    if(!nick)
+	return NULL;
     lc = g_utf8_strdown(nick, -1);
     bucket = g_str_hash(lc);
     g_free(lc);
