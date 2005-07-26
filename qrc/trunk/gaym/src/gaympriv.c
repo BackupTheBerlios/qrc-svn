@@ -204,7 +204,7 @@ void gaym_server_store_deny(GaimConnection * gc, const char *name,
 
     char *url =
         g_strdup_printf("%s?name=%s&key=%s&list=ignore&op=%s", hashurl,
-                        name, gaym->hash_pw, action);
+                        name, gaym->chat_key, action);
 
     char *user_agent = "Mozilla/4.0";
 

@@ -37,8 +37,8 @@ struct gaym_fetch_thumbnail_data {
     char *who;
     char *bio;
     char *stats;
-    const char *pic_data;
-    gint pic_data_len;
+    // const char *pic_data;
+    // gint pic_data_len;
 };
 void gaym_fetch_thumbnail_cb(void *user_data, const char *pic_data,
                              size_t len);

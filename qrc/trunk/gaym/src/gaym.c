@@ -238,6 +238,9 @@ static char *gaym_tooltip_text(GaimBuddy * buddy)
     struct gaym_buddy *ib =
         g_hash_table_lookup(gaym->buddies, buddy->name);
 
+    if (!ib)
+        ib = g_hash_table_lookup(gaym->channel_members, buddy->name);
+
     if (!ib) {
         return NULL;
     }
@@ -418,7 +421,7 @@ GHashTable *gaym_chat_info_defaults(GaimConnection * gc,
     return defaults;
 }
 
-static void gaym_login_with_hash(GaimAccount * account)
+static void gaym_login_with_chat_key(GaimAccount * account)
 {
     GaimConnection *gc;
     struct gaym_conn *gaym;
@@ -517,10 +520,11 @@ static void gaym_login(GaimAccount * account)
 
     /**
      * Making a change to try cached password first.
-     * gaym_try_cached_password(account, gaym_login_with_hash);
+     * gaym_try_cached_password(account, gaym_login_with_chat_key);
      */
-    gaym_get_hash_from_weblogin(account, gaym_login_with_hash);
+    gaym_get_chat_key_from_weblogin(account, gaym_login_with_chat_key);
 }
+
 
 static void gaym_get_configtxt_cb(gpointer proto_data,
                                   const gchar * config_text, size_t len)
@@ -537,7 +541,6 @@ static void gaym_get_configtxt_cb(gpointer proto_data,
 
     return;
 }
-
 static void gaym_login_cb(gpointer data, gint source,
                           GaimInputCondition cond)
 {
@@ -551,6 +554,10 @@ static void gaym_login_cb(gpointer data, gint source,
     char *login_name;
 
     if (GAIM_CONNECTION_IS_VALID(gc)) {
+
+        gc->inpa =
+            gaim_input_add(source, GAIM_INPUT_READ, gaym_input_cb, gc);
+
         GList *connections = gaim_connections_get_all();
 
         if (source < 0) {
@@ -564,11 +571,11 @@ static void gaym_login_cb(gpointer data, gint source,
         }
 
         gaym->fd = source;
-        gaim_debug_misc("gaym", "In login_cb with pw_hash=%s\n",
-                        gaym->hash_pw);
-        if (gaym->hash_pw) {
+        gaim_debug_misc("gaym", "In login_cb with chat_key=%s\n",
+                        gaym->chat_key);
+        if (gaym->chat_key) {
 
-            buf = gaym_format(gaym, "vv", "PASS", gaym->hash_pw);
+            buf = gaym_format(gaym, "vv", "PASS", gaym->chat_key);
             if (gaym_send(gaym, buf) < 0) {
                 gaim_connection_error(gc, "Error sending password");
                 return;
@@ -622,10 +629,9 @@ static void gaym_login_cb(gpointer data, gint source,
 
         const char *server = gaim_account_get_string(gc->account, "server",
                                                      IRC_DEFAULT_SERVER);
-
         char *url =
             g_strdup_printf
-            ("http://%s/messenger/config.txt?%s", server, gaym->hash_pw);
+            ("http://%s/messenger/config.txt?%s", server, gaym->chat_key);
 
         char *user_agent = "Mozilla/4.0";
 
@@ -635,8 +641,7 @@ static void gaym_login_cb(gpointer data, gint source,
 
         g_free(url);
 
-        gc->inpa =
-            gaim_input_add(gaym->fd, GAIM_INPUT_READ, gaym_input_cb, gc);
+
     }
 }
 static void gaym_close(GaimConnection * gc)
@@ -662,8 +667,8 @@ static void gaym_close(GaimConnection * gc)
     if (gaym->thumbnail)
         g_free(gaym->thumbnail);
 
-    if (gaym->hash_pw)
-        g_free(gaym->hash_pw);
+    if (gaym->chat_key)
+        g_free(gaym->chat_key);
 
     if (gaym->server_bioline)
         g_free(gaym->server_bioline);
@@ -852,7 +857,7 @@ gboolean gaym_unreference_channel_member(struct gaym_conn * gaym,
 }
 
 GaymBuddy *gaym_get_channel_member_info(struct gaym_conn * gaym,
-                                        gchar * name)
+                                        const gchar * name)
 {
     return g_hash_table_lookup(gaym->channel_members, name);
 }
@@ -1400,7 +1405,6 @@ static void gaym_clean_channel_members(GaimConversation * conv)
         GaimConnection *gc = gaim_conversation_get_gc(conv);
         g_return_if_fail(gc != NULL);
         struct gaym_conn *gaym = gc->proto_data;
-
         gaym_unreference_channel_member(gaym, conv->name);
     }
 }

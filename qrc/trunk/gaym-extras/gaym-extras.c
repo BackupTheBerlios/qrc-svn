@@ -11,24 +11,32 @@
 #include "util.h"
 #include "version.h"
 #include "buddyicon.h"
+#include "prpl.h"
 
 #include "gtkconv.h"
 #include "gtkimhtml.h"
 #include "gtkplugin.h"
 
 #include "../gaym/src/gaym.h"
-#include "../gaym/src/gayminfo.h"
-#include "../gaym/src/helpers.h"
-
+struct fetch_thumbnail_data {
+    char *who;
+    const char *pic_data;
+    gint pic_data_len;
+};
 #define CHATSORT_PLUGIN_ID "gtk-chaticon"
+
 
 GHashTable *icons;
 GHashTable *pending_updates;
 GHashTable *im_window_bios;
+
+// Consider combining into one popup hash...
 GHashTable *popup_rects;
 GHashTable *popup_timeouts;
 GHashTable *popups;
 
+// Additional UI info for a conversation.
+// We may be able to clean this up, some.
 typedef struct _GaymChatIcon {
 
     GaimConversation *conv;
@@ -84,25 +92,21 @@ static gint
 sort_chat_users_by_alpha(GtkTreeModel * model, GtkTreeIter * a,
                          GtkTreeIter * b, gpointer userdata)
 {
-    char *user1 = NULL, *user2 = NULL, *luser1 = NULL, *luser2 = NULL;
+    char *user1 = NULL, *user2 = NULL;
     gint ret = 0;
 
     gtk_tree_model_get(model, a, CHAT_USERS_NAME_COLUMN, &user1, -1);
     gtk_tree_model_get(model, b, CHAT_USERS_NAME_COLUMN, &user2, -1);
 
-    luser1 = g_utf8_strdown(user1, -1);
-    luser2 = g_utf8_strdown(user2, -1);
-    if (luser1 == NULL || luser2 == NULL) {
-        if (!(luser1 == NULL && luser2 == NULL))
-            ret = (luser1 == NULL) ? -1 : 1;
+    if (user1 == NULL || user2 == NULL) {
+        if (!(user1 == NULL && user2 == NULL))
+            ret = (user1 == NULL) ? -1 : 1;
     } else {
-        ret = g_utf8_collate(luser1, luser2);
+        ret = g_utf8_collate(user1, user2);
     }
 
     g_free(user1);
     g_free(user2);
-    g_free(luser1);
-    g_free(luser2);
     return ret;
 }
 
@@ -113,7 +117,7 @@ sort_chat_users_by_category(GtkTreeModel * model, GtkTreeIter * a,
 {
     GaimConvChatBuddyFlags f1 = 0, f2 = 0;
     gint flag_mask = 0x000F;
-    char *user1 = NULL, *user2 = NULL, *luser1 = NULL, *luser2 = NULL;
+    char *user1 = NULL, *user2 = NULL;
     gint ret = 0;
 
     gtk_tree_model_get(model, a, CHAT_USERS_NAME_COLUMN, &user1,
@@ -124,22 +128,18 @@ sort_chat_users_by_category(GtkTreeModel * model, GtkTreeIter * a,
     f1 = f1 & flag_mask;
     f2 = f2 & flag_mask;
 
-    luser1 = g_utf8_strdown(user1, -1);
-    luser2 = g_utf8_strdown(user2, -1);
-    if (luser1 == NULL || luser2 == NULL) {
-        if (!(luser1 == NULL && luser2 == NULL))
-            ret = (luser1 == NULL) ? -1 : 1;
+    if (user1 == NULL || user2 == NULL) {
+        if (!(user1 == NULL && user2 == NULL))
+            ret = (user1 == NULL) ? -1 : 1;
     } else if (f1 != f2) {
-        /* sort more important lusers first */
+        /* sort more important users first */
         ret = (f1 > f2) ? -1 : 1;
     } else {
-        ret = g_utf8_collate(luser1, luser2);
+        ret = g_utf8_collate(user1, user2);
     }
 
     g_free(user1);
     g_free(user2);
-    g_free(luser1);
-    g_free(luser2);
     return ret;
 }
 
@@ -210,7 +210,7 @@ get_icon_scale_size(GdkPixbufAnimation * icon, GaimBuddyIconSpec * spec,
         *height = 100;
 }
 
-void gaym_gtkconv_update_thumbnail(GaimConversation * conv, struct gaym_fetch_thumbnail_data
+void gaym_gtkconv_update_thumbnail(GaimConversation * conv, struct fetch_thumbnail_data
                                    *thumbnail_data)
 {
     GaimGtkConversation *gtkconv;
@@ -230,7 +230,6 @@ void gaym_gtkconv_update_thumbnail(GaimConversation * conv, struct gaym_fetch_th
 
     GaimAccount *account;
     GaimPluginProtocolInfo *prpl_info = NULL;
-
     g_return_if_fail(conv != NULL);
     g_return_if_fail(GAIM_IS_GTK_CONVERSATION(conv));
     g_return_if_fail(gaim_conversation_get_type(conv) == GAIM_CONV_CHAT);
@@ -360,8 +359,7 @@ static gboolean check_for_update(gpointer * conversation,
     GaimConversation *c = (GaimConversation *) conversation;
     char *name_needing_update = (char *) name;
 
-    struct gaym_fetch_thumbnail_data *d =
-        (struct gaym_fetch_thumbnail_data *) data;
+    struct fetch_thumbnail_data *d = (struct fetch_thumbnail_data *) data;
 
 
     g_return_val_if_fail(name_needing_update != NULL, FALSE);
@@ -377,7 +375,7 @@ void fetch_thumbnail_cb(void *user_data, const char *pic_data, size_t len)
 {
     if (!user_data)
         return;
-    struct gaym_fetch_thumbnail_data *d = user_data;
+    struct fetch_thumbnail_data *d = user_data;
     if (!pic_data) {
         return;
     }
@@ -404,6 +402,7 @@ static void changed_cb(GtkTreeSelection * selection, gpointer conv)
     GaimConversation *c = (GaimConversation *) conv;
     GaymBuddy *cm;
     struct gaym_conn *gaym = c->account->gc->proto_data;
+
     GtkTreeIter iter;
     GtkTreeModel *model;
     gchar *name;
@@ -421,16 +420,15 @@ static void changed_cb(GtkTreeSelection * selection, gpointer conv)
 
     // Get thumbnail URL.
     cm = gaym_get_channel_member_info(gaym, name);
-
+    // thumbnail = ui_info->get_user_thumbnail_url(gaym, name);
 
     // Fetch thumbnail.
 
-    struct gaym_fetch_thumbnail_data *data;
+    struct fetch_thumbnail_data *data;
     char *hashurl = g_hash_table_lookup(gaym->confighash,
                                         "mini-profile-panel.thumbnail-prefix");
     g_return_if_fail(hashurl != NULL);
-    data = g_new0(struct gaym_fetch_thumbnail_data, 1);
-    data->gc = gaim_account_get_connection(gaym->account);
+    data = g_new0(struct fetch_thumbnail_data, 1);
     data->who = g_strdup(name);
     char *url = g_strdup_printf("%s%s", hashurl, cm->thumbnail);
     gaim_url_fetch(url, FALSE, "Mozilla/4.0", FALSE,
@@ -441,11 +439,19 @@ static void changed_cb(GtkTreeSelection * selection, gpointer conv)
 
 }
 
-static void clean_im_bio(GaimConversation * c)
+static void clean_popup_stuff(GaimConversation * c)
 {
 
-    g_return_if_fail(c->type == GAIM_CONV_IM);
-    g_hash_table_remove(im_window_bios, c->name);
+    GaimGtkConversation *gtkconv = GAIM_GTK_CONVERSATION(c);
+    if (c->type == GAIM_CONV_IM) {
+        g_hash_table_remove(popup_timeouts, gtkconv->tab_label);
+        g_hash_table_remove(popups, gtkconv->tab_label);
+    } else if (c->type == GAIM_CONV_CHAT) {
+        GaimGtkChatPane *gtkchat = gtkconv->u.chat;
+        g_hash_table_remove(popup_timeouts, gtkchat->list);
+        g_hash_table_remove(popup_rects, gtkchat->list);
+        g_hash_table_remove(popups, gtkchat->list);
+    }
 
 }
 
@@ -458,37 +464,30 @@ static void update_im_bio(GaimAccount * account, gchar * name)
         gaim_find_conversation_with_account(name, account);
 
     g_return_if_fail(c != NULL);
-
     g_return_if_fail(c->type == GAIM_CONV_IM);
 
     GaimGtkConversation *gtkconv = GAIM_GTK_CONVERSATION(c);
-    struct gaym_conn *gaym = account->gc->proto_data;
-    GaymBuddy *cm = gaym_get_channel_member_info(gaym, c->name);
-
-    g_return_if_fail(cm != NULL);
+    // struct gaym_conn *gaym = account->gc->proto_data;
 
     GtkBox *vbox_big = GTK_BOX(gtkconv->lower_hbox->parent);
 
     GtkWidget *bio_area = g_hash_table_lookup(im_window_bios, c->name);
     if (!bio_area) {
-        bio_area = gtk_label_new(_(" "));
+        bio_area = gtk_label_new(_("Temporarily disabled."));
         g_hash_table_insert(im_window_bios, c, bio_area);
         gtk_box_pack_start(vbox_big, bio_area, TRUE, TRUE, 0);
-        gtk_widget_show(bio_area);
+        // gtk_widget_show(bio_area);
     }
 
-    char *buf;
-    buf =
-        g_strconcat(1 ? "Age: " : "",
-                    cm->age ? cm->age : "?",
-                    1 ? "\nLocation: " : "",
-                    cm->location ? cm->location : "?",
-                    cm->bio ? "\nInfo: " : "", cm->bio ? cm->bio : "");
+    /* char* age = ui_info->get_user_age(gaym, name); char* location =
+       ui_info->get_user_location(gaym, name); char* bio =
+       ui_info->get_user_bio(gaym, name); char *buf; buf = g_strconcat(1 ? 
+       "Age: " : "", cm->age ? cm->age : "?", 1 ? "\nLocation: " : "",
+       cm->location ? cm->location : "?", cm->bio ? "\nInfo: " : "",
+       cm->bio ? cm->bio : "");
 
-    gtk_label_set_text(GTK_LABEL(bio_area), buf);
-    gtk_label_set_line_wrap(GTK_LABEL(bio_area), TRUE);
-    g_free(buf);
-
+       gtk_label_set_text(GTK_LABEL(bio_area), buf);
+       gtk_label_set_line_wrap(GTK_LABEL(bio_area), TRUE); g_free(buf); */
 }
 static void namelist_leave_cb(GtkWidget * tv, GdkEventCrossing * e,
                               gpointer n)
@@ -540,17 +539,20 @@ static void namelist_paint_tip(GtkWidget * tipwindow,
     return;
 }
 
+typedef enum {
+    TOOLTIP_CHAT,
+    TOOLTIP_IM,
+} GaymTooltipType;
+
 struct timeout_cb_data {
+    GaymTooltipType type;
     GtkWidget *tv;
     struct gaym_conn *gaym;
 };
 
-static gboolean namelist_tooltip_timeout(struct timeout_cb_data *data)
+static gboolean tooltip_timeout(struct timeout_cb_data *data)
 {
-    GtkTreePath *path;
-    GtkTreeIter iter;
-    GtkTreeModel *model;
-    gchar *name;
+    const gchar *name;
     int scr_w, scr_h, w, h, x, y;
 #if GTK_CHECK_VERSION(2,2,0)
     int mon_num;
@@ -560,23 +562,17 @@ static gboolean namelist_tooltip_timeout(struct timeout_cb_data *data)
     gboolean tooltip_top = FALSE;
     char *tooltiptext = NULL;
     GdkRectangle mon_size;
-    GdkRectangle *rect;
     guint *timeout;
     GtkWidget *tipwindow;
     GtkWidget *tv = data->tv;
+    GaymTooltipType type = data->type;
     struct gaym_conn *gaym = data->gaym;
-    g_free(data);
-    rect = g_hash_table_lookup(popup_rects, tv);
+    GaimPluginProtocolInfo *prpl_info =
+        GAIM_PLUGIN_PROTOCOL_INFO(gaim_find_prpl
+                                  (gaim_account_get_protocol_id
+                                   (gaym->account)));
+
     timeout = (guint *) g_hash_table_lookup(popup_timeouts, tv);
-    if (!gtk_tree_view_get_path_at_pos
-        (GTK_TREE_VIEW(tv), rect->x, rect->y, &path, NULL, NULL, NULL))
-        return FALSE;
-    model = gtk_tree_view_get_model(GTK_TREE_VIEW(tv));
-    gtk_tree_model_get_iter(model, &iter, path);
-    gtk_tree_model_get(model, &iter, CHAT_USERS_NAME_COLUMN, &name, -1);
-
-
-
     while (gtk_events_pending())
         gtk_main_iteration();
 
@@ -584,28 +580,49 @@ static gboolean namelist_tooltip_timeout(struct timeout_cb_data *data)
        events have happened, and the mouse might not still be in the buddy 
        list */
     if (!(*timeout)) {
-        gtk_tree_path_free(path);
         return FALSE;
     }
-    /* 
-       gtk_tree_view_get_cell_area(GTK_TREE_VIEW(tv), path, NULL,
-       &gtkblist->contact_rect);
-       gdk_drawable_get_size(GDK_DRAWABLE(tv->window),
-       &(gtkblist->contact_rect.width), NULL); gtk_tree_path_down (path);
-       while (gtk_tree_model_get_iter(GTK_TREE_MODEL(gtkblist->treemodel), 
-       &i, path)) { GdkRectangle rect;
-       gtk_tree_view_get_cell_area(GTK_TREE_VIEW(tv), path, NULL, &rect);
-       gtkblist->contact_rect.height += rect.height;
-       gtk_tree_path_next(path);
 
-       } */
+    if (type == TOOLTIP_CHAT) {
+        GtkTreePath *path;
+        GtkTreeIter iter;
+        GtkTreeModel *model;
+        GdkRectangle *rect;
 
-    gtk_tree_path_free(path);
+        rect = g_hash_table_lookup(popup_rects, tv);
+        if (!gtk_tree_view_get_path_at_pos
+            (GTK_TREE_VIEW(tv), rect->x, rect->y, &path, NULL, NULL, NULL))
+            return FALSE;
+        model = gtk_tree_view_get_model(GTK_TREE_VIEW(tv));
+        gtk_tree_model_get_iter(model, &iter, path);
+        gtk_tree_model_get(model, &iter, CHAT_USERS_NAME_COLUMN, &name,
+                           -1);
+        gtk_tree_path_free(path);
+    } else if (type == TOOLTIP_IM) {
+        name = gtk_label_get_text(GTK_LABEL(tv));
+    } else
+        return FALSE;
+
 
     GaymBuddy *cm = gaym_get_channel_member_info(gaym, name);
+    if (!cm) {
+        guint *timeout = g_hash_table_lookup(popup_timeouts, tv);
+        if (timeout) {
+            int delay =
+                gaim_prefs_get_int("/gaim/gtk/blist/tooltip_delay");
+            g_timeout_add(delay, (GSourceFunc) tooltip_timeout, data);
+        }
+        return FALSE;
+    }
+    g_free(data);
 
-    tooltiptext = build_tooltip_text(cm);
 
+    GaimBuddy *gb = g_new0(GaimBuddy, 1);
+    gb->name = cm->name;
+    gb->account = gaym->account;
+
+    tooltiptext = prpl_info->tooltip_text(gb);
+    g_free(gb);
     g_return_val_if_fail(tooltiptext != NULL, FALSE);
 
     tipwindow = g_hash_table_lookup(popups, tv);
@@ -736,9 +753,9 @@ static gboolean namelist_motion_cb(GtkWidget * tv, GdkEventMotion * event,
         g_new0(struct timeout_cb_data, 1);
     timeout_data->tv = tv;
     timeout_data->gaym = gaym;
+    timeout_data->type = TOOLTIP_CHAT;
     *timeout =
-        g_timeout_add(delay, (GSourceFunc) namelist_tooltip_timeout,
-                      timeout_data);
+        g_timeout_add(delay, (GSourceFunc) tooltip_timeout, timeout_data);
 
     gtk_tree_view_get_cell_area(GTK_TREE_VIEW(tv), path, NULL, rect);
 
@@ -749,8 +766,106 @@ static gboolean namelist_motion_cb(GtkWidget * tv, GdkEventMotion * event,
 
     return TRUE;
 }
+
+static void tab_leave_cb(GtkWidget * event, GdkEventCrossing * e,
+                         gpointer n)
+{
+    GtkWidget *tab = gtk_bin_get_child(GTK_BIN(event));
+    gaim_debug_misc("im_bio", "tab exit\n");
+    guint *timeout = g_hash_table_lookup(popup_timeouts, tab);
+    g_hash_table_remove(popups, tab);
+
+
+    if (timeout && *timeout) {
+        g_source_remove(*timeout);
+        *timeout = 0;
+    }
+}
+
+
+static gboolean tab_entry_cb(GtkWidget * event,
+                             GdkEventCrossing * crossing, gpointer conv)
+{
+
+    guint *timeout;
+    guint delay;
+    gaim_debug_misc("im_bio", "tab entry\n");
+    GaimConversation *c = (GaimConversation *) conv;
+    struct gaym_conn *gaym = c->account->gc->proto_data;
+
+    GtkWidget *tab = gtk_bin_get_child(GTK_BIN(event));
+    timeout = g_hash_table_lookup(popup_timeouts, tab);
+
+    delay = gaim_prefs_get_int("/gaim/gtk/blist/tooltip_delay");
+
+    if (delay == 0)
+        return FALSE;
+
+    if (timeout && *timeout)
+        return FALSE;
+
+    // g_hash_table_remove(popups, tab);
+    // g_source_remove(*timeout);
+
+
+
+    struct timeout_cb_data *timeout_data =
+        g_new0(struct timeout_cb_data, 1);
+    timeout_data->tv = tab;
+    timeout_data->gaym = gaym;
+    timeout_data->type = TOOLTIP_IM;
+    *timeout =
+        g_timeout_add(delay, (GSourceFunc) tooltip_timeout, timeout_data);
+
+    return TRUE;
+}
+static void redo_im_window(GaimConversation * c)
+{
+
+    if (c && c->type == GAIM_CONV_IM) {
+        GaimGtkConversation *gtkconv = GAIM_GTK_CONVERSATION(c);
+        GtkWidget *event = gtk_event_box_new();
+
+        gaim_debug_misc("im_bio", "remove tab_label\n");
+        gtk_widget_ref(gtkconv->tab_label);
+        gtk_container_remove(GTK_CONTAINER(gtkconv->tabby),
+                             GTK_WIDGET(gtkconv->tab_label));
+        // gtk_container_remove(GTK_CONTAINER(gtkconv->tabby),
+        // gtkconv->icon);
+        // gtk_container_remove(GTK_CONTAINER(gtkconv->tabby),
+        // gtkconv->close);
+        gtk_widget_add_events(event,
+                              GDK_ENTER_NOTIFY_MASK |
+                              GDK_LEAVE_NOTIFY_MASK);
+        g_signal_connect(G_OBJECT(event), "enter-notify-event",
+                         G_CALLBACK(tab_entry_cb), c);
+
+        g_signal_connect(G_OBJECT(event),
+                         "leave-notify-event",
+                         G_CALLBACK(tab_leave_cb), c);
+        gaim_debug_misc("im_bio", "put event in tabby\n");
+        gtk_box_pack_start(GTK_BOX(gtkconv->tabby), GTK_WIDGET(event),
+                           TRUE, TRUE, 0);
+        gaim_debug_misc("im_bio", "show event\n");
+        gtk_widget_show(GTK_WIDGET(event));
+        gaim_debug_misc("im_bio", "put label in event\n");
+        gtk_container_add(GTK_CONTAINER(event),
+                          GTK_WIDGET(gtkconv->tab_label));
+        gtk_widget_unref(gtkconv->tab_label);
+        gaim_debug_misc("im_bio", "show label\n");
+        gtk_widget_show(GTK_WIDGET(gtkconv->tab_label));
+
+        // gaim_debug_misc("im_bio","Tried to add events: tab_label text
+        // is %s\n",gtk_label_get_text(GTK_LABEL(gtkconv->tab_label)));
+        g_hash_table_insert(popup_timeouts, gtkconv->tab_label,
+                            g_new0(guint, 1));
+    }
+
+}
+
 static void redochatwindow(GaimConversation * c)
 {
+
 
     GtkTreeModel *oldls;
 
@@ -850,11 +965,14 @@ static gboolean plugin_load(GaimPlugin * plugin)
                               (GDestroyNotify) gtk_widget_destroy);
     gaim_signal_connect(gaim_conversations_get_handle(), "chat-joined",
                         plugin, GAIM_CALLBACK(redochatwindow), NULL);
+    gaim_signal_connect(gaim_conversations_get_handle(),
+                        "conversation-created", plugin,
+                        GAIM_CALLBACK(redo_im_window), NULL);
     gaim_signal_connect(gaim_accounts_get_handle(), "info-updated", plugin,
                         GAIM_CALLBACK(update_im_bio), NULL);
     gaim_signal_connect(gaim_conversations_get_handle(),
                         "deleting-conversation", plugin,
-                        GAIM_CALLBACK(clean_im_bio), NULL);
+                        GAIM_CALLBACK(clean_popup_stuff), NULL);
 
     return TRUE;
 }

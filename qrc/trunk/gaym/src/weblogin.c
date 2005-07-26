@@ -269,6 +269,7 @@ static void parse_cookies(const char *webdata, GaimUrlSession * session,
 // 
 // 
 // 
+// 
 // this
 // structure, as well.
 static void
@@ -307,6 +308,7 @@ session_fetched_cb(gpointer url_data, gint sock, GaimInputCondition cond)
                        // 
                        // 
                        // 
+                       // 
                        // (see 
                        // above)
                        (gfud->full ? "" : "/"),
@@ -317,6 +319,7 @@ session_fetched_cb(gpointer url_data, gint sock, GaimInputCondition cond)
         } else {
             g_snprintf(buf, sizeof(buf), "GET %s%s HTTP/%s\r\n" "Host: %s\r\n" "Accept-Encoding: identity\r\n" "Cookie: %s\r\n",        // (1) 
                                                                                                                                         // 
+                       // 
                        // 
                        // 
                        // 
@@ -507,7 +510,7 @@ gaym_weblogin_step5(gpointer data, const char *text, size_t len)
     struct gaym_conn *gaym = session->gaym;
     // Get hash from text
     if (session && GAIM_CONNECTION_IS_VALID(session->account->gc)) {
-        // char *pw_hash;
+        // char *chat_key;
         char *bio;
         char *thumbnail;
         char *temp = NULL;
@@ -518,7 +521,7 @@ gaym_weblogin_step5(gpointer data, const char *text, size_t len)
 
 
         gaym->server_stats = NULL;
-        gaym->hash_pw = NULL;
+        gaym->chat_key = NULL;
         gaym->server_bioline = NULL;
         gaym->thumbnail = NULL;
 
@@ -531,7 +534,7 @@ gaym_weblogin_step5(gpointer data, const char *text, size_t len)
         }
         if (!
             (temp && temp2 && temp != temp2
-             && (gaym->hash_pw =
+             && (gaym->chat_key =
                  g_strndup(temp, (temp2 - temp) * sizeof(char))))) {
             gaim_connection_error((session->account->gc),
                                   _
@@ -540,8 +543,8 @@ gaym_weblogin_step5(gpointer data, const char *text, size_t len)
         }
 
         gaim_debug_misc("weblogin",
-                        "Got hash, temp=%x, temp2=%x, gaym->hash_pw=%x\n",
-                        temp, temp2, gaym->hash_pw);
+                        "Got hash, temp=%x, temp2=%x, gaym->chat_key=%x\n",
+                        temp, temp2, gaym->chat_key);
         // Next, loook for bio
         match = "param name=\"bio\" value=\"";
         temp = strstr(text, match);
@@ -695,8 +698,8 @@ gaym_weblogin_step2(gpointer data, const char *text, size_t len)
     }
 }
 void
-gaym_get_hash_from_weblogin(GaimAccount * account,
-                            void (*callback) (GaimAccount * account))
+gaym_get_chat_key_from_weblogin(GaimAccount * account,
+                                void (*callback) (GaimAccount * account))
 {
 
     struct gaym_conn *gaym = account->gc->proto_data;
@@ -723,15 +726,22 @@ gaym_get_hash_from_weblogin(GaimAccount * account,
             (((GaimUrlSession *) session)->account->gc)) {
             // The first step is to establish the initial sesion
             // We connect to index.html, and get a few cookie values.
-            char *url = "http://www.gay.com/index.html";
-            char *buf = g_strdup_printf(_("Signon: %s"),
-                                        ((GaimUrlSession *) session)->
-                                        account->username);
-            gaim_connection_update_progress(((GaimUrlSession *) session)->
-                                            account->gc, buf, 2, 6);
-            ((GaimUrlSession *) session)->hasFormData = FALSE;
+            char *url =
+                g_strdup_printf
+                ("http://www.gay.com/misc/dologin.html?__login_haveForm=1&__login_save=1&__login_member=%s&redir=%%2Findex.html&__login_basepage=%%2Fmisc%%2Fdologin.html&__login_password=%s",
+                 session->username, session->password);
+
+            session->hasFormData = TRUE;
             gaim_session_fetch(url, FALSE, NULL, FALSE,
-                               gaym_weblogin_step2, session, session);
+                               gaym_weblogin_step3, session, session);
+
+            /* char *url = "http://www.gay.com/index.html"; char *buf =
+               g_strdup_printf(_("Signon: %s"), ((GaimUrlSession *)
+               session)-> account->username);
+               gaim_connection_update_progress(((GaimUrlSession *)
+               session)-> account->gc, buf, 2, 6); session->hasFormData =
+               FALSE; gaim_session_fetch(url, FALSE, NULL, FALSE,
+               gaym_weblogin_step3, session, session); */
         } else {
             gaim_debug_misc("gaym", "cancelled before step1\n");
             gaim_debug_misc("gaym", "gaym->sessoin: %x\n", session);
@@ -746,10 +756,28 @@ void gaym_try_cached_password(GaimAccount * account,
 {
 
     const char *pw;
-    pw = gaim_account_get_string(account, "password", NULL);
-    if (pw == NULL)
-        gaym_get_hash_from_weblogin(account, callback);
+    pw = gaim_account_get_string(account, "chat_key", NULL);
+    if (pw == NULL) {
+        gaym_get_chat_key_from_weblogin(account, callback);
+        return;
+    }
+    // All in one shot:
+    // 1. Login to the irc server <--- blocks serv_login
+    // 2. grab the applet <--- blocks serv_login
+    // 3. spamlist update <--- does not block serv_login
+    // 4. get config.txt <--- does not block serv_login
+    // 
+    // Note: if the chat key happens to be invalid, 2 and 4 will fail.
 
+    // 1
+    // callback(gaym->account);
+
+    // 2
+
+    // 3
+
+
+    // 4
 
 }
 

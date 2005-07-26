@@ -94,6 +94,8 @@ static struct _gaym_msg {
     {
     "471", "nc:", gaym_msg_chanfull},   /* Channel Full */
     {
+    "668", "n:", gaym_msg_login_failed},        /* Invalid Authentication */
+    {
     "690", "ncnt:", gaym_msg_richnames_list},   /* Gay.com's RPL for names 
                                                    list */
     {

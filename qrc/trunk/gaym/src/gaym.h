@@ -72,7 +72,7 @@ struct gaym_conn {
     int inbufused;
 
     char *thumbnail;
-    char *hash_pw;
+    char *chat_key;
     char *server_bioline;
     char *server_stats;
     char *roomlist_filter;
@@ -129,7 +129,7 @@ struct gaym_buddy {
 gboolean gaym_unreference_channel_member(struct gaym_conn *gaym,
                                          gchar * name);
 GaymBuddy *gaym_get_channel_member_info(struct gaym_conn *gaym,
-                                        gchar * name);
+                                        const gchar * name);
 
 GaymBuddy *gaym_get_channel_member_reference(struct gaym_conn
                                              *gaym, const char *name);
@@ -149,151 +149,91 @@ char *gaym_parse_ctcp(struct gaym_conn *gaym, const char *from,
                       const char *to, const char *msg, int notice);
 char *gaym_format(struct gaym_conn *gaym, const char *format, ...);
 
-void gaym_msg_default(struct gaym_conn *gaym, const char *name,
-                      const char *from, char **args);
-void gaym_msg_away(struct gaym_conn *gaym, const char *name,
-                   const char *from, char **args);
-void gaym_msg_badmode(struct gaym_conn *gaym, const char *name,
-                      const char *from, char **args);
-void gaym_msg_banned(struct gaym_conn *gaym, const char *name,
-                     const char *from, char **args);
-void gaym_msg_chanmode(struct gaym_conn *gaym, const char *name,
-                       const char *from, char **args);
-void gaym_msg_endwhois(struct gaym_conn *gaym, const char *name,
-                       const char *from, char **args);
-void gaym_msg_endmotd(struct gaym_conn *gaym, const char *name,
-                      const char *from, char **args);
-void gaym_msg_invite(struct gaym_conn *gaym, const char *name,
-                     const char *from, char **args);
-void gaym_msg_inviteonly(struct gaym_conn *gaym, const char *name,
-                         const char *from, char **args);
-void gaym_msg_who(struct gaym_conn *gaym, const char *name,
-                  const char *from, char **args);
-void gaym_msg_chanfull(struct gaym_conn *gaym, const char *name,
-                       const char *from, char **args);
-void gaym_msg_join(struct gaym_conn *gaym, const char *name,
-                   const char *from, char **args);
-void gaym_msg_kick(struct gaym_conn *gaym, const char *name,
-                   const char *from, char **args);
-void gaym_msg_list(struct gaym_conn *gaym, const char *name,
-                   const char *from, char **args);
-void gaym_msg_mode(struct gaym_conn *gaym, const char *name,
-                   const char *from, char **args);
-void gaym_msg_motd(struct gaym_conn *gaym, const char *name,
-                   const char *from, char **args);
-void gaym_msg_names(struct gaym_conn *gaym, const char *name,
-                    const char *from, char **args);
-void gaym_msg_nick(struct gaym_conn *gaym, const char *name,
-                   const char *from, char **args);
-void gaym_msg_nickused(struct gaym_conn *gaym, const char *name,
-                       const char *from, char **args);
-void gaym_msg_nochan(struct gaym_conn *gaym, const char *name,
-                     const char *from, char **args);
-void gaym_msg_nonick_chan(struct gaym_conn *gaym, const char *name,
-                          const char *from, char **args);
-void gaym_msg_nonick(struct gaym_conn *gaym, const char *name,
-                     const char *from, char **args);
-void gaym_msg_no_such_nick(struct gaym_conn *gaym, const char *name,
-                           const char *from, char **args);
-void gaym_msg_nochangenick(struct gaym_conn *gaym, const char *name,
-                           const char *from, char **args);
-void gaym_msg_nosend(struct gaym_conn *gaym, const char *name,
-                     const char *from, char **args);
-void gaym_msg_notice(struct gaym_conn *gaym, const char *name,
-                     const char *from, char **args);
-void gaym_msg_notinchan(struct gaym_conn *gaym, const char *name,
-                        const char *from, char **args);
-void gaym_msg_notop(struct gaym_conn *gaym, const char *name,
-                    const char *from, char **args);
-void gaym_msg_part(struct gaym_conn *gaym, const char *name,
-                   const char *from, char **args);
-void gaym_msg_ping(struct gaym_conn *gaym, const char *name,
-                   const char *from, char **args);
-void gaym_msg_pong(struct gaym_conn *gaym, const char *name,
-                   const char *from, char **args);
-void gaym_msg_privmsg(struct gaym_conn *gaym, const char *name,
-                      const char *from, char **args);
-void gaym_msg_regonly(struct gaym_conn *gaym, const char *name,
-                      const char *from, char **args);
-void gaym_msg_quit(struct gaym_conn *gaym, const char *name,
-                   const char *from, char **args);
-void gaym_msg_topic(struct gaym_conn *gaym, const char *name,
-                    const char *from, char **args);
-void gaym_msg_trace(struct gaym_conn *gaym, const char *name,
-                    const char *from, char **args);
-void gaym_msg_unknown(struct gaym_conn *gaym, const char *name,
-                      const char *from, char **args);
-void gaym_msg_wallops(struct gaym_conn *gaym, const char *name,
-                      const char *from, char **args);
-void gaym_msg_whois(struct gaym_conn *gaym, const char *name,
-                    const char *from, char **args);
-
-
-void gaym_msg_richnames_list(struct gaym_conn *gaym, const char *name,
-                             const char *from, char **args);
-void gaym_msg_create_pay_only(struct gaym_conn *gaym, const char *name,
-                              const char *from, char **args);
-void gaym_msg_pay_channel(struct gaym_conn *gaym, const char *name,
-                          const char *from, char **args);
-void gaym_msg_toomany_channels(struct gaym_conn *gaym, const char *name,
-                               const char *from, char **args);
-void gaym_msg_list_busy(struct gaym_conn *gaym, const char *name,
-                        const char *from, char **args);
+typedef void (msg_handler) (struct gaym_conn * gaym, const char *name,
+                            const char *from, char **args);
+msg_handler gaym_msg_away;
+msg_handler gaym_msg_default;
+msg_handler gaym_msg_away;
+msg_handler gaym_msg_badmode;
+msg_handler gaym_msg_banned;
+msg_handler gaym_msg_chanmode;
+msg_handler gaym_msg_endwhois;
+msg_handler gaym_msg_endmotd;
+msg_handler gaym_msg_invite;
+msg_handler gaym_msg_inviteonly;
+msg_handler gaym_msg_who;
+msg_handler gaym_msg_chanfull;
+msg_handler gaym_msg_join;
+msg_handler gaym_msg_kick;
+msg_handler gaym_msg_list;
+msg_handler gaym_msg_login_failed;
+msg_handler gaym_msg_mode;
+msg_handler gaym_msg_motd;
+msg_handler gaym_msg_names;
+msg_handler gaym_msg_nick;
+msg_handler gaym_msg_nickused;
+msg_handler gaym_msg_nochan;
+msg_handler gaym_msg_nonick_chan;
+msg_handler gaym_msg_nonick;
+msg_handler gaym_msg_no_such_nick;
+msg_handler gaym_msg_nochangenick;
+msg_handler gaym_msg_nosend;
+msg_handler gaym_msg_notice;
+msg_handler gaym_msg_notinchan;
+msg_handler gaym_msg_notop;
+msg_handler gaym_msg_part;
+msg_handler gaym_msg_ping;
+msg_handler gaym_msg_pong;
+msg_handler gaym_msg_privmsg;
+msg_handler gaym_msg_regonly;
+msg_handler gaym_msg_quit;
+msg_handler gaym_msg_topic;
+msg_handler gaym_msg_trace;
+msg_handler gaym_msg_unknown;
+msg_handler gaym_msg_wallops;
+msg_handler gaym_msg_whois;
+msg_handler gaym_msg_richnames_list;
+msg_handler gaym_msg_create_pay_only;
+msg_handler gaym_msg_pay_channel;
+msg_handler gaym_msg_toomany_channels;
+msg_handler gaym_msg_list_busy;
 
 
 void gaym_cmd_table_build(struct gaym_conn *gaym);
 
-int gaym_cmd_default(struct gaym_conn *gaym, const char *cmd,
-                     const char *target, const char **args);
-int gaym_cmd_away(struct gaym_conn *gaym, const char *cmd,
-                  const char *target, const char **args);
-int gaym_cmd_ctcp_action(struct gaym_conn *gaym, const char *cmd,
-                         const char *target, const char **args);
-int gaym_cmd_invite(struct gaym_conn *gaym, const char *cmd,
-                    const char *target, const char **args);
-int gaym_cmd_join(struct gaym_conn *gaym, const char *cmd,
-                  const char *target, const char **args);
-int gaym_cmd_kick(struct gaym_conn *gaym, const char *cmd,
-                  const char *target, const char **args);
-int gaym_cmd_list(struct gaym_conn *gaym, const char *cmd,
-                  const char *target, const char **args);
-int gaym_cmd_mode(struct gaym_conn *gaym, const char *cmd,
-                  const char *target, const char **args);
-int gaym_cmd_names(struct gaym_conn *gaym, const char *cmd,
-                   const char *target, const char **args);
-int gaym_cmd_nick(struct gaym_conn *gaym, const char *cmd,
-                  const char *target, const char **args);
-int gaym_cmd_op(struct gaym_conn *gaym, const char *cmd,
-                const char *target, const char **args);
-int gaym_cmd_privmsg(struct gaym_conn *gaym, const char *cmd,
-                     const char *target, const char **args);
-int gaym_cmd_part(struct gaym_conn *gaym, const char *cmd,
-                  const char *target, const char **args);
-int gaym_cmd_ping(struct gaym_conn *gaym, const char *cmd,
-                  const char *target, const char **args);
-int gaym_cmd_quit(struct gaym_conn *gaym, const char *cmd,
-                  const char *target, const char **args);
-int gaym_cmd_quote(struct gaym_conn *gaym, const char *cmd,
-                   const char *target, const char **args);
-int gaym_cmd_query(struct gaym_conn *gaym, const char *cmd,
-                   const char *target, const char **args);
-int gaym_cmd_remove(struct gaym_conn *gaym, const char *cmd,
-                    const char *target, const char **args);
-int gaym_cmd_topic(struct gaym_conn *gaym, const char *cmd,
-                   const char *target, const char **args);
-int gaym_cmd_trace(struct gaym_conn *gaym, const char *cmd,
-                   const char *target, const char **args);
-int gaym_cmd_wallops(struct gaym_conn *gaym, const char *cmd,
-                     const char *target, const char **args);
-int gaym_cmd_whois(struct gaym_conn *gaym, const char *cmd,
-                   const char *target, const char **args);
+typedef int (cmd_handler) (struct gaym_conn * gaym, const char *cmd,
+                           const char *target, const char **args);
+
+cmd_handler gaym_cmd_default;
+cmd_handler gaym_cmd_away;
+cmd_handler gaym_cmd_ctcp_action;
+cmd_handler gaym_cmd_invite;
+cmd_handler gaym_cmd_join;
+cmd_handler gaym_cmd_kick;
+cmd_handler gaym_cmd_list;
+cmd_handler gaym_cmd_mode;
+cmd_handler gaym_cmd_names;
+cmd_handler gaym_cmd_nick;
+cmd_handler gaym_cmd_op;
+cmd_handler gaym_cmd_privmsg;
+cmd_handler gaym_cmd_part;
+cmd_handler gaym_cmd_ping;
+cmd_handler gaym_cmd_quit;
+cmd_handler gaym_cmd_quote;
+cmd_handler gaym_cmd_query;
+cmd_handler gaym_cmd_remove;
+cmd_handler gaym_cmd_topic;
+cmd_handler gaym_cmd_trace;
+cmd_handler gaym_cmd_wallops;
+cmd_handler gaym_cmd_whois;
+
 
 void gaym_dccsend_send_file(GaimConnection * gc, const char *who,
                             const char *file);
 void gaym_dccsend_recv(struct gaym_conn *gaym, const char *from,
                        const char *msg);
-void gaym_get_hash_from_weblogin(GaimAccount * account,
-                                 void (*callback) (GaimAccount *));
+void gaym_get_chat_key_from_weblogin(GaimAccount * account,
+                                     void (*callback) (GaimAccount *));
 
 void gaim_session_fetch(const char *url, gboolean full,
                         const char *user_agent, gboolean http11,

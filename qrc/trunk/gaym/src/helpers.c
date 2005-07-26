@@ -479,8 +479,10 @@ char *build_tooltip_text(struct gaym_buddy *ib)
     }
 
     if (tooltip->len == 0) {
-        return g_string_free(tooltip, TRUE);
+        g_string_append_printf(tooltip, _(" No info."));
     }
+
+    g_string_erase(tooltip, 0, 1);
 
     return g_string_free(tooltip, FALSE);
 }

@@ -297,7 +297,7 @@ void gaym_msg_whois(struct gaym_conn *gaym, const char *name,
         g_return_if_fail(hashurl != NULL);
 
         char *infourl = g_strdup_printf("%s?pw=%s&name=%s", hashurl,
-                                        gaym->hash_pw, args[1]);
+                                        gaym->chat_key, args[1]);
         if (infourl) {
             gaim_url_fetch(infourl, FALSE,
                            "Mozilla/4.0 (compatible; MSIE 5.0)", FALSE,
@@ -306,6 +306,26 @@ void gaym_msg_whois(struct gaym_conn *gaym, const char *name,
         }
     }
     g_free(normalized);
+}
+
+void gaym_msg_login_failed(struct gaym_conn *gaym, const char *name,
+                           const char *from, char **args)
+{
+
+
+
+    gaym_cmd_quit(gaym, "quit", NULL, NULL);
+
+    // if (gc->inpa)
+    // gaim_input_remove(gc->inpa);
+
+    // g_free(gaym->inbuf);
+    // gaim_debug_misc("gaym", "Login failed. closing fd %i\n", gaym->fd);
+    // close(gaym->fd);
+    // gaim_debug_misc("gaym", "Get chatkey from weblogin\n");
+    // gaym_get_hash_from_weblogin(gaym->account,
+    // gaym_login_with_chat_key);
+
 }
 
 void gaym_msg_list(struct gaym_conn *gaym, const char *name,
@@ -504,15 +524,19 @@ void gaym_msg_names(struct gaym_conn *gaym, const char *name,
 /**
  * Change this to WELCOME
  */
+
 void gaym_msg_endmotd(struct gaym_conn *gaym, const char *name,
                       const char *from, char **args)
 {
     GaimConnection *gc;
 
-    gc = gaim_account_get_connection(gaym->account);
-    if (!gc)
-        return;
+    gaim_debug_misc("gaym", "Got motd\n");
 
+    gc = gaim_account_get_connection(gaym->account);
+    if (!gc) {
+        gaim_debug_misc("gaym", "!gc ???\n");
+        return;
+    }
     gaim_connection_set_state(gc, GAIM_CONNECTED);
     serv_finish_login(gc);
 
