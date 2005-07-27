@@ -34,6 +34,8 @@ if test x$PKG_CONFIG = xno ; then
 fi
 
 # Build preferences
+
+
 AC_ARG_ENABLE([bot-challenger],
 	[AS_HELP_STRING(--enable-bot-challenger,build the bot-challenger plugin @<:@default=yes@:>@)],,
 	[enable_bot_challenger="yes"])
@@ -51,7 +53,7 @@ AM_CONDITIONAL([COND_GAYM], [test "$enable_gaym" = "yes"])
 AM_CONDITIONAL([COND_GAYM_EXTRAS], [test "$enable_gaym_extras" = "yes"])
 
 if test "$enable_bot_challenger" != "yes" ; then
-	enable_bot_challener="no"
+	enable_bot_challenger="no"
 fi
 
 if test "$enable_gaym" != "yes" ; then
@@ -72,12 +74,17 @@ if test "$enable_gaym_extras" = "yes" ; then
 		]
 	)
 fi
+AC_ARG_WITH([gaim-prefix],
+	[AS_HELP_STRING(--with-gaim-prefix,specify the prefix where gaim is found)],
+	PKG_CONFIG_PATH=$withval/lib/pkgconfig,[])
+export PKG_CONFIG_PATH
 PKG_CHECK_MODULES([GAIM], [$REQUIRED_GAIM],
 	[
 	AC_SUBST(GAIM_CFLAGS)
 	AC_SUBST(GAIM_LIBS)
 	]
 )
+
 AC_ARG_VAR([GAIM_DATADIR], [datadir of GAIM, overriding pkg-config])dnl
 AC_ARG_VAR([GAIM_LIBDIR], [libdir of GAIM, overriding pkg-config])dnl
 AC_CACHE_CHECK([for GAIM][_DATADIR], [pkg_cv_][GAIM][_DATADIR],

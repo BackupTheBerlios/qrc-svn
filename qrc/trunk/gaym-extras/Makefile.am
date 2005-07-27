@@ -2,7 +2,7 @@ pkgdir = \
 	$(GAIM_LIBDIR)/gaim
 
 GAYMSOURCES = \
-	gaym-extras.c
+	gaym-extras.c chatsort.c bio-popups.c chaticon.c gaym-extras.h
 
 AM_CFLAGS = \
 	$(st)
@@ -23,3 +23,4 @@ AM_CPPFLAGS = \
 	$(DEBUG_CFLAGS) \
 	$(GTK_CFLAGS) \
 	$(GAIM_CFLAGS)
+	

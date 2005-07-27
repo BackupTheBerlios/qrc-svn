@@ -236,10 +236,10 @@ static char *gaym_tooltip_text(GaimBuddy * buddy)
     }
 
     struct gaym_buddy *ib =
-        g_hash_table_lookup(gaym->buddies, buddy->name);
+        g_hash_table_lookup(gaym->channel_members, buddy->name);
 
     if (!ib)
-        ib = g_hash_table_lookup(gaym->channel_members, buddy->name);
+        ib = g_hash_table_lookup(gaym->buddies, buddy->name);
 
     if (!ib) {
         return NULL;
@@ -555,8 +555,6 @@ static void gaym_login_cb(gpointer data, gint source,
 
     if (GAIM_CONNECTION_IS_VALID(gc)) {
 
-        gc->inpa =
-            gaim_input_add(source, GAIM_INPUT_READ, gaym_input_cb, gc);
 
         GList *connections = gaim_connections_get_all();
 
@@ -640,6 +638,8 @@ static void gaym_login_cb(gpointer data, gint source,
                        gaym_get_configtxt_cb, gaym);
 
         g_free(url);
+        gc->inpa =
+            gaim_input_add(gaym->fd, GAIM_INPUT_READ, gaym_input_cb, gc);
 
 
     }
@@ -854,12 +854,6 @@ gboolean gaym_unreference_channel_member(struct gaym_conn * gaym,
         }
         return FALSE;
     }
-}
-
-GaymBuddy *gaym_get_channel_member_info(struct gaym_conn * gaym,
-                                        const gchar * name)
-{
-    return g_hash_table_lookup(gaym->channel_members, name);
 }
 
 static void gaym_add_buddy(GaimConnection * gc, GaimBuddy * buddy,
@@ -1129,7 +1123,7 @@ static guint gaym_nick_hash(const char *nick)
     guint bucket;
     
     if(!nick)
-	return NULL;
+	return 0;
     lc = g_utf8_strdown(nick, -1);
     bucket = g_str_hash(lc);
     g_free(lc);
@@ -1366,7 +1360,7 @@ static GaimPluginProtocolInfo prpl_info = {
     NULL,                       /* normalize */
     NULL,                       /* set_buddy_icon */
     NULL,                       /* remove_group */
-    NULL,                       /* get_cb_real_name */
+    NULL,		       /* get_cb_real_name */
     NULL,                       /* set_chat_topic */
     gaym_find_blist_chat,       /* find_blist_chat */
     gaym_roomlist_get_list,     /* roomlist_get_list */
@@ -1562,7 +1556,7 @@ static GaimPluginInfo info = {
     NULL,                                                 /**< unload         */
     NULL,                                                 /**< destroy        */
 
-    NULL,                                                 /**< ui_info        */
+    gaym_get_channel_member_reference,                    /**< ui_info        */
     &prpl_info,                                           /**< extra_info     */
     &prefs_info,
     gaym_actions

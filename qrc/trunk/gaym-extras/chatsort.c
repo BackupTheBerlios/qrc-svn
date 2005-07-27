@@ -1,93 +1,141 @@
-/* Attempt to sort chat users by entry order, instead of alpha */
-#include "internal.h"
-#include "gtkgaim.h"
+#include "gaym-extras.h"
 
-#include "conversation.h"
-#include "debug.h"
-#include "log.h"
-#include "prefs.h"
-#include "signals.h"
-#include "util.h"
-#include "version.h"
+static gint
+sort_chat_users_by_entry(GtkTreeModel * model, GtkTreeIter * a,
+                         GtkTreeIter * b, gpointer userdata)
+{
+    GaimConvChatBuddyFlags f1 = 0, f2 = 0;
+    char *user1 = NULL, *user2 = NULL;
+    gint ret = 0;
 
-#include "gtkconv.h"
-#include "gtkimhtml.h"
-#include "gtkplugin.h"
+    gtk_tree_model_get(model, a, CHAT_USERS_NAME_COLUMN, &user1,
+                       CHAT_USERS_FLAGS_COLUMN, &f1, -1);
+    gtk_tree_model_get(model, b, CHAT_USERS_NAME_COLUMN, &user2,
+                       CHAT_USERS_FLAGS_COLUMN, &f2, -1);
 
-#define CHATSORT_PLUGIN_ID "gtk-chatsort"
+    if (user1 == NULL || user2 == NULL) {
+        if (!(user1 == NULL && user2 == NULL))
+            ret = (user1 == NULL) ? -1 : 1;
+    } else if (f1 != f2) {
+        /* sort more important users first */
+        ret = (f1 > f2) ? -1 : 1;
+    } else {
+        ret = g_utf8_collate(user1, user2);
+    }
+
+    g_free(user1);
+    g_free(user2);
+    return ret;
+}
+
+static gint
+sort_chat_users_by_alpha(GtkTreeModel * model, GtkTreeIter * a,
+                         GtkTreeIter * b, gpointer userdata)
+{
+    char *user1 = NULL, *user2 = NULL;
+    gint ret = 0;
+
+    gtk_tree_model_get(model, a, CHAT_USERS_NAME_COLUMN, &user1, -1);
+    gtk_tree_model_get(model, b, CHAT_USERS_NAME_COLUMN, &user2, -1);
+
+    if (user1 == NULL || user2 == NULL) {
+        if (!(user1 == NULL && user2 == NULL))
+            ret = (user1 == NULL) ? -1 : 1;
+    } else {
+        ret = g_utf8_collate(user1, user2);
+    }
+
+    g_free(user1);
+    g_free(user2);
+    return ret;
+}
 
 
-// A dummy sort function... don't sort at all!
-static gint sort_chat_users(GtkTreeModel * model, GtkTreeIter * a,
+static gint
+sort_chat_users_by_category(GtkTreeModel * model, GtkTreeIter * a,
                             GtkTreeIter * b, gpointer userdata)
 {
-    return 1;
+    GaimConvChatBuddyFlags f1 = 0, f2 = 0;
+    gint flag_mask = 0x000F;
+    char *user1 = NULL, *user2 = NULL;
+    gint ret = 0;
+
+    gtk_tree_model_get(model, a, CHAT_USERS_NAME_COLUMN, &user1,
+                       CHAT_USERS_FLAGS_COLUMN, &f1, -1);
+    gtk_tree_model_get(model, b, CHAT_USERS_NAME_COLUMN, &user2,
+                       CHAT_USERS_FLAGS_COLUMN, &f2, -1);
+
+    f1 = f1 & flag_mask;
+    f2 = f2 & flag_mask;
+
+    if (user1 == NULL || user2 == NULL) {
+        if (!(user1 == NULL && user2 == NULL))
+            ret = (user1 == NULL) ? -1 : 1;
+    } else if (f1 != f2) {
+        /* sort more important users first */
+        ret = (f1 > f2) ? -1 : 1;
+    } else {
+        ret = g_utf8_collate(user1, user2);
+    }
+
+    g_free(user1);
+    g_free(user2);
+    return ret;
 }
 
-// This gets called BEFORE a chatlist is populated... just creates a new
-// type of chat window.
-static void redochatwindow(GaimConversation * c)
+
+
+void change_sort_order(GtkWidget * button, void *data)
 {
 
-    GtkTreeModel *oldls;
-    GtkTreeSelection *select;
-    GtkTreeIter iter;
+    static GaymSortOrder order = SORT_ENTRY;
 
-    // Get a handle to the chat pane for the conversation
+
+    GtkTreeView *list = (GtkTreeView *) data;
+    GtkTreeModel *model = gtk_tree_view_get_model(GTK_TREE_VIEW(list));
+    gaim_debug_misc("chatsort", "list: %x, data: %x, model: %x\n", list,
+                    data, model);
+    if (order == SORT_ALPHA) {
+        order = SORT_CATEGORY;
+        gaim_debug_misc("chatsort", "Change to entry order");
+        gtk_button_set_label(GTK_BUTTON(button), "E");
+        gtk_tree_sortable_set_sort_func(GTK_TREE_SORTABLE(model),
+                                        CHAT_USERS_NAME_COLUMN,
+                                        sort_chat_users_by_category, NULL,
+                                        NULL);
+    } else if (order == SORT_CATEGORY) {
+        order = SORT_ENTRY;
+        gaim_debug_misc("chatsort", "Change to category order");
+        gtk_button_set_label(GTK_BUTTON(button), "P");
+        gtk_tree_sortable_set_sort_func(GTK_TREE_SORTABLE(model),
+                                        CHAT_USERS_NAME_COLUMN,
+                                        sort_chat_users_by_entry, NULL,
+                                        NULL);
+    } else {
+        order = SORT_ALPHA;
+        gaim_debug_misc("chatsort", "Change to alpha order");
+        gtk_button_set_label(GTK_BUTTON(button), "A");
+        gtk_tree_sortable_set_sort_func(GTK_TREE_SORTABLE(model),
+                                        CHAT_USERS_NAME_COLUMN,
+                                        sort_chat_users_by_alpha, NULL,
+                                        NULL);
+    }
+
+}
+void add_chat_sort_functions(GaimConversation* c) {
+     
     GaimGtkConversation *gtkconv = GAIM_GTK_CONVERSATION(c);
     GaimGtkChatPane *gtkchat = gtkconv->u.chat;
+    
+    GtkBox *iconbox = (GtkBox *) gtkconv->info->parent;
+    GtkWidget *button = gtk_button_new_with_label("E");
+    gtk_button_set_relief(GTK_BUTTON(button), GTK_RELIEF_NONE);
+    gtk_box_pack_end(iconbox, button, FALSE, FALSE, 0);
+    gtk_widget_show(button);
+    g_signal_connect(G_OBJECT(button), "clicked",
+                     G_CALLBACK(change_sort_order), gtkchat->list);
+    gaim_debug_misc("chatsort", "Connected signal with data %x\n",
+                    gtkchat->list);
 
-
-    oldls = gtk_tree_view_get_model(GTK_TREE_VIEW(gtkchat->list));
-    select = gtk_tree_view_get_selection(GTK_TREE_VIEW(gtkchat->list));
-
-    // This is a dummy "root" item. If it's not here,
-    // then the first name entered into the list gets "stucK" at the
-    // top. This is a hack.
-    gtk_list_store_append(GTK_LIST_STORE(oldls), &iter);
-    gtk_list_store_set(GTK_LIST_STORE(oldls), &iter,
-                       CHAT_USERS_NAME_COLUMN, " ", -1);
-    gtk_tree_sortable_set_sort_func(GTK_TREE_SORTABLE(oldls),
-                                    CHAT_USERS_NAME_COLUMN,
-                                    sort_chat_users, NULL, NULL);
 
 }
-
-static gboolean plugin_load(GaimPlugin * plugin)
-{
-    gaim_signal_connect(gaim_conversations_get_handle(),
-                        "chat-joined",
-                        plugin, GAIM_CALLBACK(redochatwindow), NULL);
-
-    return TRUE;
-}
-
-static GaimPluginInfo info = {
-    GAIM_PLUGIN_MAGIC,
-    GAIM_MAJOR_VERSION,
-    GAIM_MINOR_VERSION,
-    GAIM_PLUGIN_STANDARD,
-    GAIM_GTK_PLUGIN_TYPE,
-    0,
-    NULL,
-    GAIM_PRIORITY_DEFAULT,
-    CHATSORT_PLUGIN_ID,
-    N_("Chatroom Sort options"),
-    VERSION,
-    N_("Changes the sorting options of chatroom lists."),
-    N_("When a new conversation is opened this plugin will insert the last conversation into the current conversation."),
-    "Jason LeBrun <gaim@jasonlebrun.info",
-    GAIM_WEBSITE,
-    plugin_load,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
-
-static void init_plugin(GaimPlugin * plugin)
-{
-}
-
-GAIM_INIT_PLUGIN(history, init_plugin, info)

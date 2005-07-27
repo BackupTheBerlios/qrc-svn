@@ -422,7 +422,7 @@ static void roombrowse_menu_create(GaimBlistNode * node, GList ** menu)
     *menu = g_list_append(*menu, act);
     // g_free(label);
 }
-static gboolean plugin_load(GaimPlugin * plugin)
+static gboolean roombrowse_load(GaimPlugin * plugin)
 {
     gaim_signal_connect(gaim_blist_get_handle(),
                         "blist-node-extended-menu",
@@ -434,32 +434,4 @@ static gboolean plugin_load(GaimPlugin * plugin)
     return TRUE;
 }
 
-static GaimPluginInfo info = {
-    GAIM_PLUGIN_MAGIC,
-    GAIM_MAJOR_VERSION,
-    GAIM_MINOR_VERSION,
-    GAIM_PLUGIN_STANDARD,
-    GAIM_GTK_PLUGIN_TYPE,
-    0,
-    NULL,
-    GAIM_PRIORITY_DEFAULT,
-    CHATSORT_PLUGIN_ID,
-    N_("Gay.Com Room Browser"),
-    VERSION,
-    N_("Browse rooms in gay.com"),
-    N_("Adds a right-click item to context menu."),
-    "Jason LeBrun <gaim@jasonlebrun.info",
-    GAIM_WEBSITE,
-    plugin_load,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
 
-static void init_plugin(GaimPlugin * plugin)
-{
-}
-
-GAIM_INIT_PLUGIN(history, init_plugin, info)
