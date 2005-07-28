@@ -433,5 +433,3 @@ static gboolean roombrowse_load(GaimPlugin * plugin)
     gaim_debug_misc("roombrowse", "Callback registered!\n");
     return TRUE;
 }
-
-

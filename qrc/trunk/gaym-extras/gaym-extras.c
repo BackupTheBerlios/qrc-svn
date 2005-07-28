@@ -8,16 +8,17 @@
 
 
 
-//Adds motion handlers to IM tab labels.
+// Adds motion handlers to IM tab labels.
 static void redo_im_window(GaimConversation * c)
 {
-    if (c && c->type == GAIM_CONV_IM) 
-	add_im_popup_stuff(c);
+    if (c && c->type == GAIM_CONV_IM)
+        add_im_popup_stuff(c);
 }
 
 
-static void update_info_cb(GaimAccount* account, char* name) {
-    gaim_debug_misc("gaym-extras","info update\n");
+static void update_info_cb(GaimAccount * account, char *name)
+{
+    gaim_debug_misc("gaym-extras", "info update\n");
 }
 
 static void redochatwindow(GaimConversation * c)
@@ -31,17 +32,17 @@ static gboolean plugin_load(GaimPlugin * plugin)
 {
     init_chat_icons();
     init_popups();
-    
+
     gaim_signal_connect(gaim_conversations_get_handle(), "chat-joined",
                         plugin, GAIM_CALLBACK(redochatwindow), NULL);
-    
+
     gaim_signal_connect(gaim_conversations_get_handle(),
                         "conversation-created", plugin,
                         GAIM_CALLBACK(redo_im_window), NULL);
-    
+
     gaim_signal_connect(gaim_accounts_get_handle(), "info-updated", plugin,
                         GAIM_CALLBACK(update_info_cb), NULL);
-    
+
     gaim_signal_connect(gaim_conversations_get_handle(),
                         "deleting-conversation", plugin,
                         GAIM_CALLBACK(clean_popup_stuff), NULL);

@@ -19,12 +19,13 @@ void clean_popup_stuff(GaimConversation * c)
 
 }
 
-static void namelist_leave_cb(GtkWidget * tv, GdkEventCrossing * e, gpointer n)
+static void namelist_leave_cb(GtkWidget * tv, GdkEventCrossing * e,
+                              gpointer n)
 {
-    //This prevent clicks from demloishing popups.
-    if(e->mode != GDK_CROSSING_NORMAL)
-	return;
-    
+    // This prevent clicks from demloishing popups.
+    if (e->mode != GDK_CROSSING_NORMAL)
+        return;
+
     guint *timeout = g_hash_table_lookup(popup_timeouts, tv);
     g_hash_table_remove(popups, tv);
 
@@ -34,20 +35,21 @@ static void namelist_leave_cb(GtkWidget * tv, GdkEventCrossing * e, gpointer n)
     }
 }
 
-static void namelist_paint_tip(GtkWidget * tipwindow, GdkEventExpose * event, gpointer data)
+static void namelist_paint_tip(GtkWidget * tipwindow,
+                               GdkEventExpose * event, gpointer data)
 {
-    char* tooltiptext=((struct paint_data*)data)->tooltiptext;
-    const char* name=((struct paint_data*)data)->name;
+    char *tooltiptext = ((struct paint_data *) data)->tooltiptext;
+    const char *name = ((struct paint_data *) data)->name;
     GtkStyle *style;
-    char* filename=g_strdup_printf("%s.jpg",name);
-    char* path = g_build_filename(gaim_user_dir(), "icons", "gaym", filename, NULL);
-    gaim_debug_misc("popups","trying to load image %s\n",path);
-    GError* err=NULL;
-    GdkPixbuf* pixbuf = gdk_pixbuf_new_from_file(path, &err);	
-    if(err)
-    {
-	gaim_debug_error("popups","Pixbuf error: %s\n",err->message);
-	g_error_free(err);
+    char *filename = g_strdup_printf("%s.jpg", name);
+    char *path =
+        g_build_filename(gaim_user_dir(), "icons", "gaym", filename, NULL);
+    gaim_debug_misc("popups", "trying to load image %s\n", path);
+    GError *err = NULL;
+    GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file(path, &err);
+    if (err) {
+        gaim_debug_error("popups", "Pixbuf error: %s\n", err->message);
+        g_error_free(err);
     }
     g_free(filename);
     g_free(path);
@@ -66,18 +68,19 @@ static void namelist_paint_tip(GtkWidget * tipwindow, GdkEventExpose * event, gp
                        -1, -1);
 
 #if GTK_CHECK_VERSION(2,2,0)
-     gdk_draw_pixbuf(GDK_DRAWABLE(tipwindow->window), NULL, pixbuf,
-     0, 0, 4, 4, -1, -1, GDK_RGB_DITHER_NONE, 0, 0);
+    gdk_draw_pixbuf(GDK_DRAWABLE(tipwindow->window), NULL, pixbuf,
+                    0, 0, 4, 4, -1, -1, GDK_RGB_DITHER_NONE, 0, 0);
 #else
-     gdk_pixbuf_render_to_drawable(pixbuf,
-     GDK_DRAWABLE(tipwindow->window), NULL, 0, 0, 4, 4, -1, -1,
-     GDK_RGB_DITHER_NONE, 0, 0);
+    gdk_pixbuf_render_to_drawable(pixbuf,
+                                  GDK_DRAWABLE(tipwindow->window), NULL, 0,
+                                  0, 4, 4, -1, -1, GDK_RGB_DITHER_NONE, 0,
+                                  0);
 #endif
 
     gtk_paint_layout(style, tipwindow->window, GTK_STATE_NORMAL, TRUE,
-                     NULL, tipwindow, "tooltip", 57, 4, layout);
+                     NULL, tipwindow, "tooltip", 65, 4, layout);
 
-    g_object_unref (pixbuf);
+    g_object_unref(pixbuf);
     g_object_unref(layout);
     g_free(tooltiptext);
     g_free(data);
@@ -100,12 +103,14 @@ static gboolean tooltip_timeout(struct timeout_cb_data *data)
     guint *timeout;
     GtkWidget *tipwindow;
     GtkWidget *tv = data->tv;
-    
+
     GaymTooltipType type = data->type;
     struct gaym_conn *gaym = data->gaym;
     g_free(data);
     GaimPluginProtocolInfo *prpl_info =
-        GAIM_PLUGIN_PROTOCOL_INFO(gaim_find_prpl (gaim_account_get_protocol_id (gaym->account)));
+        GAIM_PLUGIN_PROTOCOL_INFO(gaim_find_prpl
+                                  (gaim_account_get_protocol_id
+                                   (gaym->account)));
 
     timeout = (guint *) g_hash_table_lookup(popup_timeouts, tv);
     /* we check to see if we're still supposed to be moving, now that gtk
@@ -158,8 +163,7 @@ static gboolean tooltip_timeout(struct timeout_cb_data *data)
     g_return_val_if_fail(tooltiptext != NULL, FALSE);
 
     tipwindow = g_hash_table_lookup(popups, tv);
-    if (tipwindow)
-    {
+    if (tipwindow) {
         g_hash_table_remove(popups, tv);
     }
     tipwindow = gtk_window_new(GTK_WINDOW_POPUP);
@@ -168,10 +172,10 @@ static gboolean tooltip_timeout(struct timeout_cb_data *data)
     gtk_widget_set_app_paintable(tipwindow, TRUE);
     gtk_window_set_resizable(GTK_WINDOW(tipwindow), FALSE);
     gtk_widget_set_name(tipwindow, "gtk-tooltips");
-    
-    struct paint_data* pdata=g_new0(struct paint_data,1);
-    pdata->tooltiptext=tooltiptext;
-    pdata->name=name;
+
+    struct paint_data *pdata = g_new0(struct paint_data, 1);
+    pdata->tooltiptext = tooltiptext;
+    pdata->name = name;
     g_signal_connect(G_OBJECT(tipwindow), "expose_event",
                      G_CALLBACK(namelist_paint_tip), pdata);
     gtk_widget_ensure_style(tipwindow);
@@ -203,8 +207,8 @@ static gboolean tooltip_timeout(struct timeout_cb_data *data)
 
     /* 57 is the size of a large status icon plus 4 pixels padding on each 
        side.  I should #define this or something */
-    w = w + 57;
-    h = MAX(h, 57);
+    w = w + 65;
+    h = MAX(h, 65);
 
 #if GTK_CHECK_VERSION(2,2,0)
     if (w > mon_size.width)
@@ -248,7 +252,8 @@ static gboolean tooltip_timeout(struct timeout_cb_data *data)
 }
 
 
-static gboolean namelist_motion_cb(GtkWidget * tv, GdkEventMotion * event, gpointer gaym)
+static gboolean namelist_motion_cb(GtkWidget * tv, GdkEventMotion * event,
+                                   gpointer gaym)
 {
     GtkTreeModel *ls = NULL;
     GtkTreePath *path = NULL;
@@ -275,15 +280,15 @@ static gboolean namelist_motion_cb(GtkWidget * tv, GdkEventMotion * event, gpoin
             return FALSE;
         /* We've left the cell.  Remove the timeout and create a new one
            below */
-	
+
         g_hash_table_remove(popups, tv);
         g_source_remove(*timeout);
     }
 
     gtk_tree_view_get_path_at_pos(GTK_TREE_VIEW(tv), event->x, event->y,
                                   &path, NULL, NULL, NULL);
-    if(G_UNLIKELY(path == NULL))
-	return FALSE;
+    if (G_UNLIKELY(path == NULL))
+        return FALSE;
     struct timeout_cb_data *timeout_data =
         g_new0(struct timeout_cb_data, 1);
     timeout_data->tv = tv;
@@ -302,11 +307,12 @@ static gboolean namelist_motion_cb(GtkWidget * tv, GdkEventMotion * event, gpoin
     return TRUE;
 }
 
-static void tab_leave_cb(GtkWidget * event, GdkEventCrossing * e, gpointer n)
+static void tab_leave_cb(GtkWidget * event, GdkEventCrossing * e,
+                         gpointer n)
 {
-    //Prevent clicks from demolishing popup.
-    if(e->mode != GDK_CROSSING_NORMAL)
-	return;
+    // Prevent clicks from demolishing popup.
+    if (e->mode != GDK_CROSSING_NORMAL)
+        return;
     GtkWidget *tab = gtk_bin_get_child(GTK_BIN(event));
     guint *timeout = g_hash_table_lookup(popup_timeouts, tab);
     g_hash_table_remove(popups, tab);
@@ -319,7 +325,8 @@ static void tab_leave_cb(GtkWidget * event, GdkEventCrossing * e, gpointer n)
 }
 
 
-static gboolean tab_entry_cb(GtkWidget * event, GdkEventCrossing * crossing, gpointer conv)
+static gboolean tab_entry_cb(GtkWidget * event,
+                             GdkEventCrossing * crossing, gpointer conv)
 {
 
     guint *timeout;
@@ -354,15 +361,15 @@ static gboolean tab_entry_cb(GtkWidget * event, GdkEventCrossing * crossing, gpo
     return TRUE;
 }
 
-void add_chat_popup_stuff(GaimConversation* c) {
-    
+void add_chat_popup_stuff(GaimConversation * c)
+{
+
     GaimGtkConversation *gtkconv = GAIM_GTK_CONVERSATION(c);
     GaimGtkChatPane *gtkchat = gtkconv->u.chat;
     GaimConnection *gc = gaim_conversation_get_gc(c);
-    
+
     g_signal_connect(G_OBJECT(gtkchat->list), "motion-notify-event",
-                     G_CALLBACK(namelist_motion_cb),
-                     gc->proto_data);
+                     G_CALLBACK(namelist_motion_cb), gc->proto_data);
     g_signal_connect(G_OBJECT(gtkchat->list), "leave-notify-event",
                      G_CALLBACK(namelist_leave_cb), NULL);
 
@@ -373,28 +380,40 @@ void add_chat_popup_stuff(GaimConversation* c) {
 
 
 }
-void add_im_popup_stuff(GaimConversation* c) {
-	GaimGtkConversation *gtkconv = GAIM_GTK_CONVERSATION(c);
-        GtkWidget *event = gtk_event_box_new();
-        gtk_widget_ref(gtkconv->tab_label);
-        gtk_container_remove(GTK_CONTAINER(gtkconv->tabby), GTK_WIDGET(gtkconv->tab_label));
-        gtk_widget_add_events(event, GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK);
-        g_signal_connect(G_OBJECT(event), "enter-notify-event", G_CALLBACK(tab_entry_cb), c);
-        g_signal_connect(G_OBJECT(event), "leave-notify-event", G_CALLBACK(tab_leave_cb), c);
-        gtk_box_pack_start(GTK_BOX(gtkconv->tabby), GTK_WIDGET(event), TRUE, TRUE, 0);
-        gtk_widget_show(GTK_WIDGET(event));
-        gtk_container_add(GTK_CONTAINER(event), GTK_WIDGET(gtkconv->tab_label));
-        gtk_widget_unref(gtkconv->tab_label);
-        gtk_widget_show(GTK_WIDGET(gtkconv->tab_label));
-        g_hash_table_insert(popup_timeouts, gtkconv->tab_label, g_new0(guint, 1));
+
+void add_im_popup_stuff(GaimConversation * c)
+{
+    GaimGtkConversation *gtkconv = GAIM_GTK_CONVERSATION(c);
+    GtkWidget *event = gtk_event_box_new();
+    gtk_widget_ref(gtkconv->tab_label);
+    gtk_container_remove(GTK_CONTAINER(gtkconv->tabby),
+                         GTK_WIDGET(gtkconv->tab_label));
+    gtk_widget_add_events(event,
+                          GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK);
+    g_signal_connect(G_OBJECT(event), "enter-notify-event",
+                     G_CALLBACK(tab_entry_cb), c);
+    g_signal_connect(G_OBJECT(event), "leave-notify-event",
+                     G_CALLBACK(tab_leave_cb), c);
+    gtk_box_pack_start(GTK_BOX(gtkconv->tabby), GTK_WIDGET(event), TRUE,
+                       TRUE, 0);
+    gtk_widget_show(GTK_WIDGET(event));
+    gtk_container_add(GTK_CONTAINER(event),
+                      GTK_WIDGET(gtkconv->tab_label));
+    gtk_widget_unref(gtkconv->tab_label);
+    gtk_widget_show(GTK_WIDGET(gtkconv->tab_label));
+    g_hash_table_insert(popup_timeouts, gtkconv->tab_label,
+                        g_new0(guint, 1));
 }
 
-void init_popups(){
-    popup_rects = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, g_free);
+void init_popups()
+{
+    popup_rects =
+        g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, g_free);
 
-    popup_timeouts = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, g_free);
+    popup_timeouts =
+        g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, g_free);
 
-    popups = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, (GDestroyNotify) gtk_widget_destroy);
+    popups =
+        g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL,
+                              (GDestroyNotify) gtk_widget_destroy);
 }
-
-

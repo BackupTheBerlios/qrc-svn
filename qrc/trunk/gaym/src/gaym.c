@@ -1119,11 +1119,11 @@ static int gaym_chat_send(GaimConnection * gc, int id, const char *what)
 
 static guint gaym_nick_hash(const char *nick)
 {
-    char *lc=NULL;
+    char *lc = NULL;
     guint bucket;
-    
-    if(!nick)
-	return 0;
+
+    if (!nick)
+        return 0;
     lc = g_utf8_strdown(nick, -1);
     bucket = g_str_hash(lc);
     g_free(lc);
@@ -1360,7 +1360,7 @@ static GaimPluginProtocolInfo prpl_info = {
     NULL,                       /* normalize */
     NULL,                       /* set_buddy_icon */
     NULL,                       /* remove_group */
-    NULL,		       /* get_cb_real_name */
+    NULL,                       /* get_cb_real_name */
     NULL,                       /* set_chat_topic */
     gaym_find_blist_chat,       /* find_blist_chat */
     gaym_roomlist_get_list,     /* roomlist_get_list */

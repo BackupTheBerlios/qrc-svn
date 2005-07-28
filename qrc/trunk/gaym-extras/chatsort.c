@@ -122,11 +122,12 @@ void change_sort_order(GtkWidget * button, void *data)
     }
 
 }
-void add_chat_sort_functions(GaimConversation* c) {
-     
+void add_chat_sort_functions(GaimConversation * c)
+{
+
     GaimGtkConversation *gtkconv = GAIM_GTK_CONVERSATION(c);
     GaimGtkChatPane *gtkchat = gtkconv->u.chat;
-    
+
     GtkBox *iconbox = (GtkBox *) gtkconv->info->parent;
     GtkWidget *button = gtk_button_new_with_label("E");
     gtk_button_set_relief(GTK_BUTTON(button), GTK_RELIEF_NONE);

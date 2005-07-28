@@ -30,6 +30,7 @@
 
 #include "gaym.h"
 
+#include "helpers.h"
 
 typedef struct {
     void (*callback) (void *, const char *, size_t);
@@ -197,81 +198,48 @@ static size_t parse_content_len(const char *data, size_t data_len)
 
 // This looks for Set-cookie: fields in headers, and adds those cookies
 // To the session struct.
+static void add_cookie(gpointer key, gpointer value, gpointer data)
+{
+    g_return_if_fail(key != NULL);
+    g_return_if_fail(value != NULL);
+    g_return_if_fail(data != NULL);
+    GaimUrlSession *session = (GaimUrlSession *) data;
+    gchar *cookies = session->cookies;
+    session->cookies =
+        g_strconcat(cookies ? cookies : "", key, "=", value, "; ", NULL);
+    g_free(cookies);
 
-// TODO If a cookie value is re-set, then it will be duplicated, since
-// Set-Cookie
-// field is just appended to already existing cookies. This is not an
-// issue for
-// the current gay.com implementation, but this should be changed, so that
-// receiving a duplicate cookie *updates* the existing value.
-// JBL 10-16-2004
+}
 static void parse_cookies(const char *webdata, GaimUrlSession * session,
                           size_t len)
 {
-
-
-    char *haystack = g_malloc0(len * sizeof(char));
-    size_t cookie_size;
-    strncpy(haystack, webdata, len);
-    char *next_token = haystack;
-    char *end_token;
-    char *new_cookie;
-
-    const char *match = "Set-cookie: ";
-    while ((next_token = strstr(next_token, match))) {
-
-        next_token += strlen(match);    // We don't want the "Set-cookie:
-        // " part!
-        end_token = strstr(next_token, "\r\n");
-
-        if (!end_token)
-            continue;
-        else {
-
-            cookie_size = end_token - next_token;
-
-            if (session->cookies)
-                new_cookie =
-                    g_strdup_printf("%s; %.*s", session->cookies,
-                                    cookie_size, next_token);
-            else
-                // FIXME: I think there is a function for resizing the
-                // memory
-                // which is more efficient then a allocation and freeing.
-                new_cookie =
-                    g_strdup_printf("%.*s", cookie_size, next_token);
-            if (new_cookie) {
-                g_free(session->cookies);       // g_strdup makes
-                // allocates memory, so
-                // get rid of the old
-                // stuff.
-                session->cookies = new_cookie;
-            }
-
-
-
+    gchar **cookies = g_strsplit(webdata, "\n", -1);
+    gchar **cookie_parts;
+    char *cookie;
+    int index = 0;
+    while (cookies[index]) {
+        cookie =
+            return_string_between("Set-cookie: ", "; ", cookies[index]);
+        if (cookie) {
+            cookie_parts = g_strsplit(cookie, "=", 2);
+            if (cookie_parts[0] && cookie_parts[1])
+                g_hash_table_replace(session->cookie_table,
+                                     cookie_parts[0], cookie_parts[1]);
         }
-
+        g_free(cookie);
+        index++;
     }
+    g_strfreev(cookies);
+    g_hash_table_foreach(session->cookie_table, (GHFunc) add_cookie,
+                         session);
+
 }
 
 
-// This is a modified version of gaim's url_fetched_cb function. It has
-// been
-// modified to pass cookies during requests. The cookies are set in
-// user_data,
-// cast as a GaimUrlSession item. Any cookies in the response are added to 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// 
-// this
-// structure, as well.
+/* This is a modified version of gaim's url_fetched_cb function. It has
+   been modified to pass cookies during requests. The cookies are set in
+   user_data, cast as a GaimUrlSession item. Any cookies in the response
+   are added to this structure, as well. */
 static void
 session_fetched_cb(gpointer url_data, gint sock, GaimInputCondition cond)
 {
@@ -299,36 +267,17 @@ session_fetched_cb(gpointer url_data, gint sock, GaimInputCondition cond)
                transfer encoding. Gaim doesn't know how to handle
                "chunked", so should always send the Host header
                regardless, to get around some observed problems */
-            g_snprintf(buf, sizeof(buf), "GET %s%s HTTP/%s\r\n" "User-Agent: %s\r\n" "Host: %s\r\n" "Cookie: %s\r\n",   // (1) 
-                                                                                                                        // 
-                       // 
-                       // 
-                       // 
-                       // 
-                       // 
-                       // 
-                       // 
-                       // 
-                       // (see 
-                       // above)
+            g_snprintf(buf, sizeof(buf),
+                       "GET %s%s HTTP/%s\r\n" "User-Agent: %s\r\n"
+                       "Host: %s\r\n" "Cookie: %s\r\n",
                        (gfud->full ? "" : "/"),
                        (gfud->full ? gfud->url : gfud->website.page),
-                       (gfud->http11 ? "1.1" : "1.0"),
-                       gfud->user_agent, gfud->website.address,
-                       gfud->session->cookies);
+                       (gfud->http11 ? "1.1" : "1.0"), gfud->user_agent,
+                       gfud->website.address, gfud->session->cookies);
         } else {
-            g_snprintf(buf, sizeof(buf), "GET %s%s HTTP/%s\r\n" "Host: %s\r\n" "Accept-Encoding: identity\r\n" "Cookie: %s\r\n",        // (1) 
-                                                                                                                                        // 
-                       // 
-                       // 
-                       // 
-                       // 
-                       // 
-                       // 
-                       // 
-                       // 
-                       // See 
-                       // above
+            g_snprintf(buf, sizeof(buf),
+                       "GET %s%s HTTP/%s\r\n" "Host: %s\r\n"
+                       "Accept-Encoding: identity\r\n" "Cookie: %s\r\n",
                        (gfud->full ? "" : "/"),
                        (gfud->full ? gfud->url : gfud->website.page),
                        (gfud->http11 ? "1.1" : "1.0"),
@@ -383,15 +332,9 @@ session_fetched_cb(gpointer url_data, gint sock, GaimInputCondition cond)
                                     gfud->len, gfud->len, gfud->webdata);
 
                     // JBL 10-16-2004: Put cookies into session
-                    gaim_debug(GAIM_DEBUG_MISC, "gaym",
-                               "Parsing cookies...");
 
                     parse_cookies(gfud->webdata, gfud->session, gfud->len);
-                    gaim_debug(GAIM_DEBUG_MISC, "gaym",
-                               "Found cookies: %s\n",
-                               (gfud->session->cookies));
-                    gaim_debug_misc("gaim_url_fetch",
-                                    "Parsing of cookies successful\n");
+
                     /* See if we can find a redirect. */
                     if (parse_redirect
                         (gfud->webdata, gfud->len, sock, gfud))
@@ -451,9 +394,6 @@ session_fetched_cb(gpointer url_data, gint sock, GaimInputCondition cond)
         gfud->webdata = g_realloc(gfud->webdata, gfud->len + 1);
         gfud->webdata[gfud->len] = 0;
 
-        /* gaim_debug_misc("gaim_url_fetch", "Received: '%s'\n",
-           gfud->webdata); */
-
         gaim_input_remove(gfud->inpa);
         close(sock);
         gfud->callback(gfud->user_data, gfud->webdata, gfud->len);
@@ -510,7 +450,6 @@ gaym_weblogin_step5(gpointer data, const char *text, size_t len)
     struct gaym_conn *gaym = session->gaym;
     // Get hash from text
     if (session && GAIM_CONNECTION_IS_VALID(session->account->gc)) {
-        // char *chat_key;
         char *bio;
         char *thumbnail;
         char *temp = NULL;
@@ -581,7 +520,7 @@ gaym_weblogin_step5(gpointer data, const char *text, size_t len)
             // gaim_connection_error(
             // gaim_account_get_connection(((struct
             // gaym_conn*)((GaimUrlSession*)session)->account),
-            // _("Problem parsing password from web. Report a bug."));
+            // _("Problem parsing password from web. Report a bug.")));
         }
         session->session_cb(gaym->account);
 
@@ -610,7 +549,7 @@ gaym_weblogin_step4(gpointer data, const char *text, size_t len)
         int nonce;
         char *buf = g_strdup_printf(_("Signon: %s"),
                                     (session->account->username));
-        gaim_connection_update_progress(session->account->gc, buf, 5, 6);
+        gaim_connection_update_progress(session->account->gc, buf, 3, 6);
         sscanf(text, "?rand=%d", &nonce);
         snprintf(url, 512,
                  "http://www.gay.com/messenger/applet.html?rand=%d",
@@ -628,75 +567,6 @@ gaym_weblogin_step4(gpointer data, const char *text, size_t len)
     }
 }
 
-
-static void
-gaym_weblogin_step3(gpointer data, const char *text, size_t len)
-{
-
-
-
-
-    GaimUrlSession *session = (GaimUrlSession *) data;
-
-    gaim_debug_misc("gaym", "Step 3: session: %x\n", session);
-    if (session && GAIM_CONNECTION_IS_VALID(session->account->gc)) {
-        if (!strstr(session->cookies, "MEMBERX")) {
-            gaim_connection_error((session->account->gc),
-                                  _
-                                  ("Problem during login. Are you sure your password is correct?"));
-            return;
-        }
-        // The third step is to get a nonce needed for getting the applet.
-        // We connect to messenger/frameset.html, using previously set
-        // cookie values.
-        // From the returned body, we will need to parse out the rand
-        // values.
-        char *url = "http://www.gay.com/messenger/frameset.html";
-        char *buf = g_strdup_printf(_("Signon: %s"),
-                                    (session->account->username));
-        gaim_connection_update_progress(session->account->gc, buf, 4, 6);
-        session->hasFormData = FALSE;
-        gaim_session_fetch(url, FALSE, NULL, FALSE, gaym_weblogin_step4,
-                           session, session);
-    } else {
-
-        gaim_debug_misc("gaym", "Connection was cancelled before step3\n");
-        gaim_debug_misc("gaym", "session: %x\n", session);
-        gaym_session_destroy(session);
-        // g_free(gaym->session);
-
-    }
-}
-static void
-gaym_weblogin_step2(gpointer data, const char *text, size_t len)
-{
-
-
-    GaimUrlSession *session = (GaimUrlSession *) data;
-    if (session && GAIM_CONNECTION_IS_VALID(session->account->gc)) {
-        gaim_debug_misc("gaym", "Step 2: connection is valid.\n");
-        // The second step is to do the actual login.
-        // We connect to misc/dologin.html, using cookies set from step 1
-        // And add a few more cookie values.
-        char url[1024];
-        char *buf = g_strdup_printf(_("Signon: %s"),
-                                    session->account->username);
-        gaim_connection_update_progress(session->account->gc, buf, 3, 6);
-
-        snprintf(url, 1024,
-                 "http://www.gay.com/misc/dologin.html?__login_haveForm=1&__login_save=1&__login_member=%s&redir=%%2Findex.html&__login_basepage=%%2Fmisc%%2Fdologin.html&__login_password=%s",
-                 session->username, session->password);
-
-        session->hasFormData = TRUE;
-        gaim_session_fetch(url, FALSE, NULL, FALSE, gaym_weblogin_step3,
-                           session, session);
-    } else {
-        gaim_debug_misc("gaym", "Connection was cancelled before step2\n");
-        gaim_debug_misc("gaym", "session: %x\n", session);
-        gaym_session_destroy(session);
-        // g_free(gaym->session);
-    }
-}
 void
 gaym_get_chat_key_from_weblogin(GaimAccount * account,
                                 void (*callback) (GaimAccount * account))
@@ -705,13 +575,6 @@ gaym_get_chat_key_from_weblogin(GaimAccount * account,
     struct gaym_conn *gaym = account->gc->proto_data;
     if (GAIM_CONNECTION_IS_VALID(account->gc)) {
 
-        // FIXME: By passing struct gaym_conn around through the 
-        // callbacks, instead of a GaimAccount struct, we will
-        // lose the information needed to free this session if 
-        // conncetion is cancelled. This needs to be modified
-        // to make sure that the GaimUrlSession *session memory
-        // is not leaked!
-
         GaimUrlSession *session = g_new0(GaimUrlSession, 1);
         session->session_cb = callback;
         session->cookies = NULL;
@@ -719,7 +582,8 @@ gaym_get_chat_key_from_weblogin(GaimAccount * account,
         session->username = g_strdup(account->username);
         session->password = g_strdup(account->password);
         session->gaym = gaym;
-
+        session->cookie_table =
+            g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
 
         gaim_debug_misc("gaym", "Made session: %x\n", session);
         if (GAIM_CONNECTION_IS_VALID
@@ -733,15 +597,7 @@ gaym_get_chat_key_from_weblogin(GaimAccount * account,
 
             session->hasFormData = TRUE;
             gaim_session_fetch(url, FALSE, NULL, FALSE,
-                               gaym_weblogin_step3, session, session);
-
-            /* char *url = "http://www.gay.com/index.html"; char *buf =
-               g_strdup_printf(_("Signon: %s"), ((GaimUrlSession *)
-               session)-> account->username);
-               gaim_connection_update_progress(((GaimUrlSession *)
-               session)-> account->gc, buf, 2, 6); session->hasFormData =
-               FALSE; gaim_session_fetch(url, FALSE, NULL, FALSE,
-               gaym_weblogin_step3, session, session); */
+                               gaym_weblogin_step4, session, session);
         } else {
             gaim_debug_misc("gaym", "cancelled before step1\n");
             gaim_debug_misc("gaym", "gaym->sessoin: %x\n", session);

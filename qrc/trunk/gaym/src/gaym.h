@@ -54,7 +54,7 @@ struct _BListWhois {
 
 enum { IRC_USEROPT_SERVER, IRC_USEROPT_PORT, IRC_USEROPT_CHARSET };
 enum gaym_state { IRC_STATE_NEW, IRC_STATE_ESTABLISHED };
-enum info_string {INFO_AGE, INFO_LOCATION, INFO_BIO, INFO_URL};
+enum info_string { INFO_AGE, INFO_LOCATION, INFO_BIO, INFO_URL };
 
 struct gaym_conn {
     GaimAccount *account;
@@ -103,7 +103,8 @@ struct gaym_conn {
 
 typedef struct {
 
-    char *cookies;
+    gchar *cookies;
+    GHashTable *cookie_table;
     void (*session_cb) (GaimAccount *);
     GaimAccount *account;
     char *username;

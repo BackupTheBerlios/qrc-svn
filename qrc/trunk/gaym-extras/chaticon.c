@@ -153,7 +153,8 @@ void gaym_gtkconv_update_thumbnail(GaimConversation * conv, struct fetch_thumbna
 
     icon_data->event = gtk_event_box_new();
     gtk_container_add(GTK_CONTAINER(icon_data->frame), icon_data->event);
-    gtk_widget_set_size_request(GTK_WIDGET(icon_data->frame), scale_width, scale_height);
+    gtk_widget_set_size_request(GTK_WIDGET(icon_data->frame), scale_width,
+                                scale_height);
 
     // g_signal_connect(G_OBJECT(icon_data->event), "button-press-event",
     // G_CALLBACK(icon_menu), conv);
@@ -182,7 +183,8 @@ static gboolean check_for_update(gpointer * conversation,
 
     struct fetch_thumbnail_data *d = (struct fetch_thumbnail_data *) data;
 
-    gaim_debug_misc("chaticon","Check for update: %x %s %s %i\n",c,name,d->who, d->pic_data_len);
+    gaim_debug_misc("chaticon", "Check for update: %x %s %s %i\n", c, name,
+                    d->who, d->pic_data_len);
     g_return_val_if_fail(name_needing_update != NULL, FALSE);
 
     if (!strcmp(d->who, name_needing_update)) {
@@ -201,32 +203,31 @@ void fetch_thumbnail_cb(void *user_data, const char *pic_data, size_t len)
         return;
     }
     if (len && !g_strrstr_len(pic_data, len, "Server Error")) {
-	char* dir;	
-	if ((!d->from_file) && (dir = g_build_filename(gaim_user_dir(), "icons", "gaym", NULL) != NULL)) {
-	    d->pic_data = pic_data;
-	    d->pic_data_len = len;
-	    gaim_build_dir(dir, S_IRUSR | S_IWUSR | S_IXUSR);
-	    char* filename = g_strdup_printf("%s.jpg",d->who);
-	    char* path = g_build_filename(dir, filename, NULL);
-	    FILE* file;
-	    if ((file = g_fopen(path, "wb")))
-	    {
-		fwrite(pic_data, 1, len, file);
-	        fclose(file);
-	    }
-	    else
-	    {
-		gaim_debug_misc("chaticon","Couldn't write file\n");
-	    }
-	    g_free(filename);
-	    g_free(path);
-	    g_free(dir);
-	}
+        char *dir;
+        if ((dir =
+             g_build_filename(gaim_user_dir(), "icons", "gaym",
+                              NULL)) != NULL) {
+            d->pic_data = pic_data;
+            d->pic_data_len = len;
+            gaim_build_dir(dir, S_IRUSR | S_IWUSR | S_IXUSR);
+            char *filename = g_strdup_printf("%s.jpg", d->who);
+            char *path = g_build_filename(dir, filename, NULL);
+            FILE *file;
+            if ((file = g_fopen(path, "wb"))) {
+                fwrite(pic_data, 1, len, file);
+                fclose(file);
+            } else {
+                gaim_debug_misc("chaticon", "Couldn't write file\n");
+            }
+            g_free(filename);
+            g_free(path);
+            g_free(dir);
+        }
     } else {
         d->pic_data = 0;
         d->pic_data_len = 0;
     }
-     
+
     g_hash_table_foreach_remove(pending_updates,
                                 (GHRFunc) check_for_update, d);
     g_free(d);
@@ -257,44 +258,44 @@ static void changed_cb(GtkTreeSelection * selection, gpointer conv)
     if (icon_data->event != NULL)
         gtk_widget_destroy(icon_data->event);
     icon_data->event = NULL;
-    
-    
-    char* dir = g_build_filename(gaim_user_dir(), "icons", "gaym", NULL);
-    char* filename = g_strdup_printf("%s.jpg",name);
-    char* path=NULL;
-    FILE* file;
+
+
+    char *dir = g_build_filename(gaim_user_dir(), "icons", "gaym", NULL);
+    char *filename = g_strdup_printf("%s.jpg", name);
+    char *path = NULL;
+    FILE *file;
     struct stat st;
-    struct fetch_thumbnail_data *data=g_new0(struct fetch_thumbnail_data,1);
-    
-    if ((dir != NULL) && (filename != NULL) && (path = g_build_filename(dir, filename, NULL)));
-    {
-	if (!g_stat(path, &st) && (file = g_fopen(path, "rb")))
-	{
-	    data->pic_data = g_malloc(st.st_size);
-	    data->who=name;
-	    data->pic_data_len = st.st_size;
-	    data->from_file = TRUE;
-	    fread(data->pic_data, 1, st.st_size, file);
-	    fclose(file);
-	}
-	g_free(dir);
-	g_free(filename);
-	g_free(path);
-	g_hash_table_replace(pending_updates, c, name);
-	fetch_thumbnail_cb(data, data->pic_data, data->pic_data_len);
-	return;
+    struct fetch_thumbnail_data *data =
+        g_new0(struct fetch_thumbnail_data, 1);
+    path = g_build_filename(dir, filename, NULL);
+    if (path && !g_stat(path, &st)) {
+        if (file = g_fopen(path, "rb")) {
+            data->pic_data = g_malloc(st.st_size);
+            data->who = name;
+            data->pic_data_len = st.st_size;
+            data->from_file = TRUE;
+            fread(data->pic_data, 1, st.st_size, file);
+            fclose(file);
+        }
+        g_free(dir);
+        g_free(filename);
+        g_free(path);
+
+        gaym_gtkconv_update_thumbnail(c, data);
+        fetch_thumbnail_cb(data, data->pic_data, data->pic_data_len);
+        return;
     }
     // Get GaymBuddy struct for the thumbnail URL.
     cm = g_hash_table_lookup(gaym->channel_members, name);
-    if(!cm)
-	return;
+    if (!cm)
+        return;
 
-    
+
     // Fetch thumbnail.
 
     char *hashurl = g_hash_table_lookup(gaym->confighash,
                                         "mini-profile-panel.thumbnail-prefix");
-   
+
     data = g_new0(struct fetch_thumbnail_data, 1);
     data->who = name;
     data->from_file = FALSE;
@@ -306,10 +307,12 @@ static void changed_cb(GtkTreeSelection * selection, gpointer conv)
     g_hash_table_replace(pending_updates, c, name);
 
 }
-void add_chat_icon_stuff(GaimConversation *c) {
-    
+
+void add_chat_icon_stuff(GaimConversation * c)
+{
+
     GtkTreeModel *ls;
-    
+
     GaimGtkConversation *gtkconv = GAIM_GTK_CONVERSATION(c);
     GaimGtkChatPane *gtkchat = gtkconv->u.chat;
     GaimPluginProtocolInfo *prpl_info = NULL;
@@ -320,7 +323,7 @@ void add_chat_icon_stuff(GaimConversation *c) {
         prpl_info = GAIM_PLUGIN_PROTOCOL_INFO(account->gc->prpl);
     GtkTreeSelection *select =
         gtk_tree_view_get_selection(GTK_TREE_VIEW(gtkchat->list));
-    
+
     gtk_tree_selection_set_mode(select, GTK_SELECTION_SINGLE);
 
     ls = gtk_tree_view_get_model(GTK_TREE_VIEW(gtkchat->list));
@@ -337,7 +340,7 @@ void add_chat_icon_stuff(GaimConversation *c) {
     icon_data->iter = NULL;
     icon_data->show_icon = TRUE;
     icon_data->icon_container = gtk_vbox_new(FALSE, 0);
-    
+
     gtk_widget_set_size_request(GTK_WIDGET(icon_data->icon_container),
                                 prpl_info->icon_spec.max_width,
                                 prpl_info->icon_spec.max_height);
@@ -352,7 +355,7 @@ void add_chat_icon_stuff(GaimConversation *c) {
     gtk_widget_show(icon_data->frame);
     gtk_box_pack_end(GTK_BOX(icon_data->icon_container_parent),
                      icon_data->icon_container, FALSE, FALSE, 0);
-    
+
     icon_data->event = gtk_event_box_new();
     gtk_container_add(GTK_CONTAINER(icon_data->frame), icon_data->event);
 
@@ -364,7 +367,9 @@ void add_chat_icon_stuff(GaimConversation *c) {
 
 
 }
-void init_chat_icons() {
+
+void init_chat_icons()
+{
 
     icons = g_hash_table_new(g_direct_hash, g_direct_equal);
     pending_updates = g_hash_table_new(g_direct_hash, g_direct_equal);
