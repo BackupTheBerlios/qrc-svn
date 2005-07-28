@@ -1556,7 +1556,7 @@ static GaimPluginInfo info = {
     NULL,                                                 /**< unload         */
     NULL,                                                 /**< destroy        */
 
-    gaym_get_channel_member_reference,                    /**< ui_info        */
+    NULL,				                   /**< ui_info        */
     &prpl_info,                                           /**< extra_info     */
     &prefs_info,
     gaym_actions
