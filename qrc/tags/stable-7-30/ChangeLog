@@ -1,0 +1,86 @@
+0.34.1+svn:
+	New Features:
+	- Bio displays in the buddy list status area
+	- Buddy list tooltip shows sex, age, location, and bio
+	- Your Bio is set to the Away Message when you are Away
+	- Improvement to the Room List layout:  First Available Room
+	  (Room Name:*) is both a Category (which can be expanded) and a
+	  Room (which can be joined), with the individual Room Instances
+	  as children
+	- Room members can now be sorted by length of time in the
+	  room (longest in the room at the bottom)
+
+	Bug Fixes:
+	- Better refreshing of stale buddy list photos
+	- Room List performance fixes
+	- Bio no longer replaces sex, age, and location values
+	- Less hard-coded information, more use of Gay.com's own
+	  configuration file (less susceptible to breakage if Gay.com
+	  changes something)
+	- Fixed a bug where certain "Get Info" requests were lost or
+	  returned info for the wrong person
+	- Addressed several memory leaks
+
+	Preference Changes:
+	- Sort chat room members by entrance time or category + name
+
+0.34.1:
+	Bug Fixes:
+	- Fixed protocol problem affecting member names beginning with
+	  non-alpha characters
+	- Fixed problem where "|" was replaced by "." in Chat and IM
+	  messages
+	- Addressed several memory leaks
+
+0.34.0:
+	New Features:
+	- Full win32 support for autotools and packaging
+	- Enabled and implemented all Gaim privacy hooks, including
+	  synchronization of ignore list with gay.com's server
+	- New /trace command to obtain IP address of a user
+	- New protocol icon
+	- Enabled "Warn", mapping it to gay.com's "Report User" web
+	  form.
+	- New bot-challenger plugin to block unwanted IM pop-ups
+	- New roombrowse plugin (alpha).
+	- New chatsort plugin (alpha).
+	- Permit user to customize bot filtering strings (see preference
+	  changes below)
+
+	Bug Fixes:
+	- More cleanup/fix of autotools
+	- Code / documentation / repository cleanup / restructuring
+	- Fixed problems that caused invalid characters/commands to be
+	  sent to the server when checking to see if buddy list members
+	  were on line
+
+	Preference Changes:
+	- Number of chat room instances to display
+	- Enable/disable bot filtering in chat
+	- Modification of bot filtering strings
+	- Download and use GayBoi's spam list
+	- Removed entrance/exit notification option, since this is
+	  available in another plugin:  http://gaim-extprefs.sf.net/
+
+0.33.0:
+	New Features:
+	- Improved thumbnail grabs
+	- Green star in chat indicates photo
+	- Half green star in chat indicates adult photo
+	- Retrieve member created rooms
+	- Add protocol icon support
+
+	Bug Fixes:
+	- Fixed crash when user has no bio or profile
+	- Use copy for nick conversions
+	- Null/dangling pointer fixes
+	- Cleanup/fix of autotools
+	- Show special characters properly in roomlist
+	- Show error when non-member tries to create a new room
+
+	Preference Changes:
+	- Entrance/exit notification option
+	- Optional bio line in entrance notification
+
+0.21.0:
+	Initial Release.
