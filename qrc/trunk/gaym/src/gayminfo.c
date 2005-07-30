@@ -239,7 +239,6 @@ void gaym_buddy_status(struct gaym_conn *gaym, char *name,
 		data->filename=g_strdup(g_strrstr(thumbnail, "/"));
 		gaim_debug_misc("gayminfo","Found filename: %s\n",data->filename);
 		url = g_strdup_printf("%s%s", hashurl, thumbnail);
-		g_free(thumbnail);
 		gaim_url_fetch(url, FALSE, "Mozilla/4.0", FALSE,
 			       gaym_fetch_thumbnail_cb, data);
 		g_free(url);

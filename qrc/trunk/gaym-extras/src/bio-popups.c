@@ -69,7 +69,7 @@ static void namelist_paint_tip(GtkWidget * tipwindow,
 #endif
 
     gtk_paint_layout(style, tipwindow->window, GTK_STATE_NORMAL, TRUE,
-                     NULL, tipwindow, "tooltip", 65, 4, layout);
+                     NULL, tipwindow, "tooltip", gdk_pixbuf_get_width(pixbuf)+9, 4, layout);
 
     g_object_unref(pixbuf);
     g_object_unref(layout);
@@ -219,10 +219,11 @@ static gboolean tooltip_timeout(struct timeout_cb_data *data)
     w = PANGO_PIXELS(w) + 8;
     h = PANGO_PIXELS(h) + 8;
 
-    /* 57 is the size of a large status icon plus 4 pixels padding on each 
-       side.  I should #define this or something */
+    /* For the width, set it to the text width, plus 13 for 4 pixels on each side and 5 between icon/text.
+     * For height, the greater of the text height and the icon height, plus 8 (4 for each buffer on top and bottom).
+     */
     w = w + gdk_pixbuf_get_width(pdata->pixbuf) + 4;
-    h = MAX(h, gdk_pixbuf_get_height(pdata->pixbuf)+4);
+    h = MAX(h, gdk_pixbuf_get_height(pdata->pixbuf)+8);
 
 #if GTK_CHECK_VERSION(2,2,0)
     if (w > mon_size.width)
@@ -417,7 +418,7 @@ void add_im_popup_stuff(GaimConversation * c)
     gtk_widget_ref(gtkconv->tab_label);
     gtk_container_remove(GTK_CONTAINER(gtkconv->tabby),
                          GTK_WIDGET(gtkconv->tab_label));
-    gtk_box_pack_start(GTK_BOX(hbox), GTK_WIDGET(gtkconv->tab_label), FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(hbox), GTK_WIDGET(gtkconv->tab_label), TRUE, TRUE, 0);
     gtk_widget_unref(gtkconv->tab_label);
     
         
