@@ -11,6 +11,8 @@
 // Adds motion handlers to IM tab labels.
 static void redo_im_window(GaimConversation * c)
 {
+    if (!g_strrstr(gaim_account_get_protocol_id(c->account),"prpl-gaym"))
+	    return;
     if (c && c->type == GAIM_CONV_IM)
         add_im_popup_stuff(c);
 }
@@ -18,11 +20,15 @@ static void redo_im_window(GaimConversation * c)
 
 static void update_info_cb(GaimAccount * account, char *name)
 {
+    if (!g_strrstr(gaim_account_get_protocol_id(account),"prpl-gaym"))
+	    return;
     gaim_debug_misc("gaym-extras", "info update\n");
 }
 
 static void redochatwindow(GaimConversation * c)
 {
+    if (!g_strrstr(gaim_account_get_protocol_id(c->account),"prpl-gaym"))
+	    return;
     add_chat_sort_functions(c);
     add_chat_popup_stuff(c);
     add_chat_icon_stuff(c);
@@ -46,6 +52,7 @@ static gboolean plugin_load(GaimPlugin * plugin)
     gaim_signal_connect(gaim_conversations_get_handle(),
                         "deleting-conversation", plugin,
                         GAIM_CALLBACK(clean_popup_stuff), NULL);
+
 
     return TRUE;
 }

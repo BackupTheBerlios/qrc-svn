@@ -6,6 +6,8 @@ GHashTable *popups;
 void clean_popup_stuff(GaimConversation * c)
 {
 
+    if (!g_strrstr(gaim_account_get_protocol_id(c->account),"prpl-gaym"))
+	    return;
     GaimGtkConversation *gtkconv = GAIM_GTK_CONVERSATION(c);
     if (c->type == GAIM_CONV_IM) {
         g_hash_table_remove(popup_timeouts, gtkconv->tab_label);
@@ -38,23 +40,38 @@ static void namelist_leave_cb(GtkWidget * tv, GdkEventCrossing * e,
 static void namelist_paint_tip(GtkWidget * tipwindow,
                                GdkEventExpose * event, gpointer data)
 {
-    char *tooltiptext = ((struct paint_data *) data)->tooltiptext;
+    char *tooltiptext= ((struct paint_data *) data)->tooltiptext;
     const char *name = ((struct paint_data *) data)->name;
-    GtkStyle *style;
-    char *filename = g_strdup_printf("%s.jpg", name);
-    char *path =
-        g_build_filename(gaim_user_dir(), "icons", "gaym", filename, NULL);
-    gaim_debug_misc("popups", "trying to load image %s\n", path);
-    GError *err = NULL;
-    GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file(path, &err);
-    if (err) {
-        gaim_debug_error("popups", "Pixbuf error: %s\n", err->message);
-        g_error_free(err);
+    GaimAccount* account = ((struct paint_data *)data)->account;
+    GDir* gdir=NULL;
+    GError* err=NULL;
+    GtkStyle *style=NULL;
+    GdkPixbuf *pixbuf=NULL;
+    const char *filename=NULL;
+    char* dirname=NULL;
+    char* path=NULL;
+   
+    dirname=g_build_filename(gaim_user_dir(), "icons", "gaym", name, NULL);
+    if(dirname) 
+    {
+	gdir=g_dir_open(dirname, 0 , &err);
+	if(gdir)
+	{
+	    while(filename=g_dir_read_name(gdir))
+	    {	
+		path=g_build_filename(dirname,filename,NULL);
+		if(path)
+		{
+		    pixbuf=gdk_pixbuf_new_from_file(path, &err);
+		    g_free(path);
+		}
+	    }
+	    g_free(gdir);
+	}
+	g_free(dirname);
     }
-    g_free(filename);
-    g_free(path);
-
-    // GAIM_STATUS_ICON_LARGE);
+	
+    
     PangoLayout *layout;
 
     layout = gtk_widget_create_pango_layout(tipwindow, NULL);
@@ -106,7 +123,7 @@ static gboolean tooltip_timeout(struct timeout_cb_data *data)
 
     GaymTooltipType type = data->type;
     struct gaym_conn *gaym = data->gaym;
-    g_free(data);
+    
     GaimPluginProtocolInfo *prpl_info =
         GAIM_PLUGIN_PROTOCOL_INFO(gaim_find_prpl
                                   (gaim_account_get_protocol_id
@@ -149,15 +166,9 @@ static gboolean tooltip_timeout(struct timeout_cb_data *data)
     tooltiptext = prpl_info->tooltip_text(gb);
     g_free(gb->name);
     g_free(gb);
-    if (!tooltiptext) {
-        guint *timeout = g_hash_table_lookup(popup_timeouts, tv);
-        if (timeout) {
-            int delay =
-                gaim_prefs_get_int("/gaim/gtk/blist/tooltip_delay");
-            g_timeout_add(delay, (GSourceFunc) tooltip_timeout, data);
-        }
+
+    if (!tooltiptext) 
         return FALSE;
-    }
 
 
     g_return_val_if_fail(tooltiptext != NULL, FALSE);
@@ -175,7 +186,8 @@ static gboolean tooltip_timeout(struct timeout_cb_data *data)
 
     struct paint_data *pdata = g_new0(struct paint_data, 1);
     pdata->tooltiptext = tooltiptext;
-    pdata->name = name;
+    pdata->name = gaim_normalize(gaym->account, name);
+    pdata->account = gaym->account;
     g_signal_connect(G_OBJECT(tipwindow), "expose_event",
                      G_CALLBACK(namelist_paint_tip), pdata);
     gtk_widget_ensure_style(tipwindow);
@@ -308,12 +320,17 @@ static gboolean namelist_motion_cb(GtkWidget * tv, GdkEventMotion * event,
 }
 
 static void tab_leave_cb(GtkWidget * event, GdkEventCrossing * e,
-                         gpointer n)
+                         gpointer conv)
 {
+    
+    GaimConversation *c = (GaimConversation *) conv;
+   
+    GaimGtkConversation *gtkconv = GAIM_GTK_CONVERSATION(c);
     // Prevent clicks from demolishing popup.
     if (e->mode != GDK_CROSSING_NORMAL)
         return;
-    GtkWidget *tab = gtk_bin_get_child(GTK_BIN(event));
+    GtkWidget *tab = gtkconv->tab_label;
+  
     guint *timeout = g_hash_table_lookup(popup_timeouts, tab);
     g_hash_table_remove(popups, tab);
 
@@ -325,7 +342,7 @@ static void tab_leave_cb(GtkWidget * event, GdkEventCrossing * e,
 }
 
 
-static gboolean tab_entry_cb(GtkWidget * event,
+static gboolean tab_entry_cb(GtkWidget *event,
                              GdkEventCrossing * crossing, gpointer conv)
 {
 
@@ -333,8 +350,10 @@ static gboolean tab_entry_cb(GtkWidget * event,
     guint delay;
     GaimConversation *c = (GaimConversation *) conv;
     struct gaym_conn *gaym = gaim_conversation_get_gc(c)->proto_data;
+    
+    GaimGtkConversation *gtkconv = GAIM_GTK_CONVERSATION(c);
 
-    GtkWidget *tab = gtk_bin_get_child(GTK_BIN(event));
+    GtkWidget *tab = gtkconv->tab_label;
     timeout = g_hash_table_lookup(popup_timeouts, tab);
 
     delay = gaim_prefs_get_int("/gaim/gtk/blist/tooltip_delay");
@@ -385,9 +404,22 @@ void add_im_popup_stuff(GaimConversation * c)
 {
     GaimGtkConversation *gtkconv = GAIM_GTK_CONVERSATION(c);
     GtkWidget *event = gtk_event_box_new();
+    GtkWidget *hbox = gtk_hbox_new(FALSE, 6);
+    
+    gtk_widget_ref(gtkconv->icon);
+    gtk_container_remove(GTK_CONTAINER(gtkconv->tabby),
+                         GTK_WIDGET(gtkconv->icon));
+    gtk_box_pack_start(GTK_BOX(hbox), GTK_WIDGET(gtkconv->icon), FALSE, FALSE, 0);
+    gtk_widget_ref(gtkconv->icon);
+    gtk_widget_unref(gtkconv->icon);
+
     gtk_widget_ref(gtkconv->tab_label);
     gtk_container_remove(GTK_CONTAINER(gtkconv->tabby),
                          GTK_WIDGET(gtkconv->tab_label));
+    gtk_box_pack_start(GTK_BOX(hbox), GTK_WIDGET(gtkconv->tab_label), FALSE, FALSE, 0);
+    gtk_widget_unref(gtkconv->tab_label);
+    
+        
     gtk_widget_add_events(event,
                           GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK);
     g_signal_connect(G_OBJECT(event), "enter-notify-event",
@@ -396,11 +428,12 @@ void add_im_popup_stuff(GaimConversation * c)
                      G_CALLBACK(tab_leave_cb), c);
     gtk_box_pack_start(GTK_BOX(gtkconv->tabby), GTK_WIDGET(event), TRUE,
                        TRUE, 0);
+    gtk_box_reorder_child(GTK_BOX(gtkconv->tabby), GTK_WIDGET(event), 0);
     gtk_widget_show(GTK_WIDGET(event));
+    gtk_widget_show(GTK_WIDGET(hbox));
+    gtk_event_box_set_visible_window(GTK_EVENT_BOX(event), FALSE);
     gtk_container_add(GTK_CONTAINER(event),
-                      GTK_WIDGET(gtkconv->tab_label));
-    gtk_widget_unref(gtkconv->tab_label);
-    gtk_widget_show(GTK_WIDGET(gtkconv->tab_label));
+                      GTK_WIDGET(hbox));
     g_hash_table_insert(popup_timeouts, gtkconv->tab_label,
                         g_new0(guint, 1));
 }

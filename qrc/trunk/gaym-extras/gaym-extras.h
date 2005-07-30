@@ -24,7 +24,9 @@ struct fetch_thumbnail_data {
 struct paint_data {
     char *tooltiptext;
     const char *name;
+    GaimAccount* account;
 };
+
 // Additional UI info for a conversation.
 // We may be able to clean this up, some.
 typedef struct _GaymChatIcon {
@@ -36,11 +38,6 @@ typedef struct _GaymChatIcon {
     GtkWidget *icon;
     GtkWidget *event;
     gboolean show_icon;
-    GdkPixbufAnimation *anim;
-    GdkPixbufAnimationIter *iter;
-    gboolean animate;
-    guint32 icon_timer;
-    GtkWidget *bio_area;
 
 } GaymChatIcon;
 
@@ -62,7 +59,7 @@ struct timeout_cb_data {
 };
 
 
-
+void get_icon_scale_size(GdkPixbuf* icon, GaimBuddyIconSpec * spec,int *width, int *height);
 void clean_popup_stuff(GaimConversation * c);
 void add_chat_icon_stuff(GaimConversation *c);
 void add_chat_popup_stuff(GaimConversation *c);
