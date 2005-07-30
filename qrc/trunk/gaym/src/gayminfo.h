@@ -35,6 +35,7 @@
 struct gaym_fetch_thumbnail_data {
     GaimConnection *gc;
     char *who;
+    char *filename;
     char *bio;
     char *stats;
     // const char *pic_data;

@@ -85,30 +85,6 @@ void gaym_msg_away(struct gaym_conn *gaym, const char *name,
     serv_got_im(gc, args[1], args[2], GAIM_CONV_IM_AUTO_RESP, time(NULL));
 }
 
-void gaym_fetch_thumbnail_cb(void *user_data, const char *pic_data,
-                             size_t len)
-{
-    if (!user_data)
-        return;
-    struct gaym_fetch_thumbnail_data *d = user_data;
-    if (!pic_data) {
-        gaim_signal_emit(gaim_accounts_get_handle(), "buddy-icon-fetched",
-                         d->gc, NULL, d->who);
-        return;
-    }
-
-
-    if (GAIM_CONNECTION_IS_VALID(d->gc) && len) {
-        gaim_buddy_icons_set_for_user(gaim_connection_get_account(d->gc),
-                                      d->who, (void *) pic_data, len);
-    } else {
-        gaim_debug_error("gaym", "Fetching buddy icon failed.\n");
-    }
-
-    g_free(d->who);
-    g_free(d);
-}
-
 static void gaym_fetch_photo_cb(void *user_data, const char *info_data,
                                 size_t len)
 {

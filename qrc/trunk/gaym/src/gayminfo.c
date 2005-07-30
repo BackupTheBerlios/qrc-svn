@@ -111,6 +111,56 @@ void gaym_update_channel_member(struct gaym_conn *gaym, const char *nick,
 
     }
 }
+void gaym_fetch_thumbnail_cb(void *user_data, const char *pic_data,
+                             size_t len)
+{
+    if (!user_data)
+        return;
+    struct gaym_fetch_thumbnail_data *d = user_data;
+    if (!pic_data) {
+        return;
+    }
+    
+    if (len && !g_strrstr_len(pic_data, len, "Server Error")) {
+        char *dir = g_build_filename(gaim_user_dir(), "icons", "gaym", d->who, NULL);
+        char *filename = g_strdup(d->filename);
+        char *path = g_build_filename(dir, filename, NULL);
+	gaim_debug_misc("gayminfo","dir: %s\n",dir);
+	gaim_debug_misc("gayminfo","filename: %s\n",filename);
+	gaim_debug_misc("gayminfo","path: %s\n",path);
+	if(!g_file_test(dir, G_FILE_TEST_EXISTS))
+            gaim_build_dir(dir, S_IRUSR | S_IWUSR | S_IXUSR);
+	
+	if(path && !g_file_test(path, G_FILE_TEST_EXISTS)) {
+            FILE *file;
+            if ((file = g_fopen(path, "wb"))) {
+                fwrite(pic_data, 1, len, file);
+                fclose(file);
+            } else {
+                gaim_debug_misc("fetch_thumbnail_cb", "Couldn't write file\n");
+            }
+            g_free(filename);
+            g_free(path);
+            g_free(dir);
+        }
+    }
+    if (GAIM_CONNECTION_IS_VALID(d->gc) && len) {
+        gaim_signal_emit(gaim_accounts_get_handle(), "info-updated",
+                         d->gc, NULL, d->who);
+        if(gaim_find_conversation_with_account(d->who, d->gc->account)) 
+	{
+	   gaim_buddy_icons_set_for_user(gaim_connection_get_account(d->gc),
+                                      d->who, (void *) pic_data, len);
+	}
+	   
+    } else {
+        gaim_debug_error("gaym", "Fetching buddy icon failed.\n");
+    }
+
+    g_free(d->who);
+    g_free(d);
+}
+
 void gaym_buddy_status(struct gaym_conn *gaym, char *name,
                        gboolean online, char *info)
 {
@@ -150,31 +200,54 @@ void gaym_buddy_status(struct gaym_conn *gaym, char *name,
     struct gaym_buddy *ib = g_hash_table_lookup(gaym->buddies, name);
 
     char *normalized = g_strdup(gaim_normalize(gaym->account, name));
-    char *im_thumbnail =
-        g_hash_table_lookup(gaym->im_thumbnail_needed, normalized);
-
+    
     if (thumbnail) {
-        if ((ib && gaim_utf8_strcasecmp(thumbnail, ib->thumbnail))
-            || im_thumbnail) {
-
-            char *hashurl = NULL;
-            hashurl =
-                g_hash_table_lookup(gaym->confighash,
-                                    "mini-profile-panel.thumbnail-prefix");
-            g_return_if_fail(hashurl != NULL);
-            data = g_new0(struct gaym_fetch_thumbnail_data, 1);
-            data->gc = gaim_account_get_connection(gaym->account);
-            data->who = g_strdup(name);
-            url = g_strdup_printf("%s%s", hashurl, thumbnail);
-            gaim_url_fetch(url, FALSE, "Mozilla/4.0", FALSE,
-                           gaym_fetch_thumbnail_cb, data);
-            g_free(url);
-        }
+	gboolean do_fetch=1;
+	GError* err=NULL;
+        if (!ib || gaim_utf8_strcasecmp(thumbnail, ib->thumbnail)) {
+	    char* dirname=g_build_filename(gaim_user_dir(), "icons", "gaym", gaim_normalize(gaym->account,name), NULL);
+	    GDir* gdir=g_dir_open(dirname, 0 , &err);
+	    if(gdir)
+	    {
+	        const char* filename;
+		
+	        while((filename=g_dir_read_name(gdir))) //don't free filename: owned by glib.
+		{
+		    char* thumbnail_base=g_path_get_basename(thumbnail);
+		    gaim_debug_misc("gaym","compared %s and %s\n",thumbnail_base, filename);
+		    if(!gaim_utf8_strcasecmp(thumbnail_base, filename))
+		    {
+			do_fetch=0;
+			break;
+		    }
+		    g_free(thumbnail_base);
+		}	
+	    }
+	    if(do_fetch) {
+		
+		gaim_debug_misc("gaym","********************************************\n");
+		gaim_debug_misc("gaym","*****************FETCH**********************\n");
+		gaim_debug_misc("gaym","********************************************\n");
+		char *hashurl = NULL;
+		hashurl =
+		    g_hash_table_lookup(gaym->confighash,
+					"mini-profile-panel.thumbnail-prefix");
+		g_return_if_fail(hashurl != NULL);
+		data = g_new0(struct gaym_fetch_thumbnail_data, 1);
+		data->gc = gaim_account_get_connection(gaym->account);
+		data->who = g_strdup(gaim_normalize(gaym->account,name));
+		data->filename=g_strdup(g_strrstr(thumbnail, "/"));
+		gaim_debug_misc("gayminfo","Found filename: %s\n",data->filename);
+		url = g_strdup_printf("%s%s", hashurl, thumbnail);
+		g_free(thumbnail);
+		gaim_url_fetch(url, FALSE, "Mozilla/4.0", FALSE,
+			       gaym_fetch_thumbnail_cb, data);
+		g_free(url);
+	    }
+    
+	}
     }
 
-    if (im_thumbnail) {
-        g_hash_table_remove(gaym->im_thumbnail_needed, normalized);
-    }
     g_free(normalized);
 
     if (ib) {

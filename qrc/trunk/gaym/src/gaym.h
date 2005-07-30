@@ -80,7 +80,6 @@ struct gaym_conn {
 
     gboolean blist_updating;
     GHashTable *info_window_needed;
-    GHashTable *im_thumbnail_needed;
 
     GString *motd;
     GString *names;

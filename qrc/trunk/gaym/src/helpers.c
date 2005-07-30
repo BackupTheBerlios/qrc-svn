@@ -20,7 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 #include "internal.h"
-
+#include "debug.h"
 #include "helpers.h"
 
 void gcom_nick_to_gaym(char *nick)
@@ -205,25 +205,27 @@ gboolean gaym_nick_check(const char *nick)
 
 void replace_dollar_n(gpointer key, gpointer value, gpointer user_data)
 {
-    int i = 0;
-    gchar *tmpstr = (gchar *) value;
+ 
     /**
      * replace $[0-9] with %s, so we can use printf style
      * processing with the provided property values
      */
-    for (i = 0; i < strlen(tmpstr); i++) {
-        if (tmpstr[i] == '$') {
-            if (g_ascii_isdigit(tmpstr[i + 1])) {
-                tmpstr[i] = '%';
-                tmpstr[i + 1] = 's';
-                i++;
-            }
-        }
+    char* pos=(char*)value;
+    while((pos=(strchr(pos, '$'))))
+    {
+	pos++;
+	if(g_ascii_isdigit(pos))
+	{
+		*pos='s';
+		*(pos-1)='%';
+		
+	}
     }
 }
 
 GHashTable *gaym_properties_new(const gchar * str)
 {
+    
     gchar *tmpstr = NULL;
     gchar **tmparr = NULL;
     gchar **proparr = NULL;
@@ -240,11 +242,20 @@ GHashTable *gaym_properties_new(const gchar * str)
     /**
      * strip out continuation character followed by newline 
      */
-    tmparr = g_strsplit(tmpstr, "\\\n", -1);
-    g_free(tmpstr);
-    tmpstr = g_strjoinv(NULL, tmparr);
-    g_strfreev(tmparr);
-
+    //tmparr = g_strsplit(tmpstr, "\\\n", -1);
+    //g_free(tmpstr);
+    //tmpstr = g_strjoinv(NULL, tmparr);
+    //g_strfreev(tmparr);
+    /**
+     * Since the properties get stripped of spaces later,
+     * just replace \\\n with <space>\n in-place, for speed.
+     * */
+    char* pos=tmpstr;
+    while((pos=g_strrstr(pos, "\\\n")))
+    {
+	*pos=' ';
+	*(pos+1)=' ';
+    }
     /**
      * We're getting close.  Now we need an array as follows:
      *
@@ -280,10 +291,12 @@ GHashTable *gaym_properties_new(const gchar * str)
         proparr = g_strsplit(tmparr[i], "=", 2);
         if (proparr[0] && strlen(g_strstrip(proparr[0])) > 0
             && proparr[1] && strlen(g_strstrip(proparr[1])) > 0) {
-            g_hash_table_insert(props, g_strdup(proparr[0]),
+            
+		g_hash_table_insert(props, g_strdup(proparr[0]),
                                 g_strdup(proparr[1]));
-            g_strfreev(proparr);
+	    
         }
+	g_strfreev(proparr);
     }
 
     g_strfreev(tmparr);

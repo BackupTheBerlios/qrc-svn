@@ -510,8 +510,6 @@ static void gaym_login(GaimAccount * account)
      * for thumbails inside the IM conversation window if the
      * person is not already on the buddy list
      */
-    gaym->im_thumbnail_needed =
-        g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
 
     buf = g_strdup_printf(_("Signon: %s"), username);
     gaim_connection_update_progress(gc, buf, 1, 6);
@@ -537,7 +535,7 @@ static void gaym_get_configtxt_cb(gpointer proto_data,
     gaym->confighash = gaym_properties_new(config_text);
     g_return_if_fail(gaym->confighash != NULL);
 
-    synchronize_deny_list(gc, gaym->confighash);
+    //synchronize_deny_list(gc, gaym->confighash);
 
     return;
 }
@@ -686,7 +684,6 @@ static void gaym_close(GaimConnection * gc)
     g_hash_table_destroy(gaym->msgs);
     g_hash_table_destroy(gaym->info_window_needed);
     g_hash_table_destroy(gaym->entry_order);
-    g_hash_table_destroy(gaym->im_thumbnail_needed);
     if (gaym->motd)
         g_string_free(gaym->motd, TRUE);
 
@@ -1438,10 +1435,6 @@ static void gaym_get_photo_info(GaimConversation * conv)
          * with the WHOIS to get the photo for the IM thumbnail
          */
 
-        char *normalized =
-            g_strdup(gaim_normalize(gc->account, conv->name));
-        g_hash_table_insert(gaym->im_thumbnail_needed, normalized,
-                            normalized);
 
         name = gaym_nick_to_gcom_strdup(conv->name);
         buf = gaym_format(gaym, "vn", "WHOIS", name);
@@ -1597,11 +1590,13 @@ static void _init_plugin(GaimPlugin * plugin)
 
     gaim_signal_register(gaim_accounts_get_handle(),
                          "info-updated",
-                         gaim_marshal_VOID__POINTER_POINTER, NULL, 3,
+                         gaim_marshal_VOID__POINTER_POINTER, NULL, 2,
                          gaim_value_new(GAIM_TYPE_SUBTYPE,
                                         GAIM_SUBTYPE_ACCOUNT),
                          gaim_value_new(GAIM_TYPE_POINTER,
                                         GAIM_TYPE_CHAR));
+    
+    
 
     gaim_prefs_add_none("/plugins/prpl/gaym");
     gaim_prefs_add_int("/plugins/prpl/gaym/chat_room_instances", 4);
