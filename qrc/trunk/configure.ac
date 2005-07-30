@@ -65,6 +65,11 @@ if test "$enable_gaym_extras" != "yes" ; then
 fi
 
 # Checks for libraries.
+AC_ARG_WITH([gaim-prefix],
+	[AS_HELP_STRING(--with-gaim-prefix,specify the prefix where gaim is found)],
+	PKG_CONFIG_PATH=$withval/lib/pkgconfig,[])
+export PKG_CONFIG_PATH
+
 PKG_PROG_PKG_CONFIG([$REQUIRED_PKG_CONFIG])
 if test "$enable_gaym_extras" = "yes" ; then
 	PKG_CHECK_MODULES([GTK], [$REQUIRED_GTK],
@@ -74,17 +79,12 @@ if test "$enable_gaym_extras" = "yes" ; then
 		]
 	)
 fi
-AC_ARG_WITH([gaim-prefix],
-	[AS_HELP_STRING(--with-gaim-prefix,specify the prefix where gaim is found)],
-	PKG_CONFIG_PATH=$withval/lib/pkgconfig,[])
-export PKG_CONFIG_PATH
 PKG_CHECK_MODULES([GAIM], [$REQUIRED_GAIM],
 	[
 	AC_SUBST(GAIM_CFLAGS)
 	AC_SUBST(GAIM_LIBS)
 	]
 )
-
 AC_ARG_VAR([GAIM_DATADIR], [datadir of GAIM, overriding pkg-config])dnl
 AC_ARG_VAR([GAIM_LIBDIR], [libdir of GAIM, overriding pkg-config])dnl
 AC_CACHE_CHECK([for GAIM][_DATADIR], [pkg_cv_][GAIM][_DATADIR],
