@@ -52,7 +52,7 @@ sort_chat_users_by_alpha(GtkTreeModel * model, GtkTreeIter * a,
 
 
 static gint
-sort_chat_users_by_category(GtkTreeModel * model, GtkTreeIter * a,
+sort_chat_users_by_pic(GtkTreeModel * model, GtkTreeIter * a,
                             GtkTreeIter * b, gpointer userdata)
 {
     GaimConvChatBuddyFlags f1 = 0, f2 = 0;
@@ -84,59 +84,62 @@ sort_chat_users_by_category(GtkTreeModel * model, GtkTreeIter * a,
 }
 
 
+static struct gaym_sort_orders
+{
+	const char* icon;
+	void* sort_funcion;
+	const char* tooltip;
+} const order[] =
+    
+{ 
+	{GAYM_STOCK_ENTRY, sort_chat_users_by_entry, _("Current sorting by entry") },
+	{GAYM_STOCK_ALPHA, sort_chat_users_by_alpha, _("Current sorting by alpha") },
+	{GAYM_STOCK_PIC, sort_chat_users_by_pic, _("Current sorting by pic") }
+};
 
+   
 void change_sort_order(GtkWidget * button, void *data)
 {
-
-    static GaymSortOrder order = SORT_ENTRY;
-
-
-    GtkTreeView *list = (GtkTreeView *) data;
-    GtkTreeModel *model = gtk_tree_view_get_model(GTK_TREE_VIEW(list));
-    gaim_debug_misc("chatsort", "list: %x, data: %x, model: %x\n", list,
-                    data, model);
-    if (order == SORT_ALPHA) {
-        order = SORT_CATEGORY;
-        gaim_debug_misc("chatsort", "Change to entry order");
-        gtk_button_set_label(GTK_BUTTON(button), "E");
-        gtk_tree_sortable_set_sort_func(GTK_TREE_SORTABLE(model),
+   
+    static int current=0;
+    current=(current+1)%G_N_ELEMENTS(order);
+    GaimGtkConversation *gtkconv = (GaimGtkConversation *) data;
+    GaimGtkChatPane *gtkchat = gtkconv->u.chat;
+    GtkTreeModel *model = gtk_tree_view_get_model(GTK_TREE_VIEW(gtkchat->list));
+    
+    GtkBox* buttonbox = GTK_BOX(button->parent);
+    gtk_widget_destroy(button);
+    button = GTK_WIDGET(gaim_gtkconv_button_new(order[current].icon, 
+						NULL,//_("E"), 
+						order[current].tooltip, 
+						gtkconv->tooltips, 
+						change_sort_order, 
+						gtkconv));
+    gtk_box_pack_end(buttonbox, button, FALSE, FALSE, 0);
+    gtk_widget_show(button);
+    gtk_tree_sortable_set_sort_func(GTK_TREE_SORTABLE(model),
                                         CHAT_USERS_NAME_COLUMN,
-                                        sort_chat_users_by_category, NULL,
+                                        order[current].sort_funcion, NULL,
                                         NULL);
-    } else if (order == SORT_CATEGORY) {
-        order = SORT_ENTRY;
-        gaim_debug_misc("chatsort", "Change to category order");
-        gtk_button_set_label(GTK_BUTTON(button), "P");
-        gtk_tree_sortable_set_sort_func(GTK_TREE_SORTABLE(model),
-                                        CHAT_USERS_NAME_COLUMN,
-                                        sort_chat_users_by_entry, NULL,
-                                        NULL);
-    } else {
-        order = SORT_ALPHA;
-        gaim_debug_misc("chatsort", "Change to alpha order");
-        gtk_button_set_label(GTK_BUTTON(button), "A");
-        gtk_tree_sortable_set_sort_func(GTK_TREE_SORTABLE(model),
-                                        CHAT_USERS_NAME_COLUMN,
-                                        sort_chat_users_by_alpha, NULL,
-                                        NULL);
-    }
+
+
 
 }
 void add_chat_sort_functions(GaimConversation * c)
 {
 
     GaimGtkConversation *gtkconv = GAIM_GTK_CONVERSATION(c);
-    GaimGtkChatPane *gtkchat = gtkconv->u.chat;
 
     GtkBox *iconbox = (GtkBox *) gtkconv->info->parent;
-    GtkWidget *button = gtk_button_new_with_label("E");
-    gtk_button_set_relief(GTK_BUTTON(button), GTK_RELIEF_NONE);
+    //    GtkWidget *button = gtk_button_new_with_label("E");
+    GtkWidget *button = gaim_gtkconv_button_new(GAYM_STOCK_ENTRY, 
+						NULL,//_("E"), 
+						_("Currently sorting by entry"), 
+						gtkconv->tooltips, 
+						change_sort_order, 
+						gtkconv);
     gtk_box_pack_end(iconbox, button, FALSE, FALSE, 0);
     gtk_widget_show(button);
-    g_signal_connect(G_OBJECT(button), "clicked",
-                     G_CALLBACK(change_sort_order), gtkchat->list);
-    gaim_debug_misc("chatsort", "Connected signal with data %x\n",
-                    gtkchat->list);
 
 
 }

@@ -9,9 +9,12 @@ Name "Gaim-QRC ${QRC_VERSION}"
 !define QRC_UNINST_EXE     "gaim-qrc-uninst.exe"
 !define GAYM_DLL           "libgaym.dll"
 !define BOT_CHALLENGER_DLL "libbot-challenger.dll"
+!define GAYM_EXTRAS_DLL	   "libgaym-extras.dll"
 !define GAYM_PNG           "gaym.png"
 !define QRC_UNINSTALL_LNK  "Gaim-QRC Uninstall.lnk"
-
+!define	ALPHA_PNG	   "alpha.png"
+!define	ENTRY_PNG	   "entry.png"
+!define	PIC_PNG		    "pic.png"
 !include "MUI.nsh"
 
 ;Do A CRC Check
@@ -30,7 +33,7 @@ SetCompressor lzma
 ; Gaim Plugin installer helper stuff
 
 !addincludedir "${GAIM_TOP}\src\win32\nsis"
-!include "gaim-plugin.nsh"
+!include "${GAIM_TOP}\src\win32\nsis\gaim-plugin.nsh"
 
 ; Modern UI Configuration
 !define MUI_HEADERIMAGE
@@ -130,7 +133,11 @@ Section -SecUninstallOldPlugin
               ; plugin DLL
               Delete "$R1\plugins\${GAYM_DLL}"
               Delete "$R1\plugins\${BOT_CHALLENGER_DLL}"
+              Delete "$R1\plugins\${GAYM_EXTRAS_DLL}"
               ; pixmaps
+	      Delete "$R1\pixmaps\${ALPHA_PNG}"
+	      Delete "$R1\pixmaps\${ENTRY_PNG}"
+	      Delete "$R1\pixmaps\${PIC_PNG}"
               Delete "$R1\pixmaps\gaim\status\default\${GAYM_PNG}"
               Delete "$R3"
 
@@ -175,11 +182,16 @@ Section "Install"
     SetCompress Auto
     SetOverwrite on
     File "..\gaym\src\.libs\${GAYM_DLL}"
+    File "..\gaym-extras\.libs\${GAYM_EXTRAS_DLL}"
     File "..\bot-challenger\.libs\${BOT_CHALLENGER_DLL}"
     
     SetOutPath "$INSTDIR\pixmaps\gaim\status\default"
     File "..\gaym\pixmaps\${GAYM_PNG}"
-    
+    	
+    SetOutPath "$INSTDIR\pixmaps"
+    File "..\gaym-extras\pixmaps\${ALPHA_PNG}"
+    File "..\gaym-extras\pixmaps\${ENTRY_PNG}"
+    File "..\gaym-extras\pixmaps\${PIC_PNG}"
     StrCmp $R0 "NONE" done
     CreateShortCut "$SMPROGRAMS\Gaim\${QRC_UNINSTALL_LNK}" "$INSTDIR\${QRC_UNINST_EXE}"
     WriteUninstaller "$INSTDIR\${QRC_UNINST_EXE}"
@@ -188,7 +200,11 @@ Section "Install"
   done:
 SectionEnd
 
-Section Uninstall
+Sec
+   makensis -DQRC_VERSION="0.33.0+svn" -DGAIM_VERSION="1.3.0" \
+   -DGAIM_TOP="/some/path/to/gaim-win32-dev-1.3.0-1/gaim-1.3.0" \
+   nsis/installer.nsi
+tion Uninstall
   Call un.CheckUserInstallRights
   Pop $R0
   StrCmp $R0 "NONE" no_rights
@@ -217,6 +233,9 @@ Section Uninstall
     Delete "$INSTDIR\plugins\${BOT_CHALLENGER_DLL}"
     ; pixmaps
     Delete "$INSTDIR\pixmaps\gaim\status\default\${GAYM_PNG}"
+    Delete "$INSTDIR\pixmaps\${ALPHA_PNG}"
+    Delete "$INSTDIR\pixmaps\${ENTRY_PNG}"
+    Delete "$INSTDIR\pixmaps\${PIC_PNG}"
     ; uninstaller
     Delete "$INSTDIR\${QRC_UNINST_EXE}"
     ; uninstaller shortcut

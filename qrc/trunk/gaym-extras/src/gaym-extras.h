@@ -13,7 +13,16 @@
 #include "gtkconv.h"
 #include "gtkplugin.h"
 
-#include "../gaym/src/gaym.h"
+#ifndef GAYM_EXTRAS_H
+#define GAYM_EXTRAS_H
+
+#define GAYM_EXTRAS_PLUGIN_ID "gtk-gaym-extras"
+
+#define GAYM_STOCK_ALPHA "alpha"
+#define GAYM_STOCK_ENTRY "entry"
+#define GAYM_STOCK_PIC "pic"
+
+
 struct fetch_thumbnail_data {
     const char *who;
     char *pic_data;
@@ -40,11 +49,6 @@ typedef struct _GaymChatIcon {
 
 } GaymChatIcon;
 
-typedef enum {
-    SORT_ALPHA,
-    SORT_ENTRY,
-    SORT_CATEGORY,
-} GaymSortOrder;
 
 typedef enum {
     TOOLTIP_CHAT,
@@ -54,7 +58,7 @@ typedef enum {
 struct timeout_cb_data {
     GaymTooltipType type;
     GtkWidget *tv;
-    struct gaym_conn *gaym;
+    GaimAccount* account;
 };
 
 
@@ -67,3 +71,19 @@ void add_chat_sort_functions(GaimConversation *c);
 void add_im_popup_stuff(GaimConversation* c);
 void init_chat_icons();
 void init_popups();
+
+
+static struct StockIcon
+{
+	const char *name;
+	const char *dir;
+	const char *filename;
+
+} const stock_icons[] = 
+{
+	    { GAYM_STOCK_ALPHA,	    "gaym",	"alpha.png" },    
+	    { GAYM_STOCK_ENTRY,	    "gaym",	"entry.png" },    
+	    { GAYM_STOCK_PIC,	    "gaym",	"pic.png" }
+};
+
+#endif //GAYM_EXTRAS_H

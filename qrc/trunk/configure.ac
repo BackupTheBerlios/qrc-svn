@@ -128,6 +128,8 @@ AC_CONFIG_FILES([Makefile
                  gaym/pixmaps/Makefile
                  gaym/src/Makefile
                  gaym-extras/Makefile
+		 gaym-extras/src/Makefile
+                 gaym-extras/pixmaps/Makefile
                  nsis/Makefile
 		 nsis/locale/Makefile])
 AC_OUTPUT

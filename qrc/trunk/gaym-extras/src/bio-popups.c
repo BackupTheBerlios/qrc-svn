@@ -124,12 +124,11 @@ static gboolean tooltip_timeout(struct timeout_cb_data *data)
     GtkWidget *tv = data->tv;
 
     GaymTooltipType type = data->type;
-    struct gaym_conn *gaym = data->gaym;
+    GaimAccount *account = data->account;
+    GaimPluginProtocolInfo *prpl_info= 
+	GAIM_PLUGIN_PROTOCOL_INFO(
+		gaim_find_prpl(gaim_account_get_protocol_id(account)));
     
-    GaimPluginProtocolInfo *prpl_info =
-        GAIM_PLUGIN_PROTOCOL_INFO(gaim_find_prpl
-                                  (gaim_account_get_protocol_id
-                                   (gaym->account)));
 
     timeout = (guint *) g_hash_table_lookup(popup_timeouts, tv);
     /* we check to see if we're still supposed to be moving, now that gtk
@@ -166,7 +165,7 @@ static gboolean tooltip_timeout(struct timeout_cb_data *data)
 
     GaimBuddy *gb = g_new0(GaimBuddy, 1);
     gb->name = g_strdup(name);
-    gb->account = gaym->account;
+    gb->account = account;
     tooltiptext = prpl_info->tooltip_text(gb);
     g_free(gb->name);
     g_free(gb);
@@ -190,7 +189,7 @@ static gboolean tooltip_timeout(struct timeout_cb_data *data)
 
     struct paint_data *pdata = g_new0(struct paint_data, 1);
     pdata->tooltiptext = tooltiptext;
-    pdata->pixbuf = lookup_cached_thumbnail(gaym->account, name);
+    pdata->pixbuf = lookup_cached_thumbnail(account, name);
     g_signal_connect(G_OBJECT(tipwindow), "expose_event",
                      G_CALLBACK(namelist_paint_tip), pdata);
     gtk_widget_ensure_style(tipwindow);
@@ -268,7 +267,7 @@ static gboolean tooltip_timeout(struct timeout_cb_data *data)
 
 
 static gboolean namelist_motion_cb(GtkWidget * tv, GdkEventMotion * event,
-                                   gpointer gaym)
+                                   gpointer account)
 {
     GtkTreeModel *ls = NULL;
     GtkTreePath *path = NULL;
@@ -307,7 +306,7 @@ static gboolean namelist_motion_cb(GtkWidget * tv, GdkEventMotion * event,
     struct timeout_cb_data *timeout_data =
         g_new0(struct timeout_cb_data, 1);
     timeout_data->tv = tv;
-    timeout_data->gaym = gaym;
+    timeout_data->account = account;
     timeout_data->type = TOOLTIP_CHAT;
     *timeout =
         g_timeout_add(delay, (GSourceFunc) tooltip_timeout, timeout_data);
@@ -352,8 +351,7 @@ static gboolean tab_entry_cb(GtkWidget *event,
     guint *timeout;
     guint delay;
     GaimConversation *c = (GaimConversation *) conv;
-    struct gaym_conn *gaym = gaim_conversation_get_gc(c)->proto_data;
-    
+    GaimAccount *account = gaim_conversation_get_account(c); 
     GaimGtkConversation *gtkconv = GAIM_GTK_CONVERSATION(c);
 
     GtkWidget *tab = gtkconv->tab_label;
@@ -375,7 +373,7 @@ static gboolean tab_entry_cb(GtkWidget *event,
     struct timeout_cb_data *timeout_data =
         g_new0(struct timeout_cb_data, 1);
     timeout_data->tv = tab;
-    timeout_data->gaym = gaym;
+    timeout_data->account = account;
     timeout_data->type = TOOLTIP_IM;
     *timeout =
         g_timeout_add(delay, (GSourceFunc) tooltip_timeout, timeout_data);
@@ -388,10 +386,10 @@ void add_chat_popup_stuff(GaimConversation * c)
 
     GaimGtkConversation *gtkconv = GAIM_GTK_CONVERSATION(c);
     GaimGtkChatPane *gtkchat = gtkconv->u.chat;
-    GaimConnection *gc = gaim_conversation_get_gc(c);
+    GaimAccount *account = gaim_conversation_get_account(c);
 
     g_signal_connect(G_OBJECT(gtkchat->list), "motion-notify-event",
-                     G_CALLBACK(namelist_motion_cb), gc->proto_data);
+                     G_CALLBACK(namelist_motion_cb), account);
     g_signal_connect(G_OBJECT(gtkchat->list), "leave-notify-event",
                      G_CALLBACK(namelist_leave_cb), NULL);
 
