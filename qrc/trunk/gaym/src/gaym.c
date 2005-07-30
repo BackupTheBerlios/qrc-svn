@@ -535,7 +535,7 @@ static void gaym_get_configtxt_cb(gpointer proto_data,
     gaym->confighash = gaym_properties_new(config_text);
     g_return_if_fail(gaym->confighash != NULL);
 
-    //synchronize_deny_list(gc, gaym->confighash);
+    // synchronize_deny_list(gc, gaym->confighash);
 
     return;
 }
@@ -1549,7 +1549,7 @@ static GaimPluginInfo info = {
     NULL,                                                 /**< unload         */
     NULL,                                                 /**< destroy        */
 
-    NULL,				                   /**< ui_info        */
+    NULL,                                                  /**< ui_info        */
     &prpl_info,                                           /**< extra_info     */
     &prefs_info,
     gaym_actions
@@ -1595,8 +1595,8 @@ static void _init_plugin(GaimPlugin * plugin)
                                         GAIM_SUBTYPE_ACCOUNT),
                          gaim_value_new(GAIM_TYPE_POINTER,
                                         GAIM_TYPE_CHAR));
-    
-    
+
+
 
     gaim_prefs_add_none("/plugins/prpl/gaym");
     gaim_prefs_add_int("/plugins/prpl/gaym/chat_room_instances", 4);

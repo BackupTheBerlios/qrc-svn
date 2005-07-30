@@ -5,8 +5,8 @@
 // Adds motion handlers to IM tab labels.
 static void redo_im_window(GaimConversation * c)
 {
-    if (!g_strrstr(gaim_account_get_protocol_id(c->account),"prpl-gaym"))
-	    return;
+    if (!g_strrstr(gaim_account_get_protocol_id(c->account), "prpl-gaym"))
+        return;
     if (c && c->type == GAIM_CONV_IM)
         add_im_popup_stuff(c);
 }
@@ -14,78 +14,77 @@ static void redo_im_window(GaimConversation * c)
 
 static void update_info_cb(GaimAccount * account, char *name)
 {
-    if (!g_strrstr(gaim_account_get_protocol_id(account),"prpl-gaym"))
-	    return;
+    if (!g_strrstr(gaim_account_get_protocol_id(account), "prpl-gaym"))
+        return;
     gaim_debug_misc("gaym-extras", "info update\n");
 }
 
 static void redochatwindow(GaimConversation * c)
 {
-    if (!g_strrstr(gaim_account_get_protocol_id(c->account),"prpl-gaym"))
-	    return;
+    if (!g_strrstr(gaim_account_get_protocol_id(c->account), "prpl-gaym"))
+        return;
     add_chat_sort_functions(c);
     add_chat_popup_stuff(c);
     add_chat_icon_stuff(c);
 }
-static gchar *
-find_file(const char *dir, const char *base)
+static gchar *find_file(const char *dir, const char *base)
 {
-	char *filename;
+    char *filename;
 
-	if (base == NULL)
-		return NULL;
+    if (base == NULL)
+        return NULL;
 
-	if (!strcmp(dir, "gaim"))
-		filename = g_build_filename(GAIM_DATADIR, "pixmaps", "gaim", base, NULL);
-	else
-	{
-		filename = g_build_filename(GAIM_DATADIR, "pixmaps", "gaim", dir,
-									base, NULL);
-	}
+    if (!strcmp(dir, "gaim"))
+        filename =
+            g_build_filename(GAIM_DATADIR, "pixmaps", "gaim", base, NULL);
+    else {
+        filename = g_build_filename(GAIM_DATADIR, "pixmaps", "gaim", dir,
+                                    base, NULL);
+    }
 
-	if (!g_file_test(filename, G_FILE_TEST_EXISTS))
-	{
-		g_critical("Unable to load stock pixmap %s\n", filename);
+    if (!g_file_test(filename, G_FILE_TEST_EXISTS)) {
+        g_critical("Unable to load stock pixmap %s\n", filename);
 
-		g_free(filename);
+        g_free(filename);
 
-		return NULL;
-	}
+        return NULL;
+    }
 
-	return filename;
+    return filename;
 
 }
-void extras_register_stock() {
-    
-    static gboolean stock_is_init=FALSE;
-    GtkIconFactory* icon_factory=NULL;
+
+void extras_register_stock()
+{
+
+    static gboolean stock_is_init = FALSE;
+    GtkIconFactory *icon_factory = NULL;
     int i;
-    if(stock_is_init)
-	return;
-    stock_is_init=TRUE;
-    icon_factory=gtk_icon_factory_new();
+    if (stock_is_init)
+        return;
+    stock_is_init = TRUE;
+    icon_factory = gtk_icon_factory_new();
 
     gtk_icon_factory_add_default(icon_factory);
 
-    for (i=0 ; i < G_N_ELEMENTS(stock_icons); i++)
-    {
-	GdkPixbuf *pixbuf;
-	GtkIconSet *iconset;
-	gchar *filename;
-	filename = find_file(stock_icons[i].dir, stock_icons[i].filename);
-	if (filename==NULL)
-	    continue;
+    for (i = 0; i < G_N_ELEMENTS(stock_icons); i++) {
+        GdkPixbuf *pixbuf;
+        GtkIconSet *iconset;
+        gchar *filename;
+        filename = find_file(stock_icons[i].dir, stock_icons[i].filename);
+        if (filename == NULL)
+            continue;
 
-	pixbuf = gdk_pixbuf_new_from_file(filename, NULL);
-	g_free(filename);
-	iconset = gtk_icon_set_new_from_pixbuf(pixbuf);
-	
-	g_object_unref(pixbuf);
-	gtk_icon_factory_add(icon_factory, stock_icons[i].name, iconset);
-	gtk_icon_set_unref(iconset);
+        pixbuf = gdk_pixbuf_new_from_file(filename, NULL);
+        g_free(filename);
+        iconset = gtk_icon_set_new_from_pixbuf(pixbuf);
+
+        g_object_unref(pixbuf);
+        gtk_icon_factory_add(icon_factory, stock_icons[i].name, iconset);
+        gtk_icon_set_unref(iconset);
     }
-	
-	
+
+
 }
 static gboolean plugin_load(GaimPlugin * plugin)
 {

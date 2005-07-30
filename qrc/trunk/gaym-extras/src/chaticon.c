@@ -1,11 +1,11 @@
 #include "gaym-extras.h"
 GHashTable *icons;
 void get_icon_scale_size(GdkPixbuf * icon, GaimBuddyIconSpec * spec,
-                    int *width, int *height)
+                         int *width, int *height)
 {
     *width = gdk_pixbuf_get_width(icon);
     *height = gdk_pixbuf_get_height(icon);
-    gaim_debug_misc("popups","current: w: %i, h: %i\n", *width,*height);
+    gaim_debug_misc("popups", "current: w: %i, h: %i\n", *width, *height);
     /* this should eventually get smarter about preserving the aspect
        ratio when scaling, but gimmie a break, I just woke up */
     if (spec && spec->scale_rules & GAIM_ICON_SCALE_DISPLAY) {
@@ -25,18 +25,17 @@ void get_icon_scale_size(GdkPixbuf * icon, GaimBuddyIconSpec * spec,
         *width = 100;
     if (*height > 100)
         *height = 100;
-    gaim_debug_misc("popups","scaled: w: %i, h: %i\n", *width,*height);
+    gaim_debug_misc("popups", "scaled: w: %i, h: %i\n", *width, *height);
 }
 
-void gaym_update_thumbnail(GaimConversation * conv, GdkPixbuf* pixbuf) 
+void gaym_update_thumbnail(GaimConversation * conv, GdkPixbuf * pixbuf)
 {
     GaimGtkConversation *gtkconv;
 
     GdkPixbuf *scale;
-    GdkPixmap *pm=NULL;
-    GdkBitmap *bm=NULL;
-    int scale_width=0, 
-	scale_height=0;
+    GdkPixmap *pm = NULL;
+    GdkBitmap *bm = NULL;
+    int scale_width = 0, scale_height = 0;
 
 
     GaimAccount *account;
@@ -68,13 +67,14 @@ void gaym_update_thumbnail(GaimConversation * conv, GdkPixbuf* pixbuf)
     get_icon_scale_size(pixbuf,
                         prpl_info ? &prpl_info->icon_spec : NULL,
                         &scale_width, &scale_height);
-    //double aspect=(double)gdk_pixbuf_get_width(pixbuf)/(double)gdk_pixbuf_get_height(pixbuf); 
+    // double
+    // aspect=(double)gdk_pixbuf_get_width(pixbuf)/(double)gdk_pixbuf_get_height(pixbuf); 
+    // 
 
     scale =
         gdk_pixbuf_scale_simple(pixbuf,
                                 scale_width,
-                                scale_height,
-                                GDK_INTERP_BILINEAR);
+                                scale_height, GDK_INTERP_BILINEAR);
 
     gdk_pixbuf_render_pixmap_and_mask(scale, &pm, &bm, 100);
     g_object_unref(G_OBJECT(scale));
@@ -82,17 +82,16 @@ void gaym_update_thumbnail(GaimConversation * conv, GdkPixbuf* pixbuf)
 
     icon_data->event = gtk_event_box_new();
     gtk_container_add(GTK_CONTAINER(icon_data->frame), icon_data->event);
-    gtk_widget_set_size_request(GTK_WIDGET(icon_data->frame), 57,
-                                77);
+    gtk_widget_set_size_request(GTK_WIDGET(icon_data->frame), 57, 77);
 
-    //g_signal_connect(G_OBJECT(icon_data->event), "button-press-event",
-    //G_CALLBACK(icon_menu), conv);
+    // g_signal_connect(G_OBJECT(icon_data->event), "button-press-event",
+    // G_CALLBACK(icon_menu), conv);
     gtk_widget_show(icon_data->event);
     icon_data->icon = gtk_image_new_from_pixmap(pm, bm);
     gtk_container_add(GTK_CONTAINER(icon_data->event), icon_data->icon);
     gtk_widget_show(icon_data->icon);
 
-    if(pm)
+    if (pm)
         g_object_unref(G_OBJECT(pm));
 
     if (bm)
@@ -111,8 +110,8 @@ static void changed_cb(GtkTreeSelection * selection, gpointer conv)
     GaimConversation *c = (GaimConversation *) conv;
 
     GtkTreeIter iter;
-    GtkTreeModel *model=NULL;
-    GdkPixbuf *pixbuf=NULL;
+    GtkTreeModel *model = NULL;
+    GdkPixbuf *pixbuf = NULL;
     gchar *name;
 
     if (!gtk_tree_selection_get_selected(selection, &model, &iter))
@@ -128,11 +127,11 @@ static void changed_cb(GtkTreeSelection * selection, gpointer conv)
 
     gtk_widget_grab_focus(GTK_WIDGET(model)->parent);
 
-    pixbuf=lookup_cached_thumbnail(c->account, name);
- 
-    if(pixbuf)
-	gaym_update_thumbnail(c, pixbuf);
-    
+    pixbuf = lookup_cached_thumbnail(c->account, name);
+
+    if (pixbuf)
+        gaym_update_thumbnail(c, pixbuf);
+
     g_object_unref(pixbuf);
     return;
 
@@ -169,9 +168,8 @@ void add_chat_icon_stuff(GaimConversation * c)
     icon_data->show_icon = TRUE;
     icon_data->icon_container = gtk_vbox_new(FALSE, 0);
 
-    gtk_widget_set_size_request(GTK_WIDGET(icon_data->icon_container),
-                                57,77);//prpl_info->icon_spec.max_width,
-                                //prpl_info->icon_spec.max_height);
+    gtk_widget_set_size_request(GTK_WIDGET(icon_data->icon_container), 57, 77); // prpl_info->icon_spec.max_width,
+    // prpl_info->icon_spec.max_height);
 
 
     icon_data->frame = gtk_frame_new(NULL);

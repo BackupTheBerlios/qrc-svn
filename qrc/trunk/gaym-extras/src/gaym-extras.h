@@ -32,7 +32,7 @@ struct fetch_thumbnail_data {
 
 struct paint_data {
     char *tooltiptext;
-    GdkPixbuf* pixbuf;
+    GdkPixbuf *pixbuf;
 };
 
 // Additional UI info for a conversation.
@@ -58,32 +58,32 @@ typedef enum {
 struct timeout_cb_data {
     GaymTooltipType type;
     GtkWidget *tv;
-    GaimAccount* account;
+    GaimAccount *account;
 };
 
 
-GdkPixbuf* lookup_cached_thumbnail(GaimAccount* account, const char*fullname);
-void get_icon_scale_size(GdkPixbuf* icon, GaimBuddyIconSpec * spec,int *width, int *height);
+GdkPixbuf *lookup_cached_thumbnail(GaimAccount * account,
+                                   const char *fullname);
+void get_icon_scale_size(GdkPixbuf * icon, GaimBuddyIconSpec * spec,
+                         int *width, int *height);
 void clean_popup_stuff(GaimConversation * c);
-void add_chat_icon_stuff(GaimConversation *c);
-void add_chat_popup_stuff(GaimConversation *c);
-void add_chat_sort_functions(GaimConversation *c);
-void add_im_popup_stuff(GaimConversation* c);
+void add_chat_icon_stuff(GaimConversation * c);
+void add_chat_popup_stuff(GaimConversation * c);
+void add_chat_sort_functions(GaimConversation * c);
+void add_im_popup_stuff(GaimConversation * c);
 void init_chat_icons();
 void init_popups();
 
 
-static struct StockIcon
-{
-	const char *name;
-	const char *dir;
-	const char *filename;
+static struct StockIcon {
+    const char *name;
+    const char *dir;
+    const char *filename;
 
-} const stock_icons[] = 
-{
-	    { GAYM_STOCK_ALPHA,	    "gaym",	"alpha.png" },    
-	    { GAYM_STOCK_ENTRY,	    "gaym",	"entry.png" },    
-	    { GAYM_STOCK_PIC,	    "gaym",	"pic.png" }
+} const stock_icons[] = {
+    {GAYM_STOCK_ALPHA, "gaym", "alpha.png"},
+    {GAYM_STOCK_ENTRY, "gaym", "entry.png"},
+    {GAYM_STOCK_PIC, "gaym", "pic.png"}
 };
 
-#endif //GAYM_EXTRAS_H
+#endif                          // GAYM_EXTRAS_H

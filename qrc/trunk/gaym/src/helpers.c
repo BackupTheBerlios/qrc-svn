@@ -205,27 +205,25 @@ gboolean gaym_nick_check(const char *nick)
 
 void replace_dollar_n(gpointer key, gpointer value, gpointer user_data)
 {
- 
+
     /**
      * replace $[0-9] with %s, so we can use printf style
      * processing with the provided property values
      */
-    gchar* pos=(gchar*)value;
-    while((pos=(strchr(pos, '$'))))
-    {
-	pos++;
-	if(g_ascii_isdigit(*pos))
-	{
-		*pos='s';
-		*(pos-1)='%';
-		
-	}
+    gchar *pos = (gchar *) value;
+    while ((pos = (strchr(pos, '$')))) {
+        pos++;
+        if (g_ascii_isdigit(*pos)) {
+            *pos = 's';
+            *(pos - 1) = '%';
+
+        }
     }
 }
 
 GHashTable *gaym_properties_new(const gchar * str)
 {
-    
+
     gchar *tmpstr = NULL;
     gchar **tmparr = NULL;
     gchar **proparr = NULL;
@@ -242,19 +240,18 @@ GHashTable *gaym_properties_new(const gchar * str)
     /**
      * strip out continuation character followed by newline 
      */
-    //tmparr = g_strsplit(tmpstr, "\\\n", -1);
-    //g_free(tmpstr);
-    //tmpstr = g_strjoinv(NULL, tmparr);
-    //g_strfreev(tmparr);
+    // tmparr = g_strsplit(tmpstr, "\\\n", -1);
+    // g_free(tmpstr);
+    // tmpstr = g_strjoinv(NULL, tmparr);
+    // g_strfreev(tmparr);
     /**
      * Since the properties get stripped of spaces later,
      * just replace \\\n with <space>\n in-place, for speed.
      * */
-    char* pos=tmpstr;
-    while((pos=g_strrstr(pos, "\\\n")))
-    {
-	*pos=' ';
-	*(pos+1)=' ';
+    char *pos = tmpstr;
+    while ((pos = g_strrstr(pos, "\\\n"))) {
+        *pos = ' ';
+        *(pos + 1) = ' ';
     }
     /**
      * We're getting close.  Now we need an array as follows:
@@ -291,12 +288,12 @@ GHashTable *gaym_properties_new(const gchar * str)
         proparr = g_strsplit(tmparr[i], "=", 2);
         if (proparr[0] && strlen(g_strstrip(proparr[0])) > 0
             && proparr[1] && strlen(g_strstrip(proparr[1])) > 0) {
-            
-		g_hash_table_insert(props, g_strdup(proparr[0]),
+
+            g_hash_table_insert(props, g_strdup(proparr[0]),
                                 g_strdup(proparr[1]));
-	    
+
         }
-	g_strfreev(proparr);
+        g_strfreev(proparr);
     }
 
     g_strfreev(tmparr);
@@ -460,8 +457,8 @@ GaimConvChatBuddyFlags chat_pecking_order(const char *extra)
 char *build_tooltip_text(struct gaym_buddy *ib)
 {
     char *escaped;
-     GString *tooltip = g_string_new("");
-    g_string_printf(tooltip, "<b><i>%s</i></b>",ib->name);
+    GString *tooltip = g_string_new("");
+    g_string_printf(tooltip, "<b><i>%s</i></b>", ib->name);
 
     g_return_val_if_fail(ib != NULL, NULL);
 
@@ -495,8 +492,7 @@ char *build_tooltip_text(struct gaym_buddy *ib)
     if (tooltip->len == 0) {
         g_string_append_printf(tooltip, _(" No info."));
     }
-
-    //g_string_erase(tooltip, 0, 1);
+    // g_string_erase(tooltip, 0, 1);
 
     return g_string_free(tooltip, FALSE);
 }

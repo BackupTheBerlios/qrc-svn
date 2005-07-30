@@ -6,8 +6,8 @@ GHashTable *popups;
 void clean_popup_stuff(GaimConversation * c)
 {
 
-    if (!g_strrstr(gaim_account_get_protocol_id(c->account),"prpl-gaym"))
-	    return;
+    if (!g_strrstr(gaim_account_get_protocol_id(c->account), "prpl-gaym"))
+        return;
     GaimGtkConversation *gtkconv = GAIM_GTK_CONVERSATION(c);
     if (c->type == GAIM_CONV_IM) {
         g_hash_table_remove(popup_timeouts, gtkconv->tab_label);
@@ -41,11 +41,11 @@ static void namelist_paint_tip(GtkWidget * tipwindow,
                                GdkEventExpose * event, gpointer data)
 {
     g_return_if_fail(data);
-	
-    char *tooltiptext= ((struct paint_data *) data)->tooltiptext;
-    GdkPixbuf* pixbuf = ((struct paint_data *)data)->pixbuf;
-    GtkStyle *style=NULL;
-        
+
+    char *tooltiptext = ((struct paint_data *) data)->tooltiptext;
+    GdkPixbuf *pixbuf = ((struct paint_data *) data)->pixbuf;
+    GtkStyle *style = NULL;
+
     PangoLayout *layout;
 
     layout = gtk_widget_create_pango_layout(tipwindow, NULL);
@@ -69,7 +69,8 @@ static void namelist_paint_tip(GtkWidget * tipwindow,
 #endif
 
     gtk_paint_layout(style, tipwindow->window, GTK_STATE_NORMAL, TRUE,
-                     NULL, tipwindow, "tooltip", gdk_pixbuf_get_width(pixbuf)+9, 4, layout);
+                     NULL, tipwindow, "tooltip",
+                     gdk_pixbuf_get_width(pixbuf) + 9, 4, layout);
 
     g_object_unref(pixbuf);
     g_object_unref(layout);
@@ -78,31 +79,33 @@ static void namelist_paint_tip(GtkWidget * tipwindow,
 
     return;
 }
-GdkPixbuf* lookup_cached_thumbnail(GaimAccount* account, const char*fullname) {
-    GDir* gdir=NULL;
-    GError* err=NULL;
-    GdkPixbuf *pixbuf=NULL;
-    const char *filename=NULL;
-    char* dirname=NULL;
-    char* path=NULL;
-    const char* name= gaim_normalize(account, fullname);
-    dirname=g_build_filename(gaim_user_dir(), "icons", "gaym", name, NULL);
-    if(dirname) 
-    {
-	gdir=g_dir_open(dirname, 0 , &err);
-	if(gdir)
-	{
-	    filename=g_dir_read_name(gdir); //don't free filename: owned by glib.
-	    if(filename)
-	    {	
-		path=g_build_filename(dirname,filename,NULL);
-		if(path)
-		    pixbuf=gdk_pixbuf_new_from_file(path, &err);
-		    g_free(path);
-	    }
-	    g_free(gdir);
-	}
-	g_free(dirname);
+
+GdkPixbuf *lookup_cached_thumbnail(GaimAccount * account,
+                                   const char *fullname)
+{
+    GDir *gdir = NULL;
+    GError *err = NULL;
+    GdkPixbuf *pixbuf = NULL;
+    const char *filename = NULL;
+    char *dirname = NULL;
+    char *path = NULL;
+    const char *name = gaim_normalize(account, fullname);
+    dirname =
+        g_build_filename(gaim_user_dir(), "icons", "gaym", name, NULL);
+    if (dirname) {
+        gdir = g_dir_open(dirname, 0, &err);
+        if (gdir) {
+            filename = g_dir_read_name(gdir);   // don't free filename:
+                                                // owned by glib.
+            if (filename) {
+                path = g_build_filename(dirname, filename, NULL);
+                if (path)
+                    pixbuf = gdk_pixbuf_new_from_file(path, &err);
+                g_free(path);
+            }
+            g_free(gdir);
+        }
+        g_free(dirname);
     }
     return pixbuf;
 }
@@ -125,10 +128,10 @@ static gboolean tooltip_timeout(struct timeout_cb_data *data)
 
     GaymTooltipType type = data->type;
     GaimAccount *account = data->account;
-    GaimPluginProtocolInfo *prpl_info= 
-	GAIM_PLUGIN_PROTOCOL_INFO(
-		gaim_find_prpl(gaim_account_get_protocol_id(account)));
-    
+    GaimPluginProtocolInfo *prpl_info =
+        GAIM_PLUGIN_PROTOCOL_INFO(gaim_find_prpl
+                                  (gaim_account_get_protocol_id(account)));
+
 
     timeout = (guint *) g_hash_table_lookup(popup_timeouts, tv);
     /* we check to see if we're still supposed to be moving, now that gtk
@@ -159,8 +162,8 @@ static gboolean tooltip_timeout(struct timeout_cb_data *data)
         name = gtk_label_get_text(GTK_LABEL(tv));
     } else
         return FALSE;
-    
-    	
+
+
 
 
     GaimBuddy *gb = g_new0(GaimBuddy, 1);
@@ -170,10 +173,10 @@ static gboolean tooltip_timeout(struct timeout_cb_data *data)
     g_free(gb->name);
     g_free(gb);
 
-    if (!tooltiptext) 
+    if (!tooltiptext)
         return FALSE;
 
-    
+
     g_return_val_if_fail(tooltiptext != NULL, FALSE);
 
     tipwindow = g_hash_table_lookup(popups, tv);
@@ -219,11 +222,12 @@ static gboolean tooltip_timeout(struct timeout_cb_data *data)
     w = PANGO_PIXELS(w) + 8;
     h = PANGO_PIXELS(h) + 8;
 
-    /* For the width, set it to the text width, plus 13 for 4 pixels on each side and 5 between icon/text.
-     * For height, the greater of the text height and the icon height, plus 8 (4 for each buffer on top and bottom).
-     */
+    /* For the width, set it to the text width, plus 13 for 4 pixels on
+       each side and 5 between icon/text. For height, the greater of the
+       text height and the icon height, plus 8 (4 for each buffer on top
+       and bottom). */
     w = w + gdk_pixbuf_get_width(pdata->pixbuf) + 4;
-    h = MAX(h, gdk_pixbuf_get_height(pdata->pixbuf)+8);
+    h = MAX(h, gdk_pixbuf_get_height(pdata->pixbuf) + 8);
 
 #if GTK_CHECK_VERSION(2,2,0)
     if (w > mon_size.width)
@@ -325,15 +329,15 @@ static gboolean namelist_motion_cb(GtkWidget * tv, GdkEventMotion * event,
 static void tab_leave_cb(GtkWidget * event, GdkEventCrossing * e,
                          gpointer conv)
 {
-    
+
     GaimConversation *c = (GaimConversation *) conv;
-   
+
     GaimGtkConversation *gtkconv = GAIM_GTK_CONVERSATION(c);
     // Prevent clicks from demolishing popup.
     if (e->mode != GDK_CROSSING_NORMAL)
         return;
     GtkWidget *tab = gtkconv->tab_label;
-  
+
     guint *timeout = g_hash_table_lookup(popup_timeouts, tab);
     g_hash_table_remove(popups, tab);
 
@@ -345,14 +349,14 @@ static void tab_leave_cb(GtkWidget * event, GdkEventCrossing * e,
 }
 
 
-static gboolean tab_entry_cb(GtkWidget *event,
+static gboolean tab_entry_cb(GtkWidget * event,
                              GdkEventCrossing * crossing, gpointer conv)
 {
 
     guint *timeout;
     guint delay;
     GaimConversation *c = (GaimConversation *) conv;
-    GaimAccount *account = gaim_conversation_get_account(c); 
+    GaimAccount *account = gaim_conversation_get_account(c);
     GaimGtkConversation *gtkconv = GAIM_GTK_CONVERSATION(c);
 
     GtkWidget *tab = gtkconv->tab_label;
@@ -407,21 +411,23 @@ void add_im_popup_stuff(GaimConversation * c)
     GaimGtkConversation *gtkconv = GAIM_GTK_CONVERSATION(c);
     GtkWidget *event = gtk_event_box_new();
     GtkWidget *hbox = gtk_hbox_new(FALSE, 6);
-    
+
     gtk_widget_ref(gtkconv->icon);
     gtk_container_remove(GTK_CONTAINER(gtkconv->tabby),
                          GTK_WIDGET(gtkconv->icon));
-    gtk_box_pack_start(GTK_BOX(hbox), GTK_WIDGET(gtkconv->icon), FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(hbox), GTK_WIDGET(gtkconv->icon), FALSE,
+                       FALSE, 0);
     gtk_widget_ref(gtkconv->icon);
     gtk_widget_unref(gtkconv->icon);
 
     gtk_widget_ref(gtkconv->tab_label);
     gtk_container_remove(GTK_CONTAINER(gtkconv->tabby),
                          GTK_WIDGET(gtkconv->tab_label));
-    gtk_box_pack_start(GTK_BOX(hbox), GTK_WIDGET(gtkconv->tab_label), TRUE, TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(hbox), GTK_WIDGET(gtkconv->tab_label), TRUE,
+                       TRUE, 0);
     gtk_widget_unref(gtkconv->tab_label);
-    
-        
+
+
     gtk_widget_add_events(event,
                           GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK);
     g_signal_connect(G_OBJECT(event), "enter-notify-event",
@@ -434,8 +440,7 @@ void add_im_popup_stuff(GaimConversation * c)
     gtk_widget_show(GTK_WIDGET(event));
     gtk_widget_show(GTK_WIDGET(hbox));
     gtk_event_box_set_visible_window(GTK_EVENT_BOX(event), FALSE);
-    gtk_container_add(GTK_CONTAINER(event),
-                      GTK_WIDGET(hbox));
+    gtk_container_add(GTK_CONTAINER(event), GTK_WIDGET(hbox));
     g_hash_table_insert(popup_timeouts, gtkconv->tab_label,
                         g_new0(guint, 1));
 }
