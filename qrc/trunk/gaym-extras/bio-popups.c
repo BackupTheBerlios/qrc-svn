@@ -40,38 +40,12 @@ static void namelist_leave_cb(GtkWidget * tv, GdkEventCrossing * e,
 static void namelist_paint_tip(GtkWidget * tipwindow,
                                GdkEventExpose * event, gpointer data)
 {
-    char *tooltiptext= ((struct paint_data *) data)->tooltiptext;
-    const char *name = ((struct paint_data *) data)->name;
-    GaimAccount* account = ((struct paint_data *)data)->account;
-    GDir* gdir=NULL;
-    GError* err=NULL;
-    GtkStyle *style=NULL;
-    GdkPixbuf *pixbuf=NULL;
-    const char *filename=NULL;
-    char* dirname=NULL;
-    char* path=NULL;
-   
-    dirname=g_build_filename(gaim_user_dir(), "icons", "gaym", name, NULL);
-    if(dirname) 
-    {
-	gdir=g_dir_open(dirname, 0 , &err);
-	if(gdir)
-	{
-	    while(filename=g_dir_read_name(gdir))
-	    {	
-		path=g_build_filename(dirname,filename,NULL);
-		if(path)
-		{
-		    pixbuf=gdk_pixbuf_new_from_file(path, &err);
-		    g_free(path);
-		}
-	    }
-	    g_free(gdir);
-	}
-	g_free(dirname);
-    }
+    g_return_if_fail(data);
 	
-    
+    char *tooltiptext= ((struct paint_data *) data)->tooltiptext;
+    GdkPixbuf* pixbuf = ((struct paint_data *)data)->pixbuf;
+    GtkStyle *style=NULL;
+        
     PangoLayout *layout;
 
     layout = gtk_widget_create_pango_layout(tipwindow, NULL);
@@ -103,6 +77,34 @@ static void namelist_paint_tip(GtkWidget * tipwindow,
     g_free(data);
 
     return;
+}
+GdkPixbuf* lookup_cached_thumbnail(GaimAccount* account, const char*fullname) {
+    GDir* gdir=NULL;
+    GError* err=NULL;
+    GdkPixbuf *pixbuf=NULL;
+    const char *filename=NULL;
+    char* dirname=NULL;
+    char* path=NULL;
+    const char* name= gaim_normalize(account, fullname);
+    dirname=g_build_filename(gaim_user_dir(), "icons", "gaym", name, NULL);
+    if(dirname) 
+    {
+	gdir=g_dir_open(dirname, 0 , &err);
+	if(gdir)
+	{
+	    filename=g_dir_read_name(gdir); //don't free filename: owned by glib.
+	    if(filename)
+	    {	
+		path=g_build_filename(dirname,filename,NULL);
+		if(path)
+		    pixbuf=gdk_pixbuf_new_from_file(path, &err);
+		    g_free(path);
+	    }
+	    g_free(gdir);
+	}
+	g_free(dirname);
+    }
+    return pixbuf;
 }
 
 static gboolean tooltip_timeout(struct timeout_cb_data *data)
@@ -158,6 +160,8 @@ static gboolean tooltip_timeout(struct timeout_cb_data *data)
         name = gtk_label_get_text(GTK_LABEL(tv));
     } else
         return FALSE;
+    
+    	
 
 
     GaimBuddy *gb = g_new0(GaimBuddy, 1);
@@ -170,7 +174,7 @@ static gboolean tooltip_timeout(struct timeout_cb_data *data)
     if (!tooltiptext) 
         return FALSE;
 
-
+    
     g_return_val_if_fail(tooltiptext != NULL, FALSE);
 
     tipwindow = g_hash_table_lookup(popups, tv);
@@ -186,8 +190,7 @@ static gboolean tooltip_timeout(struct timeout_cb_data *data)
 
     struct paint_data *pdata = g_new0(struct paint_data, 1);
     pdata->tooltiptext = tooltiptext;
-    pdata->name = gaim_normalize(gaym->account, name);
-    pdata->account = gaym->account;
+    pdata->pixbuf = lookup_cached_thumbnail(gaym->account, name);
     g_signal_connect(G_OBJECT(tipwindow), "expose_event",
                      G_CALLBACK(namelist_paint_tip), pdata);
     gtk_widget_ensure_style(tipwindow);
@@ -219,8 +222,8 @@ static gboolean tooltip_timeout(struct timeout_cb_data *data)
 
     /* 57 is the size of a large status icon plus 4 pixels padding on each 
        side.  I should #define this or something */
-    w = w + 65;
-    h = MAX(h, 65);
+    w = w + gdk_pixbuf_get_width(pdata->pixbuf) + 4;
+    h = MAX(h, gdk_pixbuf_get_height(pdata->pixbuf)+4);
 
 #if GTK_CHECK_VERSION(2,2,0)
     if (w > mon_size.width)

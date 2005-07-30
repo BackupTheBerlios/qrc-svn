@@ -5,7 +5,7 @@ void get_icon_scale_size(GdkPixbuf * icon, GaimBuddyIconSpec * spec,
 {
     *width = gdk_pixbuf_get_width(icon);
     *height = gdk_pixbuf_get_height(icon);
-
+    gaim_debug_misc("popups","current: w: %i, h: %i\n", *width,*height);
     /* this should eventually get smarter about preserving the aspect
        ratio when scaling, but gimmie a break, I just woke up */
     if (spec && spec->scale_rules & GAIM_ICON_SCALE_DISPLAY) {
@@ -25,18 +25,16 @@ void get_icon_scale_size(GdkPixbuf * icon, GaimBuddyIconSpec * spec,
         *width = 100;
     if (*height > 100)
         *height = 100;
+    gaim_debug_misc("popups","scaled: w: %i, h: %i\n", *width,*height);
 }
 
 void gaym_update_thumbnail(GaimConversation * conv, GdkPixbuf* pixbuf) 
 {
     GaimGtkConversation *gtkconv;
 
-    char filename[256];
-    GError *err = NULL;
-
     GdkPixbuf *scale;
-    GdkPixmap *pm;
-    GdkBitmap *bm;
+    GdkPixmap *pm=NULL;
+    GdkBitmap *bm=NULL;
     int scale_width=0, 
 	scale_height=0;
 
@@ -67,16 +65,16 @@ void gaym_update_thumbnail(GaimConversation * conv, GdkPixbuf* pixbuf)
 
 
 
-    //get_icon_scale_size(icon_data->pixbuf,
-    //                    prpl_info ? &prpl_info->icon_spec : NULL,
-    //                    &scale_width, &scale_height);
-    double aspect=gdk_pixbuf_get_width(pixbuf)/gdk_pixbuf_get_height(pixbuf); 
-    gaim_debug_misc("popups","w: %i, h: %i, a: %d\n",gdk_pixbuf_get_width(pixbuf), gdk_pixbuf_get_height(pixbuf), aspect);
+    get_icon_scale_size(pixbuf,
+                        prpl_info ? &prpl_info->icon_spec : NULL,
+                        &scale_width, &scale_height);
+    //double aspect=(double)gdk_pixbuf_get_width(pixbuf)/(double)gdk_pixbuf_get_height(pixbuf); 
+
     scale =
         gdk_pixbuf_scale_simple(pixbuf,
-                                57*aspect,//gdk_pixbuf_get_width(icon_data->pixbuf) * scale_width,
-                                77,//gdk_pixbuf_get_height(icon_data->buf) * scale_width,
-                                GDK_INTERP_HYPER);
+                                scale_width,
+                                scale_height,
+                                GDK_INTERP_BILINEAR);
 
     gdk_pixbuf_render_pixmap_and_mask(scale, &pm, &bm, 100);
     g_object_unref(G_OBJECT(scale));
@@ -114,7 +112,6 @@ static void changed_cb(GtkTreeSelection * selection, gpointer conv)
 
     GtkTreeIter iter;
     GtkTreeModel *model=NULL;
-    GError *err=NULL;
     GdkPixbuf *pixbuf=NULL;
     gchar *name;
 
@@ -131,34 +128,8 @@ static void changed_cb(GtkTreeSelection * selection, gpointer conv)
 
     gtk_widget_grab_focus(GTK_WIDGET(model)->parent);
 
-
-    GDir* gdir=NULL;
-    const char *filename=NULL;
-    char* dirname=NULL;
-    char* path=NULL;
-    char* normalized=g_utf8_strdown(name, strlen(name));
-    dirname=g_build_filename(gaim_user_dir(), "icons", "gaym", normalized, NULL);
-    gaim_debug_misc("check","checking dirname %s\n",dirname);
-    if(dirname) 
-    {
-	gdir=g_dir_open(dirname, 0 , &err);
-	if(gdir)
-	{
-	    filename=g_dir_read_name(gdir); //don't free filename: owned by glib.
-	    if(filename)
-	    {	
-		path=g_build_filename(dirname,filename,NULL);
-		gaim_debug_misc("check","trying file: %s\n",path);
-		if(path)
-		    pixbuf=gdk_pixbuf_new_from_file(path, &err);
-		    g_free(path);
-	    }
-	    g_free(gdir);
-	}
-	g_free(dirname);
-    }
-	
-
+    pixbuf=lookup_cached_thumbnail(c->account, name);
+ 
     if(pixbuf)
 	gaym_update_thumbnail(c, pixbuf);
     
@@ -199,7 +170,7 @@ void add_chat_icon_stuff(GaimConversation * c)
     icon_data->icon_container = gtk_vbox_new(FALSE, 0);
 
     gtk_widget_set_size_request(GTK_WIDGET(icon_data->icon_container),
-                                57,77);// prpl_info->icon_spec.max_width,
+                                57,77);//prpl_info->icon_spec.max_width,
                                 //prpl_info->icon_spec.max_height);
 
 

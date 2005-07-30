@@ -23,8 +23,7 @@ struct fetch_thumbnail_data {
 
 struct paint_data {
     char *tooltiptext;
-    const char *name;
-    GaimAccount* account;
+    GdkPixbuf* pixbuf;
 };
 
 // Additional UI info for a conversation.
@@ -59,6 +58,7 @@ struct timeout_cb_data {
 };
 
 
+GdkPixbuf* lookup_cached_thumbnail(GaimAccount* account, const char*fullname);
 void get_icon_scale_size(GdkPixbuf* icon, GaimBuddyIconSpec * spec,int *width, int *height);
 void clean_popup_stuff(GaimConversation * c);
 void add_chat_icon_stuff(GaimConversation *c);
