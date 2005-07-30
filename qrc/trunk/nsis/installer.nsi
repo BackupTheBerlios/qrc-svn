@@ -182,7 +182,7 @@ Section "Install"
     SetCompress Auto
     SetOverwrite on
     File "..\gaym\src\.libs\${GAYM_DLL}"
-    File "..\gaym-extras\.libs\${GAYM_EXTRAS_DLL}"
+    File "..\gaym-extras\src\.libs\${GAYM_EXTRAS_DLL}"
     File "..\bot-challenger\.libs\${BOT_CHALLENGER_DLL}"
     
     SetOutPath "$INSTDIR\pixmaps\gaim\status\default"
@@ -200,11 +200,7 @@ Section "Install"
   done:
 SectionEnd
 
-Sec
-   makensis -DQRC_VERSION="0.33.0+svn" -DGAIM_VERSION="1.3.0" \
-   -DGAIM_TOP="/some/path/to/gaim-win32-dev-1.3.0-1/gaim-1.3.0" \
-   nsis/installer.nsi
-tion Uninstall
+Section Uninstall
   Call un.CheckUserInstallRights
   Pop $R0
   StrCmp $R0 "NONE" no_rights

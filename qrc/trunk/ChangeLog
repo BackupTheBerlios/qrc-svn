@@ -1,3 +1,14 @@
+0.8-pre:
+	New Features:
+	- Bio displays in chat list as popups over the namelist.
+	- Pvt IM windows display bios as popups over the tab.
+	- Rooms are now sortable by entry order, alpha, or pic type.
+	- Popups have thumbnails in them, as well
+	- Thumbnails are cached locally.
+	
+	Bug Fixes:
+	- Too many to count
+
 0.34.1+svn:
 	New Features:
 	- Bio displays in the buddy list status area
