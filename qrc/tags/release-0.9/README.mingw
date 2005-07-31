@@ -1,0 +1,78 @@
+         NEW AND IMPROVED WIN32 (tested on Debian/GNU Linux)
+
+Getting a build environment:
+
+   Get something like gaim-win32-dev-1.3.0-1.tar.gz from
+   http://developer.berlios.de/projects/qrc/
+
+   Unwind it in a directory of your choice and run build-pkgconfig.sh to
+   set up the pkgconfig paths.
+
+Running configure:
+   
+   ./configure --host=i586-mingw32msvc \
+   PKG_CONFIG_PATH=/some/path/to/gaim-win32-dev-1.3.0-1/pkgconfig
+
+Running make:
+
+   make   (what did you expect?)
+
+Building the windows installer
+
+   makensis -DQRC_VERSION="0.33.0+svn" -DGAIM_VERSION="1.3.0" \
+   -DGAIM_TOP="/some/path/to/gaim-win32-dev-1.3.0-1/gaim-1.3.0" \
+   nsis/installer.nsi
+
+   QRC_VERSION and GAIM_VERSION are I hope obvious.
+
+   GAIM_TOP is the absolute path to the top level directory inside your
+   win32 gaim development libraries and headers.
+
+How to make a win32 build environment (only true geeks need this):
+
+   This documents how the win32 build environment available at
+   http://developer.berlios.de/projects/qrc/ was created.
+
+To build from linux:
+
+   - This assumes your home directory is /home/deckrider, and your
+     directory to download and unwind gaim and other required software
+     is /home/deckrider/wingaim, your cross compiler name is
+     i586-mingw32msvc-gcc, and you have nsis installed.
+
+   - Download and unwind the following under
+     /home/deckrider/wingaim/win32-dev:
+
+     http://prdownloads.sourceforge.net/gaim/gtk-dev-2.6.7-rev-a.tar.gz
+     http://ftp.gnu.org/gnu/aspell/w32/aspell-dev-0-50-3-3.zip
+     http://gaim.sourceforge.net/win32/gtkspell-2.0.6.tar.gz
+     ftp://ftp.mozilla.org/pub/mozilla.org/security/nss/releases/NSS_3_9_RTM/WIN954.0_OPT.OBJ/nss-3.9.zip
+     ftp://ftp.mozilla.org/pub/mozilla.org/nspr/releases/v4.4.1/WIN954.0_OPT.OBJ/nspr-4.4.1.zip
+     
+   - Download and unwind the following under /home/deckrider/wingaim:
+
+     http://prdownloads.sourceforge.net/gaim/gaim-1.3.0.tar.gz
+
+   - cd /home/deckrider/wingaim/gaim-1.3.0
+
+   - cp config.h.mingw config.h
+
+   - cd ./src
+
+   - make -f Makefile.mingw  gaim.dll CC=i586-mingw32msvc-gcc
+
+   - Additionally, you need to rename gaim.dll to libgaim.dll
+
+   - move the top level gaim directory in with the others under
+     win32-dev
+
+   - find all the *.pc files, put them in a central location and fix
+     their paths (since they report a path different from where they
+     probably are now)
+
+   - Finally you will need to create gaim.pc, since for some reason they
+     don't build one under win32.  You can use the template they provide
+     called gaim.pc.in (used for regular builds).  Note that under
+     win32, all gaim plugins require gtk, even if they don't directly
+     use it.
+
