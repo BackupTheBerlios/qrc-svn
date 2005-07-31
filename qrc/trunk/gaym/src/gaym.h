@@ -94,9 +94,7 @@ struct gaym_conn {
     GHashTable *confighash;
     GHashTable *entry_order;
 
-    char *persist_room;
-    gboolean cancelling_persist;
-    void *hammer_cancel_dialog;
+    GHashTable *hammers;
 
 };
 
@@ -133,6 +131,14 @@ GaymBuddy *gaym_get_channel_member_reference(struct gaym_conn
 
 gboolean gaym_unreference_channel_member(struct gaym_conn *gaym,
                                          gchar * name);
+
+struct hammer_cb_data {
+   struct gaym_conn* gaym;
+   char* room;
+   void* cancel_dialog;
+} hammer_cb_data;
+
+void hammer_cb_data_destroy(struct hammer_cb_data *hdata);
 
 typedef int (*IRCCmdCallback) (struct gaym_conn * gaym, const char *cmd,
                                const char *target, const char **args);

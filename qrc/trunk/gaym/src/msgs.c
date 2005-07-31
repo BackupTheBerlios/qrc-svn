@@ -694,6 +694,7 @@ void gaym_msg_trace(struct gaym_conn *gaym, const char *name,
 void gaym_msg_join(struct gaym_conn *gaym, const char *name,
                    const char *from, char **args)
 {
+    gaim_debug_misc("join","got join for %s\n",args[0]);
     GaimConnection *gc = gaim_account_get_connection(gaym->account);
     g_return_if_fail(gc != NULL);
 
@@ -708,6 +709,18 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name,
     gcom_nick_to_gaym(nick);
     if (!gaim_utf8_strcasecmp(nick, gaim_connection_get_display_name(gc))) {
         /* We are joining a channel for the first time */
+
+	gpointer data, unused;
+	gboolean hammering=g_hash_table_lookup_extended
+	    (gaym->hammers,args[1],&unused, &data);
+	//There was a hammer, but it is cancelled. Leave!
+	if(hammering && !data) { //hammer was cancelled.
+	    gaim_debug_misc("gaym","JOINED, BUT HAMMER CANCELLED: ABORT!!!!\n");
+	    g_hash_table_remove(gaym->hammers, args[0]);
+	    gaym_cmd_part(gaym, NULL, NULL, (const char**)args);
+	    return;
+	}
+#if 0
         if (gaym->persist_room && !strcmp(gaym->persist_room, args[0])) {
             g_free(gaym->persist_room);
             gaym->persist_room = NULL;
@@ -715,7 +728,8 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name,
                                gaym->hammer_cancel_dialog);
 
         }
-
+#endif
+	g_hash_table_remove(gaym->hammers, args[0]);
         serv_got_joined_chat(gc, id++, args[0]);
 
         gint *entry = g_new(gint, 1);
@@ -1145,37 +1159,56 @@ void gaym_msg_quit(struct gaym_conn *gaym, const char *name,
 void gaym_msg_who(struct gaym_conn *gaym, const char *name,
                   const char *from, char **args)
 {
+    //Use the who msgs cross-referenced with the NAMES list to figure out who is who. Resolve conflicts.
+    
 }
 
 void hammer_stop_cb(gpointer data)
 {
+    struct hammer_cb_data* hdata = (struct hammer_cb_data *) data;
 
-    struct gaym_conn *gaym = (struct gaym_conn *) data;
-
-    gaym->cancelling_persist = TRUE;
-    gaim_debug_misc("gaym", "Cancelling persist: %s\n",
-                    gaym->persist_room);
+    gaim_debug_misc("gaym","hammer stopped, dialog is %x\n",hdata->cancel_dialog);
+    //This destroys the hammer data!
+    gaim_debug_misc("gaym", "Cancelling hammer: %s\n",hdata->room);
+    //I'm not sure if the dialog data is freed. 
+    //For now, I assume not. 
+    //hdata->cancel_dialog=0;
+    //The old key gets freed, so strdup it again
+    g_hash_table_replace(hdata->gaym->hammers, g_strdup(hdata->room), NULL); 
 }
 
-void hammer_cb(gpointer data)
+void hammer_cb_data_destroy(struct hammer_cb_data *hdata) {
+    if(!hdata)
+	return;
+    if(hdata->cancel_dialog)
+	gaim_request_close(GAIM_REQUEST_ACTION, hdata->cancel_dialog);
+    if(hdata->room)
+	g_free(hdata->room);
+    g_free(hdata);
+}
+
+void hammer_cb_no(gpointer data) {
+    hammer_cb_data_destroy(data);
+}
+
+void hammer_cb_yes(gpointer data)
 {
-
-    struct gaym_conn *gaym = (struct gaym_conn *) data;
-    const char *args[1];
+    struct hammer_cb_data *hdata = (struct hammer_cb_data *) data;
+    char* room=g_strdup(hdata->room);
+    const char *args[1]={room};
+    
     char *msg;
-    gaim_debug_misc("gaym", "Persisting room %s\n", gaym->persist_room);
-    args[0] = gaym->persist_room;
-    gaym->cancelling_persist = FALSE;
-    msg = g_strdup_printf("Hammering into room %s", gaym->persist_room);
-    gaym->hammer_cancel_dialog =
-        gaim_request_action(gaym->account->gc, _("Cancel Hammer"), msg,
-                            NULL, 0, gaym, 1, ("Cancel"), hammer_stop_cb);
-
-    gaym_cmd_join(gaym, NULL, NULL, args);
+    msg = g_strdup_printf("Hammering into room %s", hdata->room);
+    hdata->cancel_dialog =
+        gaim_request_action(hdata->gaym->account->gc, _("Cancel Hammer"), msg,
+                            NULL, 0, hdata, 1, ("Cancel"), hammer_stop_cb);
+    g_hash_table_insert(hdata->gaym->hammers, g_strdup(hdata->room), hdata);
+    gaym_cmd_join(hdata->gaym, NULL, NULL, args);
     if (msg)
         g_free(msg);
+    if (room)
+	g_free(room);
 }
-
 void gaym_msg_chanfull(struct gaym_conn *gaym, const char *name,
                        const char *from, char **args)
 {
@@ -1188,27 +1221,33 @@ void gaym_msg_chanfull(struct gaym_conn *gaym, const char *name,
 
     joinargs[0] = args[1];
 
-    if (gaym->persist_room && !strcmp(gaym->persist_room, args[1]))
-        if (gaym->cancelling_persist) {
-            if (gaym->persist_room) {
-                g_free(gaym->persist_room);
-                gaym->persist_room = NULL;
-            }
-            gaym->cancelling_persist = FALSE;
-        } else {
-            gaim_debug_misc("gaym", "trying again\n");
-            gaym_cmd_join(gaym, NULL, NULL, joinargs);
-    } else {
+    gpointer unused=NULL;
+    gpointer data=NULL;
+    gboolean hammering=g_hash_table_lookup_extended
+	(gaym->hammers,args[1],&unused, &data);
 
-        gaym->persist_room = g_strdup(args[1]);
+    if(hammering && data) {
+        //Add delay here?
+	gaym_cmd_join(gaym, NULL, NULL, joinargs);
+    }
+    else if(hammering && !data) { //hammer was cancelled.
+	    gaim_debug_misc("gaym","HAMMER CANCELLED ON FULL MESSAGE\n");
+	g_hash_table_remove(gaym->hammers, args[1]);
+    }
+    else {
         buf =
             g_strdup_printf("%s is full. Do you want to keep trying?",
                             args[1]);
+	struct hammer_cb_data* hdata = g_new0(struct hammer_cb_data, 1);
+	hdata->gaym=gaym;
+	hdata->room=g_strdup(args[1]);
+	hdata->cancel_dialog=NULL;
         gaim_request_yes_no(gc, _("Room Full"), _("Room Full"), buf, 0,
-                            gaym, hammer_cb, NULL);
+                            hdata, hammer_cb_yes, hammer_cb_no);
 
         g_free(buf);
     }
+	
 }
 
 void gaym_msg_create_pay_only(struct gaym_conn *gaym, const char *name,

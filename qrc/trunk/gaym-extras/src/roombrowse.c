@@ -422,7 +422,7 @@ static void roombrowse_menu_create(GaimBlistNode * node, GList ** menu)
     *menu = g_list_append(*menu, act);
     // g_free(label);
 }
-static gboolean roombrowse_load(GaimPlugin * plugin)
+static gboolean roombrowse_init()
 {
     gaim_signal_connect(gaim_blist_get_handle(),
                         "blist-node-extended-menu",

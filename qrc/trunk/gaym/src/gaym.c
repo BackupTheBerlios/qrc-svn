@@ -493,6 +493,8 @@ static void gaym_login(GaimAccount * account)
     gaym->msgs = g_hash_table_new(g_str_hash, g_str_equal);
     gaym_msg_table_build(gaym);
     gaym->roomlist_filter = NULL;
+
+    gaym->hammers = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, (GDestroyNotify)hammer_cb_data_destroy);
     /**
      * The last parameter needs to be NULL here, since the same
      * field is added for both the key and the value (and if we
@@ -641,6 +643,11 @@ static void gaym_login_cb(gpointer data, gint source,
 
     }
 }
+
+void kill_hammer(gpointer* room, struct hammer_cb_data* data, gpointer *null) {
+    hammer_cb_data_destroy(data);
+}
+
 static void gaym_close(GaimConnection * gc)
 {
     struct gaym_conn *gaym = gc->proto_data;
@@ -696,9 +703,7 @@ static void gaym_close(GaimConnection * gc)
 
     g_hash_table_destroy(gaym->confighash);
 
-    if (gaym->hammer_cancel_dialog)
-        gaim_request_close(GAIM_REQUEST_ACTION,
-                           gaym->hammer_cancel_dialog);
+    g_hash_table_foreach(gaym->hammers, (GHFunc)kill_hammer, NULL);
 
     g_free(gaym->server);
     g_free(gaym);
