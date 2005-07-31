@@ -26,6 +26,14 @@
 #include "util.h"
 #include "debug.h"
 
+//#define GAYM_TOKEN 1
+
+#ifdef GAYM_TOKEN
+gboolean gaym_stats_find_gaym_token(const char* info) {
+    gaim_debug_misc("token","checking for token in %s\n",info);
+    return (gboolean)g_strrstr(info, "\xC2\xA0 \xC2\xA0");
+}
+#endif
 char *gaym_thumbnail_strdup(const char *info)
 {
     char *start = strchr(info, ':');
@@ -45,13 +53,19 @@ char *gaym_bio_strdup(const char *info)
 {
     char *start = strchr(info, '#');
     char *end = 0;
-    if (start) {
+    if (start && *start) {
         start++;
         end = strchr(start, 0x01);
         if (!end)
             end = strchr(start, 0);
     }
-
+#ifdef GAYM_TOKEN
+    gaim_debug_misc("gaym","end: %x, end-1: %x, end-5: %x\n",end,*(end-1),*(end-5));
+    if(end-5 >= start)
+	if(!strncmp((end-5),"\xC2\xA0 \xC2\xA0",5))
+	    end-=5;
+#endif
+    gaim_debug_misc("gaym","end %x, start %x\n",end,start);
     if ((end) && (start < end)) {
         return g_strdup_printf("%.*s", end - start, start);
     } else {
@@ -107,6 +121,9 @@ void gaym_update_channel_member(struct gaym_conn *gaym, const char *nick,
         }
         cm->name = g_strdup(nick);
         cm->bio = gaym_bio_strdup(info);
+#ifdef GAYM_TOKEN
+	cm->gaymuser = gaym_stats_find_gaym_token(info);
+#endif
         cm->thumbnail = gaym_thumbnail_strdup(info);
 
     }
@@ -172,12 +189,16 @@ void gaym_buddy_status(struct gaym_conn *gaym, char *name,
     char *stats = NULL;
     char *url = NULL;
     struct gaym_fetch_thumbnail_data *data;
+    gboolean gaymuser=FALSE;
 
     if (!gaym || !gaym->account || !gaym->buddies || !name) {
         return;
     }
 
     if (info) {
+#ifdef GAYM_TOKEN
+	gaymuser = gaym_stats_find_gaym_token(info);
+#endif
         bio = gaym_bio_strdup(info);
         if (bio) {
             bio = g_strstrip(bio);
@@ -192,6 +213,8 @@ void gaym_buddy_status(struct gaym_conn *gaym, char *name,
         if (stats) {
             stats = g_strstrip(stats);
         }
+
+	
     }
 
     GaimConnection *gc = gaim_account_get_connection(gaym->account);
@@ -216,12 +239,7 @@ void gaym_buddy_status(struct gaym_conn *gaym, char *name,
             if (gdir) {
                 const char *filename;
 
-                while ((filename = g_dir_read_name(gdir)))      // don't
-                    // free
-                    // filename: 
-                    // owned
-                    // by
-                    // glib.
+                while ((filename = g_dir_read_name(gdir)))      /* don't  free  filename:  owned  by glib.*/
                 {
                     char *thumbnail_base = g_path_get_basename(thumbnail);
                     gaim_debug_misc("gaym", "compared %s and %s\n",
@@ -298,6 +316,7 @@ void gaym_buddy_status(struct gaym_conn *gaym, char *name,
             g_strfreev(s);
             g_free(stats);
         }
+	ib->gaymuser = gaymuser;
         GaimBuddy *buddy = gaim_find_buddy(gaym->account, name);
         if (buddy) {
             serv_got_update(gc, buddy->name, online, 0, 0, 0, 0);

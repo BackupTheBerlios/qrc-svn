@@ -249,9 +249,9 @@ GHashTable *gaym_properties_new(const gchar * str)
      * just replace \\\n with <space>\n in-place, for speed.
      * */
     char *pos = tmpstr;
-    while ((pos = g_strrstr(pos, "\\\n"))) {
+    while ((pos = strstr(pos, "\\\n"))) {
         *pos = ' ';
-        *(pos + 1) = ' ';
+        *(++pos) = ' ';
     }
     /**
      * We're getting close.  Now we need an array as follows:
@@ -288,7 +288,7 @@ GHashTable *gaym_properties_new(const gchar * str)
         proparr = g_strsplit(tmparr[i], "=", 2);
         if (proparr[0] && strlen(g_strstrip(proparr[0])) > 0
             && proparr[1] && strlen(g_strstrip(proparr[1])) > 0) {
-
+	    gaim_debug_misc("properties","Inserted %s=%s\n",proparr[0],proparr[1]);
             g_hash_table_insert(props, g_strdup(proparr[0]),
                                 g_strdup(proparr[1]));
 
@@ -492,6 +492,9 @@ char *build_tooltip_text(struct gaym_buddy *ib)
         g_free(escaped);
     }
 
+    if (ib->gaymuser) {
+	g_string_append(tooltip, _("\n<i>Gaym user.</i>"));
+    }
     if (tooltip->len == 0) {
         g_string_append_printf(tooltip, _(" No info."));
     }

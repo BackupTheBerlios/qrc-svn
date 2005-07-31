@@ -41,6 +41,7 @@ struct gaym_fetch_thumbnail_data {
     // const char *pic_data;
     // gint pic_data_len;
 };
+
 void gaym_fetch_thumbnail_cb(void *user_data, const char *pic_data,
                              size_t len);
 /**
@@ -66,6 +67,10 @@ char *gaym_thumbnail_strdup(const char *info);
  * @return The bio string.
  */
 char *gaym_bio_strdup(const char *info);
+
+
+
+gboolean gaym_stats_find_gaym_token(const char* info);
 
 /**
  * Extract the stats string from the extra IRC info about the user.

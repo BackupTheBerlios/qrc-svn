@@ -112,7 +112,6 @@ typedef struct {
     gboolean hasFormData;
 
 } GaimUrlSession;
-
 typedef struct gaym_buddy GaymBuddy;
 struct gaym_buddy {
     char *name;                 /* gaym formatted nick */
@@ -124,15 +123,17 @@ struct gaym_buddy {
     char *sex;                  /* sex string */
     char *age;                  /* age string */
     char *location;             /* location string */
+    gboolean gaymuser;		/* gaym detected */
 };
-
-gboolean gaym_unreference_channel_member(struct gaym_conn *gaym,
-                                         gchar * name);
 GaymBuddy *gaym_get_channel_member_info(struct gaym_conn *gaym,
                                         const gchar * name);
 
 GaymBuddy *gaym_get_channel_member_reference(struct gaym_conn
                                              *gaym, const char *name);
+
+gboolean gaym_unreference_channel_member(struct gaym_conn *gaym,
+                                         gchar * name);
+
 typedef int (*IRCCmdCallback) (struct gaym_conn * gaym, const char *cmd,
                                const char *target, const char **args);
 

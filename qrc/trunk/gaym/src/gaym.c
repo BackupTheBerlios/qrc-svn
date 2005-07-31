@@ -300,7 +300,7 @@ static void gaym_set_info(GaimConnection * gc, const char *info)
     }
 
     bioline =
-        g_strdup_printf("%s#%s\001%s",
+        g_strdup_printf("%s#%s\xC2\xA0 \xC2\xA0\001%s",
                         gaym->thumbnail ? gaym->thumbnail : "",
                         gc->away ? gc->away : (gaym->bio ? gaym->bio : ""),
                         gaym->server_stats ? gaym->server_stats : "");
@@ -596,7 +596,7 @@ static void gaym_login_cb(gpointer data, gint source,
 
         login_name =
             gaym_nick_to_gcom_strdup(gaim_connection_get_display_name(gc));
-        bioline = g_strdup_printf("%s#%s\001%s",
+        bioline = g_strdup_printf("%s#%s\xC2\xA0 \xC2\xA0\001%s",
                                   gaym->thumbnail,
                                   user_bioline ? user_bioline : "",
                                   gaym->server_stats ? gaym->
