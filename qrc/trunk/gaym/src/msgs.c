@@ -244,7 +244,7 @@ void gaym_msg_whois(struct gaym_conn *gaym, const char *name,
     if (!gaym || !args || !args[1]) {
         return;
     }
-
+    
     gcom_nick_to_gaym(args[1]);
 
     gaym_buddy_status(gaym, args[1], TRUE, args[5]);
@@ -255,8 +255,8 @@ void gaym_msg_whois(struct gaym_conn *gaym, const char *name,
 
     // Update, but then release the reference. It was already opened
     // during conversation-created.
-    gaym_update_channel_member(gaym, args[1], args[5]);
-    gaym_unreference_channel_member(gaym, args[1]);
+    gaym_update_channel_member(gaym, normalized, args[5]);
+    gaym_unreference_channel_member(gaym, normalized);
     gaim_signal_emit(gaim_accounts_get_handle(), "info-updated",
                      gaym->account, args[1]);
 
@@ -539,11 +539,32 @@ void gaym_msg_nonick_chan(struct gaym_conn *gaym, const char *name,
                           const char *from, char **args)
 {
     GaimConnection *gc = gaim_account_get_connection(gaym->account);
+    GaimConversation *convo;
+
+    convo = gaim_find_conversation_with_account(args[1], gaym->account);
+    if (convo) {
+        if (gaim_conversation_get_type(convo) == GAIM_CONV_CHAT) {
+            /* does this happen? */
+            gaim_conv_chat_write(GAIM_CONV_CHAT(convo), args[1],
+                                 _("no such channel"),
+                                 GAIM_MESSAGE_SYSTEM | GAIM_MESSAGE_NO_LOG,
+                                 time(NULL));
+        } else {
+            gaim_conv_im_write(GAIM_CONV_IM(convo), args[1],
+                               _("User is not logged in"),
+                               GAIM_MESSAGE_SYSTEM | GAIM_MESSAGE_NO_LOG,
+                               time(NULL));
+        }
+    } else {
+        if ((gc = gaim_account_get_connection(gaym->account)) == NULL)
+            return;
+        gaim_notify_error(gc, NULL, _("Not logged in: "), args[1]);
+    }
 
     if (gc == NULL || args == NULL || args[1] == NULL)
         return;
-
-    gaim_notify_error(gc, NULL, _("Not logged in:"), args[1]);
+    
+    
 }
 
 void gaym_msg_nonick(struct gaym_conn *gaym, const char *name,

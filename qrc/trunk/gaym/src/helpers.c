@@ -456,8 +456,11 @@ GaimConvChatBuddyFlags chat_pecking_order(const char *extra)
 
 char *build_tooltip_text(struct gaym_buddy *ib)
 {
+    if(!ib->name)
+	return g_strdup("No info found.");
     char *escaped;
     GString *tooltip = g_string_new("");
+    
     g_string_printf(tooltip, "<b><i>%s</i></b>", ib->name);
 
     g_return_val_if_fail(ib != NULL, NULL);

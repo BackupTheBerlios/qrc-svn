@@ -135,9 +135,9 @@ Section -SecUninstallOldPlugin
               Delete "$R1\plugins\${BOT_CHALLENGER_DLL}"
               Delete "$R1\plugins\${GAYM_EXTRAS_DLL}"
               ; pixmaps
-	      Delete "$R1\pixmaps\${ALPHA_PNG}"
-	      Delete "$R1\pixmaps\${ENTRY_PNG}"
-	      Delete "$R1\pixmaps\${PIC_PNG}"
+	      Delete "$R1\pixmaps\gaim\gaym\${ALPHA_PNG}"
+	      Delete "$R1\pixmaps\gaim\gaym\${ENTRY_PNG}"
+	      Delete "$R1\pixmaps\gaim\gaym\${PIC_PNG}"
               Delete "$R1\pixmaps\gaim\status\default\${GAYM_PNG}"
               Delete "$R3"
 
@@ -188,7 +188,7 @@ Section "Install"
     SetOutPath "$INSTDIR\pixmaps\gaim\status\default"
     File "..\gaym\pixmaps\${GAYM_PNG}"
     	
-    SetOutPath "$INSTDIR\pixmaps"
+    SetOutPath "$INSTDIR\pixmaps\gaim\gaym"
     File "..\gaym-extras\pixmaps\${ALPHA_PNG}"
     File "..\gaym-extras\pixmaps\${ENTRY_PNG}"
     File "..\gaym-extras\pixmaps\${PIC_PNG}"
@@ -229,9 +229,9 @@ Section Uninstall
     Delete "$INSTDIR\plugins\${BOT_CHALLENGER_DLL}"
     ; pixmaps
     Delete "$INSTDIR\pixmaps\gaim\status\default\${GAYM_PNG}"
-    Delete "$INSTDIR\pixmaps\${ALPHA_PNG}"
-    Delete "$INSTDIR\pixmaps\${ENTRY_PNG}"
-    Delete "$INSTDIR\pixmaps\${PIC_PNG}"
+    Delete "$INSTDIR\pixmaps\gaim\gaym\${ALPHA_PNG}"
+    Delete "$INSTDIR\pixmaps\gaim\gaym\${ENTRY_PNG}"
+    Delete "$INSTDIR\pixmaps\gaim\gaym\${PIC_PNG}"
     ; uninstaller
     Delete "$INSTDIR\${QRC_UNINST_EXE}"
     ; uninstaller shortcut

@@ -1,7 +1,12 @@
 /* Show icons in chat room windows */
 
-
+//Messy.
 #include "gaym-extras.h"
+#ifdef _WIN32
+#include "win32/win32dep.h"
+#else
+#define DATADIR GAIM_DATADIR
+#endif
 // Adds motion handlers to IM tab labels.
 static void redo_im_window(GaimConversation * c)
 {
@@ -36,9 +41,9 @@ static gchar *find_file(const char *dir, const char *base)
 
     if (!strcmp(dir, "gaim"))
         filename =
-            g_build_filename(GAIM_DATADIR, "pixmaps", "gaim", base, NULL);
+            g_build_filename(DATADIR, "pixmaps", "gaim", base, NULL);
     else {
-        filename = g_build_filename(GAIM_DATADIR, "pixmaps", "gaim", dir,
+        filename = g_build_filename(DATADIR, "pixmaps", "gaim", dir,
                                     base, NULL);
     }
 
@@ -105,9 +110,30 @@ static gboolean plugin_load(GaimPlugin * plugin)
                         "deleting-conversation", plugin,
                         GAIM_CALLBACK(clean_popup_stuff), NULL);
 
+    gaim_prefs_add_none("/plugins/gaym-extras");
+    gaim_prefs_add_none("/plugins/gaym-extras/silly");
+
     extras_register_stock();
+    
     return TRUE;
 }
+
+static GaimPluginPrefFrame *get_plugin_pref_frame(GaimPlugin * plugin)
+{
+    GaimPluginPrefFrame *frame;
+    GaimPluginPref *ppref;
+
+    frame = gaim_plugin_pref_frame_new();
+
+    ppref =
+        gaim_plugin_pref_new_with_name_and_label("/plugins/gaym-extras/silly",_("Do you really want to turn any of this off? ;-)"));
+    gaim_plugin_pref_frame_add(frame, ppref);
+
+      return frame;
+}
+static GaimPluginUiInfo prefs_info = {
+    get_plugin_pref_frame
+};
 
 static GaimPluginInfo info = {
     GAIM_PLUGIN_MAGIC,
@@ -129,7 +155,7 @@ static GaimPluginInfo info = {
     NULL,
     NULL,
     NULL,
-    NULL,
+    &prefs_info,
     NULL
 };
 

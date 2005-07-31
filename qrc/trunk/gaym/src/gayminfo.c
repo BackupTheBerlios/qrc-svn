@@ -151,9 +151,9 @@ void gaym_fetch_thumbnail_cb(void *user_data, const char *pic_data,
         gaim_signal_emit(gaim_accounts_get_handle(), "info-updated",
                          d->gc, NULL, d->who);
         if (gaim_find_conversation_with_account(d->who, d->gc->account)) {
-            gaim_buddy_icons_set_for_user(gaim_connection_get_account
-                                          (d->gc), d->who,
-                                          (void *) pic_data, len);
+            //gaim_buddy_icons_set_for_user(gaim_connection_get_account
+            //                              (d->gc), d->who,
+            //                              (void *) pic_data, len);
         }
 
     } else {
@@ -232,6 +232,7 @@ void gaym_buddy_status(struct gaym_conn *gaym, char *name,
                     }
                     g_free(thumbnail_base);
                 }
+		g_dir_close(gdir);
             }
             if (do_fetch) {
 

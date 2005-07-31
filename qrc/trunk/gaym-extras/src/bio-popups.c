@@ -25,7 +25,7 @@ static void namelist_leave_cb(GtkWidget * tv, GdkEventCrossing * e,
                               gpointer n)
 {
     // This prevent clicks from demloishing popups.
-    if (e->mode != GDK_CROSSING_NORMAL)
+    if (e->mode != GDK_CROSSING_NORMAL && (e->state & GDK_BUTTON1_MASK))
         return;
 
     guint *timeout = g_hash_table_lookup(popup_timeouts, tv);
@@ -103,7 +103,7 @@ GdkPixbuf *lookup_cached_thumbnail(GaimAccount * account,
                     pixbuf = gdk_pixbuf_new_from_file(path, &err);
                 g_free(path);
             }
-            g_free(gdir);
+            g_dir_close(gdir);
         }
         g_free(dirname);
     }
@@ -334,7 +334,7 @@ static void tab_leave_cb(GtkWidget * event, GdkEventCrossing * e,
 
     GaimGtkConversation *gtkconv = GAIM_GTK_CONVERSATION(c);
     // Prevent clicks from demolishing popup.
-    if (e->mode != GDK_CROSSING_NORMAL)
+    if (e->mode != GDK_CROSSING_NORMAL && (e->state & GDK_BUTTON1_MASK))
         return;
     GtkWidget *tab = gtkconv->tab_label;
 

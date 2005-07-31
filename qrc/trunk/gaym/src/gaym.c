@@ -236,13 +236,12 @@ static char *gaym_tooltip_text(GaimBuddy * buddy)
     }
 
     struct gaym_buddy *ib =
-        g_hash_table_lookup(gaym->channel_members, buddy->name);
-
-    if (!ib)
-        ib = g_hash_table_lookup(gaym->buddies, buddy->name);
-
+        g_hash_table_lookup(gaym->channel_members, gaim_normalize(gaym->account,buddy->name)); 
+    if(!ib)
+         ib=g_hash_table_lookup(gaym->buddies, gaim_normalize(gaym->account,buddy->name));
+    
     if (!ib) {
-        return NULL;
+        return g_strdup("No info found.");
     }
 
     return build_tooltip_text(ib);
@@ -812,11 +811,11 @@ GaymBuddy *gaym_get_channel_member_reference(struct gaym_conn
     if (!channel_member) {
         GaymBuddy *channel_member = g_new0(GaymBuddy, 1);
         channel_member->ref_count = 1;
-        g_hash_table_insert(gaym->channel_members, g_strdup(name),
+        g_hash_table_insert(gaym->channel_members, g_strdup(gaim_normalize(gaym->account,name)),
                             channel_member);
         gaim_debug_misc("gaym", "Creating channel_members entry for %s\n",
                         name);
-        return g_hash_table_lookup(gaym->channel_members, name);
+        return g_hash_table_lookup(gaym->channel_members, gaim_normalize(gaym->account, name));
     } else {
         gaim_debug_misc("gaym",
                         "Adding reference to channel_members entry for %s\n",
@@ -833,7 +832,7 @@ gboolean gaym_unreference_channel_member(struct gaym_conn * gaym,
 
     GaymBuddy *channel_member;
     channel_member =
-        (GaymBuddy *) g_hash_table_lookup(gaym->channel_members, name);
+        (GaymBuddy *) g_hash_table_lookup(gaym->channel_members, gaim_normalize(gaym->account,name));
     if (!channel_member)
         return FALSE;
     else {
@@ -847,7 +846,7 @@ gboolean gaym_unreference_channel_member(struct gaym_conn * gaym,
         if (channel_member->ref_count == 0) {
             gaim_debug_misc("gaym", "Removing %s from channel_members\n",
                             name);
-            return g_hash_table_remove(gaym->channel_members, name);
+            return g_hash_table_remove(gaym->channel_members, gaim_normalize(gaym->account, name));
         }
         return FALSE;
     }
