@@ -1576,9 +1576,10 @@ static GaimPluginInfo info = {
 };
 
 
-void gaym_get_room_namelist(const char* room, struct gaym_conn* gaym) {
+void gaym_get_room_namelist(GaimAccount* account, const char* room) {
 
     const char* args[1]={room};
+    struct gaym_conn* gaym=(struct gaym_conn*)account->gc->proto_data;
     GaymNamelist *namelist = g_new0(GaymNamelist, 1);
     namelist->roomname=g_strdup(room);
     namelist->members=NULL;
@@ -1622,7 +1623,7 @@ static void _init_plugin(GaimPlugin * plugin)
                         "deleting-conversation", plugin,
                         GAIM_CALLBACK(gaym_clean_channel_members), NULL);
 
-    gaim_signal_register(gaim_accounts_get_handle(),
+       gaim_signal_register(gaim_accounts_get_handle(),
                          "info-updated",
                          gaim_marshal_VOID__POINTER_POINTER, NULL, 2,
                          gaim_value_new(GAIM_TYPE_SUBTYPE,
@@ -1630,12 +1631,21 @@ static void _init_plugin(GaimPlugin * plugin)
                          gaim_value_new(GAIM_TYPE_POINTER,
                                         GAIM_TYPE_CHAR));
 
-     gaim_signal_register(gaim_accounts_get_handle(),
+    gaim_signal_register(gaim_accounts_get_handle(),
                          "namelist-complete",
                          gaim_marshal_VOID__POINTER_POINTER, NULL, 2,
                          gaim_value_new(GAIM_TYPE_SUBTYPE,
                                         GAIM_SUBTYPE_ACCOUNT),
                          gaim_value_new(GAIM_TYPE_POINTER));
+    gaim_signal_register(gaim_accounts_get_handle(),
+                         "request-namelist",
+                         gaim_marshal_VOID__POINTER_POINTER, NULL, 2,
+                         gaim_value_new(GAIM_TYPE_SUBTYPE,
+                                        GAIM_SUBTYPE_ACCOUNT),
+                         gaim_value_new(GAIM_TYPE_POINTER, GAIM_TYPE_CHAR));
+     gaim_signal_connect(gaim_accounts_get_handle(),
+                        "request-namelist", plugin,
+                        GAIM_CALLBACK(gaym_get_room_namelist), NULL);
 
 
 

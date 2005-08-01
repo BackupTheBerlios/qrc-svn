@@ -93,7 +93,7 @@ void extras_register_stock()
 }
 static gboolean plugin_load(GaimPlugin * plugin)
 {
-    init_chat_icons();
+    init_chat_icons(plugin);
     init_popups();
     init_roombrowse(plugin);
     gaim_signal_connect(gaim_conversations_get_handle(), "chat-joined",

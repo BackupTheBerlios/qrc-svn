@@ -194,8 +194,52 @@ void add_chat_icon_stuff(GaimConversation * c)
 
 }
 
-void init_chat_icons()
+void chaticon_replace(GaimConversation* conv, const char* name, GaimConvChatBuddyFlags flags) {
+    GaimGtkConversation *gtkconv = GAIM_GTK_CONVERSATION(conv);
+    GaimGtkChatPane *gtkchat = gtkconv->u.chat;
+    gboolean valid;
+    GtkTreeIter iter;
+    int row_count=0;
+    GtkTreeModel *list_store=gtk_tree_view_get_model(GTK_TREE_VIEW(gtkchat->list));
+   /* Get the first iter in the list */
+  valid = gtk_tree_model_get_iter_first (list_store, &iter);
+
+  while (valid)
+    {
+      /* Walk through the list, reading each row */
+      gchar *str_data;
+
+      /* Make sure you terminate calls to gtk_tree_model_get()
+       * with a '-1' value
+       */
+      gtk_tree_model_get (list_store, &iter, 
+                          CHAT_USERS_NAME_COLUMN, &str_data,
+                          -1);
+
+      /* Do something with the data */
+      g_print ("Row %d: (%s)(%s)\n", row_count, str_data,name);
+    
+	if(!strcmp(str_data,name)) {
+	    GdkPixbuf *pixbuf=lookup_cached_thumbnail(conv->account, gaim_normalize(conv->account,name));
+	    gaim_debug_misc("chaticon","Got pixbuf: %x\n");
+	    GtkTreePath* path=gtk_tree_model_get_path(list_store, &iter);
+	    gtk_list_store_set(GTK_LIST_STORE(list_store), &iter, 0, pixbuf, -1);
+
+	    gtk_tree_model_row_changed(list_store, path, &iter);
+	    //g_free(pixbuf);
+	    break;
+	}
+      row_count ++;
+      valid = gtk_tree_model_iter_next (list_store, &iter);
+      g_free (str_data);
+    } 
+
+}
+void init_chat_icons(GaimPlugin* plugin)
 {
+    
+ gaim_signal_connect(gaim_conversations_get_handle(), "chat-buddy-joined",
+                        plugin, GAIM_CALLBACK(chaticon_replace), NULL);
 
     icons = g_hash_table_new(g_direct_hash, g_direct_equal);
 }

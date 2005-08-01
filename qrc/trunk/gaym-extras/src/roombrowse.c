@@ -62,7 +62,6 @@ typedef struct RoomBrowseGui {
 void roombrowse_add_info(gpointer data, RoomBrowseGui* browser) {
     /* Add a new row to the model */
     GaymBuddy* member=(GaymBuddy*)data;
-    gaim_debug_misc("roombrowse","append row%s\n",member->name);
     char* sync="Y";
     if(!member->name || !member->prefix)
 	return;
@@ -98,11 +97,11 @@ void roombrowse_add_info(gpointer data, RoomBrowseGui* browser) {
 }
 void roombrowse_update_list(GaimAccount* account, GaymNamelist* namelist) {
 
-    gaim_debug_misc("roombrowse","update_list from namelist at %x\n",namelist);
     g_return_if_fail(namelist);
+    gaim_debug_misc("roombrowse","update_list from namelist at %x\n",namelist);
     
     RoomBrowseGui* browser=g_hash_table_lookup(browsers, namelist->roomname);
-    if(!browser) {
+    if(!browser && namelist->roomname) {
 	gaim_debug_misc("roombrowse","No browser found for %s\n",namelist->roomname);
     }
     gtk_list_store_clear(GTK_LIST_STORE(browser->model));
@@ -114,7 +113,8 @@ gboolean update_list(GtkWidget* button, gpointer data) {
     gaim_debug_misc("roombrowse","Doing list update!\n");
     struct update_cb_data* udata=(struct update_cb_data*)data;
     
-    gaym_get_room_namelist(udata->room, udata->gc->proto_data);
+    //gaym_get_room_namelist(udata->room, udata->gc->proto_data);
+    gaim_signal_emit(gaim_accounts_get_handle(), "request-namelist", udata->gc->account, udata->room);
     return TRUE;
 }
 static void roombrowse_menu_cb(GaimBlistNode * node, gpointer data)
@@ -159,7 +159,7 @@ static void roombrowse_menu_cb(GaimBlistNode * node, gpointer data)
     //gtk_tree_view_set_headers_visible(GTK_TREE_VIEW(browser->list), FALSE); 
     GtkCellRenderer* rend;
     GtkTreeViewColumn* col;
-    
+    gtk_tree_view_set_rules_hint(GTK_TREE_VIEW(browser->list), TRUE); 
     rend=gtk_cell_renderer_pixbuf_new();
     col=gtk_tree_view_column_new_with_attributes("Photo", rend, "pixbuf", COLUMN_PHOTO, NULL);
     gtk_tree_view_append_column(GTK_TREE_VIEW(browser->list), col);

@@ -430,7 +430,7 @@ void gaym_msg_names(struct gaym_conn *gaym, const char *name,
     
     if (!strcmp(name, "366")) {
 	GaymNamelist* namelist=g_hash_table_lookup(gaym->namelists, args[1]);
-        if(!strncmp(namelist->roomname, args[1], strlen(namelist->roomname)))
+        if(namelist && !strncmp(namelist->roomname, args[1], strlen(namelist->roomname)))
 	{
 	    gaim_debug_misc("names","*****Got all names responses for %s\n",args[1]);
 	    //g_hash_table_remove(gaym->namelists, args[2]);

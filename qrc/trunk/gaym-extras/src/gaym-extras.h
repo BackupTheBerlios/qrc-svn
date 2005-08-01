@@ -71,7 +71,7 @@ void add_chat_icon_stuff(GaimConversation * c);
 void add_chat_popup_stuff(GaimConversation * c);
 void add_chat_sort_functions(GaimConversation * c);
 void add_im_popup_stuff(GaimConversation * c);
-void init_chat_icons();
+void init_chat_icons(GaimPlugin* plugin);
 void init_popups();
 void init_roombrowse(GaimPlugin* plugin);
 

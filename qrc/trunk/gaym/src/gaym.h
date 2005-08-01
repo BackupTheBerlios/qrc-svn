@@ -252,7 +252,7 @@ void gaym_dccsend_recv(struct gaym_conn *gaym, const char *from,
 void gaym_get_chat_key_from_weblogin(GaimAccount * account,
                                      void (*callback) (GaimAccount *));
 
-void gaym_get_room_namelist(const char* room, struct gaym_conn* gaym);
+void gaym_get_room_namelist(GaimAccount* account, const char* room);
 void gaim_session_fetch(const char *url, gboolean full,
                         const char *user_agent, gboolean http11,
                         void (*cb) (gpointer, const char *, size_t),
