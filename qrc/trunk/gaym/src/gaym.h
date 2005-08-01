@@ -96,6 +96,9 @@ struct gaym_conn {
 
     GHashTable *hammers;
 
+
+    GHashTable *namelists;
+
 };
 
 typedef struct {
@@ -120,6 +123,7 @@ struct gaym_buddy {
     char *thumbnail;            /* thumbnail string */
     char *sex;                  /* sex string */
     char *age;                  /* age string */
+    char *prefix;		/* prefix string */
     char *location;             /* location string */
     gboolean gaymuser;		/* gaym detected */
 };
@@ -233,8 +237,14 @@ cmd_handler gaym_cmd_topic;
 cmd_handler gaym_cmd_trace;
 cmd_handler gaym_cmd_wallops;
 cmd_handler gaym_cmd_whois;
+cmd_handler gaym_cmd_who;
 
-
+typedef struct GaymNamelist {
+    char* roomname;
+    GSList *members; //List of GaymBuddies;
+    int num_rooms;
+    GSList* current; //Pointer to gaymbuddy to be updated next (during names pass)
+} GaymNamelist;
 void gaym_dccsend_send_file(GaimConnection * gc, const char *who,
                             const char *file);
 void gaym_dccsend_recv(struct gaym_conn *gaym, const char *from,
@@ -242,6 +252,7 @@ void gaym_dccsend_recv(struct gaym_conn *gaym, const char *from,
 void gaym_get_chat_key_from_weblogin(GaimAccount * account,
                                      void (*callback) (GaimAccount *));
 
+void gaym_get_room_namelist(const char* room, struct gaym_conn* gaym);
 void gaim_session_fetch(const char *url, gboolean full,
                         const char *user_agent, gboolean http11,
                         void (*cb) (gpointer, const char *, size_t),

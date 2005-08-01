@@ -427,16 +427,26 @@ void gaym_msg_names(struct gaym_conn *gaym, const char *name,
 {
     char *names, *cur, *end, *tmp, *msg;
     GaimConversation *convo;
-
+    
     if (!strcmp(name, "366")) {
-        convo =
+	GaymNamelist* namelist=g_hash_table_lookup(gaym->namelists, args[1]);
+        if(!strncmp(namelist->roomname, args[1], strlen(namelist->roomname)))
+	{
+	    gaim_debug_misc("names","*****Got all names responses for %s\n",args[1]);
+	    //g_hash_table_remove(gaym->namelists, args[2]);
+	    GaymNamelist* namelist=g_hash_table_lookup(gaym->namelists, args[1]);
+	    gaim_debug_misc("msgs","should be emitting namelist-complete signal passing namelist %x\n",namelist);
+	    gaim_signal_emit(gaim_accounts_get_handle(), "namelist-complete", gaym->account, namelist);
+	    return;
+	}
+	convo =
             gaim_find_conversation_with_account(gaym->nameconv ? gaym->
                                                 nameconv : args[1],
                                                 gaym->account);
         if (!convo) {
             gaim_debug(GAIM_DEBUG_ERROR, "gaym",
                        "Got a NAMES list for %s, which doesn't exist\n",
-                       args[2]);
+                       args[1]);
             g_string_free(gaym->names, TRUE);
             gaym->names = NULL;
             g_free(gaym->nameconv);
@@ -490,10 +500,29 @@ void gaym_msg_names(struct gaym_conn *gaym, const char *name,
         }
         g_free(names);
     } else {
-        if (!gaym->names)
+        if (gaym->nameconv && !gaym->names) {
             gaym->names = g_string_new("");
+	    gaym->names = g_string_append(gaym->names, args[3]);
+	}
+	gaim_debug_misc("names","Response: %s\n",args[3]);
+	GaymNamelist* nameslist=g_hash_table_lookup(gaym->namelists, args[2]);
+	if(nameslist)
+	{
+	    gchar** names=g_strsplit(args[3]," ",-1);
+	    	    
 
-        gaym->names = g_string_append(gaym->names, args[3]);
+		int i=0;
+		gaim_debug_misc("names","names[i]: %s, nameslist->current: %x\n", names[i], nameslist->current);
+	    	while(names[i] && strlen(names[i]) && nameslist->current)
+		{
+			gaim_debug_misc("names","append %s (length %i)\n",names[i],strlen(names[i]));
+			((GaymBuddy*)(nameslist->current->data))->name=g_strdup(names[i]);
+			nameslist->current=g_slist_next(nameslist->current);
+			i++;
+		}
+		g_strfreev(names);
+	    
+	}
     }
 }
 
@@ -712,23 +741,16 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name,
 
 	gpointer data, unused;
 	gboolean hammering=g_hash_table_lookup_extended
-	    (gaym->hammers,args[1],&unused, &data);
+	    (gaym->hammers,args[0],&unused, &data);
 	//There was a hammer, but it is cancelled. Leave!
+	gaim_debug_misc("join","Joined %s\n",args[0]);
 	if(hammering && !data) { //hammer was cancelled.
 	    gaim_debug_misc("gaym","JOINED, BUT HAMMER CANCELLED: ABORT!!!!\n");
 	    g_hash_table_remove(gaym->hammers, args[0]);
 	    gaym_cmd_part(gaym, NULL, NULL, (const char**)args);
 	    return;
 	}
-#if 0
-        if (gaym->persist_room && !strcmp(gaym->persist_room, args[0])) {
-            g_free(gaym->persist_room);
-            gaym->persist_room = NULL;
-            gaim_request_close(GAIM_REQUEST_ACTION,
-                               gaym->hammer_cancel_dialog);
-
-        }
-#endif
+	
 	g_hash_table_remove(gaym->hammers, args[0]);
         serv_got_joined_chat(gc, id++, args[0]);
 
@@ -1159,6 +1181,72 @@ void gaym_msg_quit(struct gaym_conn *gaym, const char *name,
 void gaym_msg_who(struct gaym_conn *gaym, const char *name,
                   const char *from, char **args)
 {
+    char* pos;
+    GaymNamelist* nameslist;
+
+    if (!strncmp(name,"315",3))
+    {
+	
+	nameslist=g_hash_table_lookup(gaym->namelists, args[1]);
+        nameslist->members=g_slist_reverse(nameslist->members);
+	nameslist->current=nameslist->members;
+
+	//If we are doing an "umbrella room" then we send out this names thing.
+	//Because the names parsing section terminates on a "names" from 
+	//The exact channel name match.
+	if(g_str_has_suffix(args[1],"=*"))
+	{
+	    gaim_debug_misc("who","Has a =* suffix, sending out one more namescmd \n");
+	    const char* cmdargs[1]={args[1]};
+	    gaym_cmd_names(gaym, NULL, NULL, cmdargs);
+	}
+	return;
+    }
+
+    if(args[2])
+    {
+
+	nameslist=g_hash_table_lookup(gaym->namelists, args[1]);
+	if(!nameslist)
+	    return;
+	GaymBuddy *member=g_new0(GaymBuddy, 1);
+	gchar** parts=g_strsplit(args[2],"|",2);
+	if(args[1])
+	{
+	    member->bio=gaym_bio_strdup(parts[1]);
+	    member->thumbnail=gaym_thumbnail_strdup(parts[1]);
+	    member->prefix=g_strndup(parts[1],6);
+	    
+	    gchar* stats=gaym_stats_strdup(parts[1]);
+	    if(stats) 
+	    {
+		gchar** stat_parts=g_strsplit(stats,"|",3);
+		member->sex=stat_parts[0];
+		member->age=stat_parts[1];
+		member->location=stat_parts[2];
+		g_free(stats);
+	    }
+	    
+	    nameslist->members=g_slist_prepend(nameslist->members, member);
+	}
+	g_strfreev(parts);	
+	
+	pos=strrchr(args[1], '=');
+	int val=0;
+	if (!pos)
+	    return;
+	val=g_ascii_digit_value(*(++pos));
+	if (val<nameslist->num_rooms)
+	{
+	    gaim_debug_misc("msgs","*******NEXT ROOM******\n");
+	    const char* cmdargs[1]={args[1]};
+	    gaym_cmd_names(gaym, NULL, NULL, cmdargs);
+	    nameslist->num_rooms=val;
+	}
+    }
+
+     
+    
     //Use the who msgs cross-referenced with the NAMES list to figure out who is who. Resolve conflicts.
     
 }

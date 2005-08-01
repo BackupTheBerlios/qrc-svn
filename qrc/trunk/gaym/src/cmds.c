@@ -574,6 +574,19 @@ int gaym_cmd_whois(struct gaym_conn *gaym, const char *cmd,
     g_free(converted_nick);
     return 0;
 }
+int gaym_cmd_who(struct gaym_conn *gaym, const char *cmd,
+                   const char *target, const char **args)
+{
+    char *buf;
+    if (!args || !args[0])
+        return 0;
+
+    buf = gaym_format(gaym, "vn", "WHO", args[0]);
+    gaim_debug_misc("cmds","Exceuting %s\n",buf);
+    gaym_send(gaym, buf);
+    g_free(buf);
+    return 0;
+}
 
 static void gaym_do_mode(struct gaym_conn *gaym, const char *target,
                          const char *sign, char **ops)

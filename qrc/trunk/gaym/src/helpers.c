@@ -221,6 +221,7 @@ void replace_dollar_n(gpointer key, gpointer value, gpointer user_data)
     }
 }
 
+
 GHashTable *gaym_properties_new(const gchar * str)
 {
 
@@ -288,7 +289,7 @@ GHashTable *gaym_properties_new(const gchar * str)
         proparr = g_strsplit(tmparr[i], "=", 2);
         if (proparr[0] && strlen(g_strstrip(proparr[0])) > 0
             && proparr[1] && strlen(g_strstrip(proparr[1])) > 0) {
-	    gaim_debug_misc("properties","Inserted %s=%s\n",proparr[0],proparr[1]);
+	    //gaim_debug_misc("properties","Inserted %s=%s\n",proparr[0],proparr[1]);
             g_hash_table_insert(props, g_strdup(proparr[0]),
                                 g_strdup(proparr[1]));
 

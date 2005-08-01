@@ -2,7 +2,7 @@ pkgdir = \
 	$(GAIM_LIBDIR)/gaim
 
 GAYMSOURCES = \
-	gaym-extras.c chatsort.c bio-popups.c chaticon.c gaym-extras.h
+	gaym-extras.c chatsort.c bio-popups.c chaticon.c gaym-extras.h roombrowse.c
 
 AM_CFLAGS = \
 	$(st)

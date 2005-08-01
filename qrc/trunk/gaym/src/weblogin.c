@@ -71,7 +71,6 @@ static void gaym_session_destroy(GaimUrlSession * session)
         g_free(session->username);
     if (session->password)
         g_free(session->password);
-    gaim_debug_misc("gaym", "freeing session: %x\n", session);
     g_free(session);
 }
 
@@ -86,13 +85,11 @@ static const char *gaym_url_decode(const char *string)
             *retval = ' ';
         retval++;
     }
-    gaim_debug_info("gaym", "Changed %s with gaym_url_decode\n", string);
     return string;
 }
 
 static void destroy_fetch_url_data(GaimFetchUrlData * gfud)
 {
-    gaim_debug_misc("gaym", "destroy_fetch_url_data called\n");
     if (gfud->webdata != NULL)
         g_free(gfud->webdata);
     if (gfud->url != NULL)
@@ -190,7 +187,6 @@ static size_t parse_content_len(const char *data, size_t data_len)
        if we make sure that there is indeed a \n in our header. */
     if (p && g_strstr_len(p, data_len - (p - data), "\n")) {
         sscanf(p, "Content-Length: %zu", &content_len);
-        gaim_debug_misc("parse_content_len", "parsed %u\n", content_len);
     }
 
     return content_len;
@@ -326,10 +322,6 @@ session_fetched_cb(gpointer url_data, gint sock, GaimInputCondition cond)
                 if (gfud->newline) {
                     size_t content_len;
                     gfud->startsaving = TRUE;
-
-                    gaim_debug_misc("gaim_url_fetch",
-                                    "Response headers: '%*.*s'\n",
-                                    gfud->len, gfud->len, gfud->webdata);
 
                     // JBL 10-16-2004: Put cookies into session
 

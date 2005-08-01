@@ -95,7 +95,7 @@ static gboolean plugin_load(GaimPlugin * plugin)
 {
     init_chat_icons();
     init_popups();
-
+    init_roombrowse(plugin);
     gaim_signal_connect(gaim_conversations_get_handle(), "chat-joined",
                         plugin, GAIM_CALLBACK(redochatwindow), NULL);
 
@@ -109,7 +109,6 @@ static gboolean plugin_load(GaimPlugin * plugin)
     gaim_signal_connect(gaim_conversations_get_handle(),
                         "deleting-conversation", plugin,
                         GAIM_CALLBACK(clean_popup_stuff), NULL);
-
     gaim_prefs_add_none("/plugins/gaym-extras");
     gaim_prefs_add_none("/plugins/gaym-extras/silly");
 

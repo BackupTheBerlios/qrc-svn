@@ -448,6 +448,16 @@ static void gaym_login_with_chat_key(GaimAccount * account)
 
 }
 
+guint gaym_room_hash(gconstpointer key) {
+
+    if(*((char*)key)==0)
+	return 0;
+
+    return atoi((char*)(key+1));
+
+
+}
+
 static void gaym_login(GaimAccount * account)
 {
     GaimConnection *gc;
@@ -478,6 +488,12 @@ static void gaym_login(GaimAccount * account)
     /**
      * gaym->server = "www.gay.com";
      */
+
+
+    gaym->namelists = g_hash_table_new_full((GHashFunc)gaym_room_hash,
+					    g_int_equal,
+					    g_free,
+					    NULL);
     gaym->buddies =
         g_hash_table_new_full((GHashFunc) gaym_nick_hash,
                               (GEqualFunc) gaym_nick_equal, NULL,
@@ -529,13 +545,15 @@ static void gaym_get_configtxt_cb(gpointer proto_data,
                                   const gchar * config_text, size_t len)
 {
     struct gaym_conn *gaym = (struct gaym_conn *) proto_data;
-    GaimConnection *gc = gaim_account_get_connection(gaym->account);
+    //GaimConnection *gc = gaim_account_get_connection(gaym->account);
 
     g_return_if_fail(config_text != NULL);
 
     gaym->confighash = gaym_properties_new(config_text);
     g_return_if_fail(gaym->confighash != NULL);
 
+    //if(roomlist=g_hash_table_lookup(gaym->confighash, "roomlist"))
+    //    gaym->roomlist = gaym_parse_roomlist();
     // synchronize_deny_list(gc, gaym->confighash);
 
     return;
@@ -1201,7 +1219,6 @@ static GaimChat *gaym_find_blist_chat(GaimAccount * account,
                 if (chat->account == account && chat_name != NULL &&
                     name != NULL
                     && g_pattern_match_simple(chat_name, name)) {
-
                     return chat;
                 }
             }
@@ -1552,13 +1569,26 @@ static GaimPluginInfo info = {
     NULL,                                                 /**< load           */
     NULL,                                                 /**< unload         */
     NULL,                                                 /**< destroy        */
-
     NULL,                                                  /**< ui_info        */
     &prpl_info,                                           /**< extra_info     */
     &prefs_info,
     gaym_actions
 };
 
+
+void gaym_get_room_namelist(const char* room, struct gaym_conn* gaym) {
+
+    const char* args[1]={room};
+    GaymNamelist *namelist = g_new0(GaymNamelist, 1);
+    namelist->roomname=g_strdup(room);
+    namelist->members=NULL;
+    namelist->num_rooms=100;
+    namelist->current=0;
+    g_hash_table_insert(gaym->namelists, g_strdup(room), namelist); 
+    
+    //g_hash_table_insert(gaym->namelist_pending, list);
+    gaym_cmd_who(gaym, NULL, NULL, args);
+}
 static void _init_plugin(GaimPlugin * plugin)
 {
 
@@ -1599,6 +1629,13 @@ static void _init_plugin(GaimPlugin * plugin)
                                         GAIM_SUBTYPE_ACCOUNT),
                          gaim_value_new(GAIM_TYPE_POINTER,
                                         GAIM_TYPE_CHAR));
+
+     gaim_signal_register(gaim_accounts_get_handle(),
+                         "namelist-complete",
+                         gaim_marshal_VOID__POINTER_POINTER, NULL, 2,
+                         gaim_value_new(GAIM_TYPE_SUBTYPE,
+                                        GAIM_SUBTYPE_ACCOUNT),
+                         gaim_value_new(GAIM_TYPE_POINTER));
 
 
 
