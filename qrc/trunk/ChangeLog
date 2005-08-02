@@ -1,4 +1,18 @@
-0.8-pre:
+0.9.5:
+	Bug Fixes:
+	- Can handle room browsing of rooms you are currently in.
+	- Strip markup from bio set as away message
+	
+	Known Bugs:
+	- Don't try and update a bunch of room browsers too quickly.
+	- Problem in win32 when you try and get info from right-click menu. 
+
+0.9:
+	New Features:
+	-Room browser!
+	
+	
+0.8:
 	New Features:
 	- Bio displays in chat list as popups over the namelist.
 	- Pvt IM windows display bios as popups over the tab.
