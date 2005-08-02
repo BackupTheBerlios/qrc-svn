@@ -1,13 +1,53 @@
 /* Show icons in chat room windows */
 
-//Messy.
+// Messy.
 #include "gaym-extras.h"
 #ifdef _WIN32
 #include "win32/win32dep.h"
 #else
 #define DATADIR GAIM_DATADIR
 #endif
+void get_icon_scale_size(GdkPixbuf * icon, GaimBuddyIconSpec * spec,
+                         int *width, int *height)
+{
+    *width = gdk_pixbuf_get_width(icon);
+    *height = gdk_pixbuf_get_height(icon);
+    gaim_debug_misc("popups", "current: w: %i, h: %i\n", *width, *height);
+    /* this should eventually get smarter about preserving the aspect
+       ratio when scaling, but gimmie a break, I just woke up */
+    if (spec && spec->scale_rules & GAIM_ICON_SCALE_DISPLAY) {
+        float spec_aspect =
+            (float) spec->max_width / (float) spec->max_height;
+        float icon_aspect = (float) (*width) / (float) (*height);
+
+        // icon will hit borders horizontally first
+        if (icon_aspect > spec_aspect) {
+            float width_ratio =
+                (float) (*width) / (float) (spec->max_width);
+            *height = (float) (*height) / width_ratio;
+            *width = spec->max_width;
+        }
+        if (icon_aspect < spec_aspect) {
+            float height_ratio =
+                (float) (*height) / (float) (spec->max_height);
+            *width = (float) (*width) / height_ratio;
+            *height = spec->max_height;
+        }
+
+
+
+    }
+
+    /* and now for some arbitrary sanity checks */
+    if (*width > 100)
+        *width = 100;
+    if (*height > 100)
+        *height = 100;
+    gaim_debug_misc("popups", "scaled: w: %i, h: %i\n", *width, *height);
+}
+
 // Adds motion handlers to IM tab labels.
+
 static void redo_im_window(GaimConversation * c)
 {
     if (!g_strrstr(gaim_account_get_protocol_id(c->account), "prpl-gaym"))
@@ -113,7 +153,7 @@ static gboolean plugin_load(GaimPlugin * plugin)
     gaim_prefs_add_none("/plugins/gaym-extras/silly");
 
     extras_register_stock();
-    
+
     return TRUE;
 }
 
@@ -125,10 +165,12 @@ static GaimPluginPrefFrame *get_plugin_pref_frame(GaimPlugin * plugin)
     frame = gaim_plugin_pref_frame_new();
 
     ppref =
-        gaim_plugin_pref_new_with_name_and_label("/plugins/gaym-extras/silly",_("Do you really want to turn any of this off? ;-)"));
+        gaim_plugin_pref_new_with_name_and_label
+        ("/plugins/gaym-extras/silly",
+         _("Do you really want to turn any of this off? ;-)"));
     gaim_plugin_pref_frame_add(frame, ppref);
 
-      return frame;
+    return frame;
 }
 static GaimPluginUiInfo prefs_info = {
     get_plugin_pref_frame

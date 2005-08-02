@@ -289,7 +289,8 @@ GHashTable *gaym_properties_new(const gchar * str)
         proparr = g_strsplit(tmparr[i], "=", 2);
         if (proparr[0] && strlen(g_strstrip(proparr[0])) > 0
             && proparr[1] && strlen(g_strstrip(proparr[1])) > 0) {
-	    //gaim_debug_misc("properties","Inserted %s=%s\n",proparr[0],proparr[1]);
+            // gaim_debug_misc("properties","Inserted
+            // %s=%s\n",proparr[0],proparr[1]);
             g_hash_table_insert(props, g_strdup(proparr[0]),
                                 g_strdup(proparr[1]));
 
@@ -457,11 +458,11 @@ GaimConvChatBuddyFlags chat_pecking_order(const char *extra)
 
 char *build_tooltip_text(struct gaym_buddy *ib)
 {
-    if(!ib->name)
-	return g_strdup("No info found.");
+    if (!ib->name)
+        return g_strdup("No info found.");
     char *escaped;
     GString *tooltip = g_string_new("");
-    
+
     g_string_printf(tooltip, "<b><i>%s</i></b>", ib->name);
 
     g_return_val_if_fail(ib != NULL, NULL);
@@ -494,7 +495,7 @@ char *build_tooltip_text(struct gaym_buddy *ib)
     }
 
     if (ib->gaymuser) {
-	g_string_append(tooltip, _("\n<i>Gaym user.</i>"));
+        g_string_append(tooltip, _("\n<i>Gaym user.</i>"));
     }
     if (tooltip->len == 0) {
         g_string_append_printf(tooltip, _(" No info."));

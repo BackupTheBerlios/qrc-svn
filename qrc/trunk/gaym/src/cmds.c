@@ -575,14 +575,14 @@ int gaym_cmd_whois(struct gaym_conn *gaym, const char *cmd,
     return 0;
 }
 int gaym_cmd_who(struct gaym_conn *gaym, const char *cmd,
-                   const char *target, const char **args)
+                 const char *target, const char **args)
 {
     char *buf;
     if (!args || !args[0])
         return 0;
 
     buf = gaym_format(gaym, "vn", "WHO", args[0]);
-    gaim_debug_misc("cmds","Exceuting %s\n",buf);
+    gaim_debug_misc("cmds", "Exceuting %s\n", buf);
     gaym_send(gaym, buf);
     g_free(buf);
     return 0;

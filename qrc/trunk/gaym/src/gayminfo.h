@@ -70,7 +70,7 @@ char *gaym_bio_strdup(const char *info);
 
 
 
-gboolean gaym_stats_find_gaym_token(const char* info);
+gboolean gaym_stats_find_gaym_token(const char *info);
 
 /**
  * Extract the stats string from the extra IRC info about the user.

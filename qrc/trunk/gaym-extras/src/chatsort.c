@@ -111,6 +111,7 @@ void change_sort_order(GtkWidget * button, void *data)
     gtk_widget_destroy(button);
     button = GTK_WIDGET(gaim_gtkconv_button_new(order[current].icon, NULL,      // _("E"), 
                                                                                 // 
+                                                // 
                                                 order[current].tooltip,
                                                 gtkconv->tooltips,
                                                 change_sort_order,

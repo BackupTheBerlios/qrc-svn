@@ -236,10 +236,13 @@ static char *gaym_tooltip_text(GaimBuddy * buddy)
     }
 
     struct gaym_buddy *ib =
-        g_hash_table_lookup(gaym->channel_members, gaim_normalize(gaym->account,buddy->name)); 
-    if(!ib)
-         ib=g_hash_table_lookup(gaym->buddies, gaim_normalize(gaym->account,buddy->name));
-    
+        g_hash_table_lookup(gaym->channel_members,
+                            gaim_normalize(gaym->account, buddy->name));
+    if (!ib)
+        ib = g_hash_table_lookup(gaym->buddies,
+                                 gaim_normalize(gaym->account,
+                                                buddy->name));
+
     if (!ib) {
         return g_strdup("No info found.");
     }
@@ -300,7 +303,7 @@ static void gaym_set_info(GaimConnection * gc, const char *info)
     }
 
     bioline =
-        g_strdup_printf("%s#%s\xC2\xA0 \xC2\xA0\001%s",
+        g_strdup_printf("%s#%s\001%s",
                         gaym->thumbnail ? gaym->thumbnail : "",
                         gc->away ? gc->away : (gaym->bio ? gaym->bio : ""),
                         gaym->server_stats ? gaym->server_stats : "");
@@ -448,12 +451,13 @@ static void gaym_login_with_chat_key(GaimAccount * account)
 
 }
 
-guint gaym_room_hash(gconstpointer key) {
+guint gaym_room_hash(gconstpointer key)
+{
 
-    if(*((char*)key)==0)
-	return 0;
+    if (*((char *) key) == 0)
+        return 0;
 
-    return atoi((char*)(key+1));
+    return atoi((char *) (key + 1));
 
 
 }
@@ -490,10 +494,8 @@ static void gaym_login(GaimAccount * account)
      */
 
 
-    gaym->namelists = g_hash_table_new_full((GHashFunc)gaym_room_hash,
-					    g_int_equal,
-					    g_free,
-					    NULL);
+    gaym->namelists = g_queue_new();
+
     gaym->buddies =
         g_hash_table_new_full((GHashFunc) gaym_nick_hash,
                               (GEqualFunc) gaym_nick_equal, NULL,
@@ -510,12 +512,17 @@ static void gaym_login(GaimAccount * account)
     gaym_msg_table_build(gaym);
     gaym->roomlist_filter = NULL;
 
-    gaym->hammers = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, (GDestroyNotify)hammer_cb_data_destroy);
+    gaym->hammers =
+        g_hash_table_new_full(g_str_hash, g_str_equal, g_free,
+                              (GDestroyNotify) hammer_cb_data_destroy);
     /**
      * The last parameter needs to be NULL here, since the same
      * field is added for both the key and the value (and if we
      * free it twice, thats bad and causes crashing!).
      */
+
+    gaym->nameconv = NULL;
+
     gaym->info_window_needed =
         g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
 
@@ -545,15 +552,15 @@ static void gaym_get_configtxt_cb(gpointer proto_data,
                                   const gchar * config_text, size_t len)
 {
     struct gaym_conn *gaym = (struct gaym_conn *) proto_data;
-    //GaimConnection *gc = gaim_account_get_connection(gaym->account);
+    // GaimConnection *gc = gaim_account_get_connection(gaym->account);
 
     g_return_if_fail(config_text != NULL);
 
     gaym->confighash = gaym_properties_new(config_text);
     g_return_if_fail(gaym->confighash != NULL);
 
-    //if(roomlist=g_hash_table_lookup(gaym->confighash, "roomlist"))
-    //    gaym->roomlist = gaym_parse_roomlist();
+    // if(roomlist=g_hash_table_lookup(gaym->confighash, "roomlist"))
+    // gaym->roomlist = gaym_parse_roomlist();
     // synchronize_deny_list(gc, gaym->confighash);
 
     return;
@@ -616,7 +623,7 @@ static void gaym_login_cb(gpointer data, gint source,
 
         login_name =
             gaym_nick_to_gcom_strdup(gaim_connection_get_display_name(gc));
-        bioline = g_strdup_printf("%s#%s\xC2\xA0 \xC2\xA0\001%s",
+        bioline = g_strdup_printf("%s#%s\001%s",
                                   gaym->thumbnail,
                                   user_bioline ? user_bioline : "",
                                   gaym->server_stats ? gaym->
@@ -662,7 +669,9 @@ static void gaym_login_cb(gpointer data, gint source,
     }
 }
 
-void kill_hammer(gpointer* room, struct hammer_cb_data* data, gpointer *null) {
+void kill_hammer(gpointer * room, struct hammer_cb_data *data,
+                 gpointer * null)
+{
     hammer_cb_data_destroy(data);
 }
 
@@ -704,6 +713,10 @@ static void gaym_close(GaimConnection * gc)
     if (gaym->bio)
         g_free(gaym->bio);
 
+
+    // Would we need to free each element, too?
+    g_queue_free(gaym->namelists);
+
     g_hash_table_destroy(gaym->cmds);
     g_hash_table_destroy(gaym->msgs);
     g_hash_table_destroy(gaym->info_window_needed);
@@ -721,7 +734,7 @@ static void gaym_close(GaimConnection * gc)
 
     g_hash_table_destroy(gaym->confighash);
 
-    g_hash_table_foreach(gaym->hammers, (GHFunc)kill_hammer, NULL);
+    g_hash_table_foreach(gaym->hammers, (GHFunc) kill_hammer, NULL);
 
     g_free(gaym->server);
     g_free(gaym);
@@ -806,7 +819,9 @@ static void gaym_set_away(GaimConnection * gc, const char *state,
     } else {
         if (gaym && gaym->bio) {
             bio = g_strdup(gaym->bio);
-            gaym_set_info(gc, bio);
+            char *stripped = gaim_markup_strip_html(bio);
+            gaym_set_info(gc, stripped);
+            g_free(stripped);
             g_free(bio);
         } else {
             gaym_set_info(gc, NULL);
@@ -834,11 +849,13 @@ GaymBuddy *gaym_get_channel_member_reference(struct gaym_conn
     if (!channel_member) {
         GaymBuddy *channel_member = g_new0(GaymBuddy, 1);
         channel_member->ref_count = 1;
-        g_hash_table_insert(gaym->channel_members, g_strdup(gaim_normalize(gaym->account,name)),
+        g_hash_table_insert(gaym->channel_members,
+                            g_strdup(gaim_normalize(gaym->account, name)),
                             channel_member);
         gaim_debug_misc("gaym", "Creating channel_members entry for %s\n",
                         name);
-        return g_hash_table_lookup(gaym->channel_members, gaim_normalize(gaym->account, name));
+        return g_hash_table_lookup(gaym->channel_members,
+                                   gaim_normalize(gaym->account, name));
     } else {
         gaim_debug_misc("gaym",
                         "Adding reference to channel_members entry for %s\n",
@@ -855,7 +872,9 @@ gboolean gaym_unreference_channel_member(struct gaym_conn * gaym,
 
     GaymBuddy *channel_member;
     channel_member =
-        (GaymBuddy *) g_hash_table_lookup(gaym->channel_members, gaim_normalize(gaym->account,name));
+        (GaymBuddy *) g_hash_table_lookup(gaym->channel_members,
+                                          gaim_normalize(gaym->account,
+                                                         name));
     if (!channel_member)
         return FALSE;
     else {
@@ -869,7 +888,9 @@ gboolean gaym_unreference_channel_member(struct gaym_conn * gaym,
         if (channel_member->ref_count == 0) {
             gaim_debug_misc("gaym", "Removing %s from channel_members\n",
                             name);
-            return g_hash_table_remove(gaym->channel_members, gaim_normalize(gaym->account, name));
+            return g_hash_table_remove(gaym->channel_members,
+                                       gaim_normalize(gaym->account,
+                                                      name));
         }
         return FALSE;
     }
@@ -1331,7 +1352,7 @@ static GaimPluginProtocolInfo prpl_info = {
     0,                          /* options */
     NULL,                       /* user_splits */
     NULL,                       /* protocol_options */
-    {"jpg", 57, 77, 57, 77},    /* icon_spec */
+    {"jpg", 57, 77, 57, 77, GAIM_ICON_SCALE_DISPLAY},   /* icon_spec */
     gaym_blist_icon,            /* list_icon */
     gaym_blist_emblems,         /* list_emblems */
     gaym_status_text,           /* status_text */
@@ -1576,18 +1597,25 @@ static GaimPluginInfo info = {
 };
 
 
-void gaym_get_room_namelist(GaimAccount* account, const char* room) {
+void gaym_get_room_namelist(GaimAccount * account, const char *room)
+{
 
-    const char* args[1]={room};
-    struct gaym_conn* gaym=(struct gaym_conn*)account->gc->proto_data;
+
+    if (!account || !room)
+        return;
+
+    const char *args[1] = { room };
+    struct gaym_conn *gaym = (struct gaym_conn *) account->gc->proto_data;
     GaymNamelist *namelist = g_new0(GaymNamelist, 1);
-    namelist->roomname=g_strdup(room);
-    namelist->members=NULL;
-    namelist->num_rooms=100;
-    namelist->current=0;
-    g_hash_table_insert(gaym->namelists, g_strdup(room), namelist); 
-    
-    //g_hash_table_insert(gaym->namelist_pending, list);
+    namelist->roomname = g_strdup(room);
+    namelist->members = NULL;
+    namelist->num_rooms = 100;
+    namelist->current = 0;
+
+    g_queue_push_tail(gaym->namelists, namelist);
+    // g_hash_table_insert(gaym->namelists, g_strdup(room), namelist); 
+
+    // g_hash_table_insert(gaym->namelist_pending, list);
     gaym_cmd_who(gaym, NULL, NULL, args);
 }
 static void _init_plugin(GaimPlugin * plugin)
@@ -1623,7 +1651,7 @@ static void _init_plugin(GaimPlugin * plugin)
                         "deleting-conversation", plugin,
                         GAIM_CALLBACK(gaym_clean_channel_members), NULL);
 
-       gaim_signal_register(gaim_accounts_get_handle(),
+    gaim_signal_register(gaim_accounts_get_handle(),
                          "info-updated",
                          gaim_marshal_VOID__POINTER_POINTER, NULL, 2,
                          gaim_value_new(GAIM_TYPE_SUBTYPE,
@@ -1642,10 +1670,11 @@ static void _init_plugin(GaimPlugin * plugin)
                          gaim_marshal_VOID__POINTER_POINTER, NULL, 2,
                          gaim_value_new(GAIM_TYPE_SUBTYPE,
                                         GAIM_SUBTYPE_ACCOUNT),
-                         gaim_value_new(GAIM_TYPE_POINTER, GAIM_TYPE_CHAR));
-     gaim_signal_connect(gaim_accounts_get_handle(),
-                        "request-namelist", plugin,
-                        GAIM_CALLBACK(gaym_get_room_namelist), NULL);
+                         gaim_value_new(GAIM_TYPE_POINTER,
+                                        GAIM_TYPE_CHAR));
+    gaim_signal_connect(gaim_accounts_get_handle(), "request-namelist",
+                        plugin, GAIM_CALLBACK(gaym_get_room_namelist),
+                        NULL);
 
 
 

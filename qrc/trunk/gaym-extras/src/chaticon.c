@@ -1,32 +1,5 @@
 #include "gaym-extras.h"
 GHashTable *icons;
-void get_icon_scale_size(GdkPixbuf * icon, GaimBuddyIconSpec * spec,
-                         int *width, int *height)
-{
-    *width = gdk_pixbuf_get_width(icon);
-    *height = gdk_pixbuf_get_height(icon);
-    gaim_debug_misc("popups", "current: w: %i, h: %i\n", *width, *height);
-    /* this should eventually get smarter about preserving the aspect
-       ratio when scaling, but gimmie a break, I just woke up */
-    if (spec && spec->scale_rules & GAIM_ICON_SCALE_DISPLAY) {
-        if (*width < spec->min_width)
-            *width = spec->min_width;
-        else if (*width > spec->max_width)
-            *width = spec->max_width;
-
-        if (*height < spec->min_height)
-            *height = spec->min_height;
-        else if (*height > spec->max_height)
-            *height = spec->max_height;
-    }
-
-    /* and now for some arbitrary sanity checks */
-    if (*width > 100)
-        *width = 100;
-    if (*height > 100)
-        *height = 100;
-    gaim_debug_misc("popups", "scaled: w: %i, h: %i\n", *width, *height);
-}
 
 void gaym_update_thumbnail(GaimConversation * conv, GdkPixbuf * pixbuf)
 {
@@ -69,6 +42,7 @@ void gaym_update_thumbnail(GaimConversation * conv, GdkPixbuf * pixbuf)
                         &scale_width, &scale_height);
     // double
     // aspect=(double)gdk_pixbuf_get_width(pixbuf)/(double)gdk_pixbuf_get_height(pixbuf); 
+    // 
     // 
 
     scale =
@@ -194,52 +168,57 @@ void add_chat_icon_stuff(GaimConversation * c)
 
 }
 
-void chaticon_replace(GaimConversation* conv, const char* name, GaimConvChatBuddyFlags flags) {
+void chaticon_replace(GaimConversation * conv, const char *name,
+                      GaimConvChatBuddyFlags flags)
+{
     GaimGtkConversation *gtkconv = GAIM_GTK_CONVERSATION(conv);
     GaimGtkChatPane *gtkchat = gtkconv->u.chat;
     gboolean valid;
     GtkTreeIter iter;
-    int row_count=0;
-    GtkTreeModel *list_store=gtk_tree_view_get_model(GTK_TREE_VIEW(gtkchat->list));
-   /* Get the first iter in the list */
-  valid = gtk_tree_model_get_iter_first (list_store, &iter);
+    int row_count = 0;
+    GtkTreeModel *list_store =
+        gtk_tree_view_get_model(GTK_TREE_VIEW(gtkchat->list));
+    /* Get the first iter in the list */
+    valid = gtk_tree_model_get_iter_first(list_store, &iter);
 
-  while (valid)
-    {
-      /* Walk through the list, reading each row */
-      gchar *str_data;
+    while (valid) {
+        /* Walk through the list, reading each row */
+        gchar *str_data;
 
-      /* Make sure you terminate calls to gtk_tree_model_get()
-       * with a '-1' value
-       */
-      gtk_tree_model_get (list_store, &iter, 
-                          CHAT_USERS_NAME_COLUMN, &str_data,
-                          -1);
+        /* Make sure you terminate calls to gtk_tree_model_get() with a
+           '-1' value */
+        gtk_tree_model_get(list_store, &iter,
+                           CHAT_USERS_NAME_COLUMN, &str_data, -1);
 
-      /* Do something with the data */
-      g_print ("Row %d: (%s)(%s)\n", row_count, str_data,name);
-    
-	if(!strcmp(str_data,name)) {
-	    GdkPixbuf *pixbuf=lookup_cached_thumbnail(conv->account, gaim_normalize(conv->account,name));
-	    gaim_debug_misc("chaticon","Got pixbuf: %x\n");
-	    GtkTreePath* path=gtk_tree_model_get_path(list_store, &iter);
-	    gtk_list_store_set(GTK_LIST_STORE(list_store), &iter, 0, pixbuf, -1);
+        /* Do something with the data */
+        g_print("Row %d: (%s)(%s)\n", row_count, str_data, name);
 
-	    gtk_tree_model_row_changed(list_store, path, &iter);
-	    //g_free(pixbuf);
-	    break;
-	}
-      row_count ++;
-      valid = gtk_tree_model_iter_next (list_store, &iter);
-      g_free (str_data);
-    } 
+        if (!strcmp(str_data, name)) {
+            GdkPixbuf *pixbuf =
+                lookup_cached_thumbnail(conv->account,
+                                        gaim_normalize(conv->account,
+                                                       name));
+            gaim_debug_misc("chaticon", "Got pixbuf: %x\n");
+            GtkTreePath *path = gtk_tree_model_get_path(list_store, &iter);
+            gtk_list_store_set(GTK_LIST_STORE(list_store), &iter, 0,
+                               pixbuf, -1);
+
+            gtk_tree_model_row_changed(list_store, path, &iter);
+            // g_free(pixbuf);
+            break;
+        }
+        row_count++;
+        valid = gtk_tree_model_iter_next(list_store, &iter);
+        g_free(str_data);
+    }
 
 }
-void init_chat_icons(GaimPlugin* plugin)
+void init_chat_icons(GaimPlugin * plugin)
 {
-    
- gaim_signal_connect(gaim_conversations_get_handle(), "chat-buddy-joined",
-                        plugin, GAIM_CALLBACK(chaticon_replace), NULL);
+
+    // gaim_signal_connect(gaim_conversations_get_handle(),
+    // "chat-buddy-joined",
+    // plugin, GAIM_CALLBACK(chaticon_replace), NULL);
 
     icons = g_hash_table_new(g_direct_hash, g_direct_equal);
 }

@@ -96,7 +96,7 @@ GdkPixbuf *lookup_cached_thumbnail(GaimAccount * account,
         gdir = g_dir_open(dirname, 0, &err);
         if (gdir) {
             filename = g_dir_read_name(gdir);   // don't free filename:
-                                                // owned by glib.
+            // owned by glib.
             if (filename) {
                 path = g_build_filename(dirname, filename, NULL);
                 if (path)

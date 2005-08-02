@@ -244,7 +244,7 @@ void gaym_msg_whois(struct gaym_conn *gaym, const char *name,
     if (!gaym || !args || !args[1]) {
         return;
     }
-    
+
     gcom_nick_to_gaym(args[1]);
 
     gaym_buddy_status(gaym, args[1], TRUE, args[5]);
@@ -427,19 +427,28 @@ void gaym_msg_names(struct gaym_conn *gaym, const char *name,
 {
     char *names, *cur, *end, *tmp, *msg;
     GaimConversation *convo;
-    
+    gaim_debug_misc("names", "%s %s %s %s", name, from, args[1], args[2]);
     if (!strcmp(name, "366")) {
-	GaymNamelist* namelist=g_hash_table_lookup(gaym->namelists, args[1]);
-        if(namelist && !strncmp(namelist->roomname, args[1], strlen(namelist->roomname)))
-	{
-	    gaim_debug_misc("names","*****Got all names responses for %s\n",args[1]);
-	    //g_hash_table_remove(gaym->namelists, args[2]);
-	    GaymNamelist* namelist=g_hash_table_lookup(gaym->namelists, args[1]);
-	    gaim_debug_misc("msgs","should be emitting namelist-complete signal passing namelist %x\n",namelist);
-	    gaim_signal_emit(gaim_accounts_get_handle(), "namelist-complete", gaym->account, namelist);
-	    return;
-	}
-	convo =
+        GaymNamelist *namelist = g_queue_peek_head(gaym->namelists);
+        gaim_debug_misc("names", "namelist->roomname:%s\n",
+                        namelist->roomname);
+        if (namelist
+            && !strncmp(namelist->roomname, args[1],
+                        strlen(namelist->roomname))) {
+            gaim_debug_misc("names",
+                            "*****Got all names responses for %s\n",
+                            args[1]);
+            GaymNamelist *namelist = g_queue_pop_head(gaym->namelists);
+            gaim_debug_misc("msgs",
+                            "should be emitting namelist-complete signal passing namelist %x\n",
+                            namelist);
+            gaim_signal_emit(gaim_accounts_get_handle(),
+                             "namelist-complete", gaym->account, namelist);
+            return;
+        }
+        if (!gaym->nameconv)
+            return;
+        convo =
             gaim_find_conversation_with_account(gaym->nameconv ? gaym->
                                                 nameconv : args[1],
                                                 gaym->account);
@@ -502,27 +511,29 @@ void gaym_msg_names(struct gaym_conn *gaym, const char *name,
     } else {
         if (gaym->nameconv && !gaym->names) {
             gaym->names = g_string_new("");
-	    gaym->names = g_string_append(gaym->names, args[3]);
-	}
-	gaim_debug_misc("names","Response: %s\n",args[3]);
-	GaymNamelist* nameslist=g_hash_table_lookup(gaym->namelists, args[2]);
-	if(nameslist)
-	{
-	    gchar** names=g_strsplit(args[3]," ",-1);
-	    	    
+            gaym->names = g_string_append(gaym->names, args[3]);
+        }
+        gaim_debug_misc("names", "Response: %s\n", args[3]);
+        GaymNamelist *nameslist = g_queue_peek_head(gaym->namelists);
+        if (nameslist) {
+            gchar **names = g_strsplit(args[3], " ", -1);
 
-		int i=0;
-		gaim_debug_misc("names","names[i]: %s, nameslist->current: %x\n", names[i], nameslist->current);
-	    	while(names[i] && strlen(names[i]) && nameslist->current)
-		{
-			gaim_debug_misc("names","append %s (length %i)\n",names[i],strlen(names[i]));
-			((GaymBuddy*)(nameslist->current->data))->name=g_strdup(names[i]);
-			nameslist->current=g_slist_next(nameslist->current);
-			i++;
-		}
-		g_strfreev(names);
-	    
-	}
+
+            int i = 0;
+            gaim_debug_misc("names",
+                            "names[i]: %s, nameslist->current: %x\n",
+                            names[i], nameslist->current);
+            while (names[i] && strlen(names[i]) && nameslist->current) {
+                gaim_debug_misc("names", "append %s (length %i)\n",
+                                names[i], strlen(names[i]));
+                ((GaymBuddy *) (nameslist->current->data))->name =
+                    g_strdup(names[i]);
+                nameslist->current = g_slist_next(nameslist->current);
+                i++;
+            }
+            g_strfreev(names);
+
+        }
     }
 }
 
@@ -592,8 +603,8 @@ void gaym_msg_nonick_chan(struct gaym_conn *gaym, const char *name,
 
     if (gc == NULL || args == NULL || args[1] == NULL)
         return;
-    
-    
+
+
 }
 
 void gaym_msg_nonick(struct gaym_conn *gaym, const char *name,
@@ -723,7 +734,7 @@ void gaym_msg_trace(struct gaym_conn *gaym, const char *name,
 void gaym_msg_join(struct gaym_conn *gaym, const char *name,
                    const char *from, char **args)
 {
-    gaim_debug_misc("join","got join for %s\n",args[0]);
+    gaim_debug_misc("join", "got join for %s\n", args[0]);
     GaimConnection *gc = gaim_account_get_connection(gaym->account);
     g_return_if_fail(gc != NULL);
 
@@ -739,19 +750,20 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name,
     if (!gaim_utf8_strcasecmp(nick, gaim_connection_get_display_name(gc))) {
         /* We are joining a channel for the first time */
 
-	gpointer data, unused;
-	gboolean hammering=g_hash_table_lookup_extended
-	    (gaym->hammers,args[0],&unused, &data);
-	//There was a hammer, but it is cancelled. Leave!
-	gaim_debug_misc("join","Joined %s\n",args[0]);
-	if(hammering && !data) { //hammer was cancelled.
-	    gaim_debug_misc("gaym","JOINED, BUT HAMMER CANCELLED: ABORT!!!!\n");
-	    g_hash_table_remove(gaym->hammers, args[0]);
-	    gaym_cmd_part(gaym, NULL, NULL, (const char**)args);
-	    return;
-	}
-	
-	g_hash_table_remove(gaym->hammers, args[0]);
+        gpointer data, unused;
+        gboolean hammering = g_hash_table_lookup_extended
+            (gaym->hammers, args[0], &unused, &data);
+        // There was a hammer, but it is cancelled. Leave!
+        gaim_debug_misc("join", "Joined %s\n", args[0]);
+        if (hammering && !data) {       // hammer was cancelled.
+            gaim_debug_misc("gaym",
+                            "JOINED, BUT HAMMER CANCELLED: ABORT!!!!\n");
+            g_hash_table_remove(gaym->hammers, args[0]);
+            gaym_cmd_part(gaym, NULL, NULL, (const char **) args);
+            return;
+        }
+
+        g_hash_table_remove(gaym->hammers, args[0]);
         serv_got_joined_chat(gc, id++, args[0]);
 
         gint *entry = g_new(gint, 1);
@@ -1181,121 +1193,132 @@ void gaym_msg_quit(struct gaym_conn *gaym, const char *name,
 void gaym_msg_who(struct gaym_conn *gaym, const char *name,
                   const char *from, char **args)
 {
-    char* pos;
-    GaymNamelist* nameslist;
+    char *pos;
+    GaymNamelist *nameslist;
 
-    if (!strncmp(name,"315",3))
-    {
-	
-	nameslist=g_hash_table_lookup(gaym->namelists, args[1]);
-        nameslist->members=g_slist_reverse(nameslist->members);
-	nameslist->current=nameslist->members;
+    if (!strncmp(name, "315", 3)) {
 
-	//If we are doing an "umbrella room" then we send out this names thing.
-	//Because the names parsing section terminates on a "names" from 
-	//The exact channel name match.
-	if(g_str_has_suffix(args[1],"=*"))
-	{
-	    gaim_debug_misc("who","Has a =* suffix, sending out one more namescmd \n");
-	    const char* cmdargs[1]={args[1]};
-	    gaym_cmd_names(gaym, NULL, NULL, cmdargs);
-	}
-	return;
+        nameslist = g_queue_peek_head(gaym->namelists);
+        if (!nameslist)
+            return;
+        nameslist->members = g_slist_reverse(nameslist->members);
+        nameslist->current = nameslist->members;
+
+        // If we are doing an "umbrella room" then we send out this names
+        // thing.
+        // Because the names parsing section terminates on a "names" from 
+        // The exact channel name match.
+        if (g_str_has_suffix(args[1], "=*")) {
+            gaim_debug_misc("who",
+                            "Has a =* suffix, sending out one more namescmd \n");
+            const char *cmdargs[1] = { args[1] };
+            gaym_cmd_names(gaym, NULL, NULL, cmdargs);
+        }
+        return;
     }
 
-    if(args[2])
-    {
+    if (args[2]) {
 
-	nameslist=g_hash_table_lookup(gaym->namelists, args[1]);
-	if(!nameslist)
-	    return;
-	GaymBuddy *member=g_new0(GaymBuddy, 1);
-	gchar** parts=g_strsplit(args[2],"|",2);
-	if(args[1])
-	{
-	    member->bio=gaym_bio_strdup(parts[1]);
-	    member->thumbnail=gaym_thumbnail_strdup(parts[1]);
-	    member->prefix=g_strndup(parts[1],6);
-	    
-	    gchar* stats=gaym_stats_strdup(parts[1]);
-	    if(stats) 
-	    {
-		gchar** stat_parts=g_strsplit(stats,"|",3);
-		member->sex=stat_parts[0];
-		member->age=stat_parts[1];
-		member->location=stat_parts[2];
-		g_free(stats);
-	    }
-	    
-	    nameslist->members=g_slist_prepend(nameslist->members, member);
-	}
-	g_strfreev(parts);	
-	
-	pos=strrchr(args[1], '=');
-	int val=0;
-	if (!pos)
-	    return;
-	val=g_ascii_digit_value(*(++pos));
-	if (val<nameslist->num_rooms)
-	{
-	    gaim_debug_misc("msgs","*******NEXT ROOM******\n");
-	    const char* cmdargs[1]={args[1]};
-	    gaym_cmd_names(gaym, NULL, NULL, cmdargs);
-	    nameslist->num_rooms=val;
-	}
+        nameslist = g_queue_peek_tail(gaym->namelists);
+        if (!nameslist)
+            return;
+        GaymBuddy *member = g_new0(GaymBuddy, 1);
+        gchar **parts = g_strsplit(args[2], " ", 7);
+
+        if (parts[6]) {
+            member->bio = gaym_bio_strdup(parts[6]);
+            member->thumbnail = gaym_thumbnail_strdup(parts[6]);
+            char *prefix_start = NULL;
+            if (g_ascii_isdigit(parts[3][0])
+                && (prefix_start = strchr(parts[3], '|')))
+                member->prefix = g_strdup(prefix_start + 1);
+            else
+                member->prefix = g_strdup(parts[3]);
+
+            gchar *stats = gaym_stats_strdup(parts[6]);
+            if (stats) {
+                gchar **stat_parts = g_strsplit(stats, "|", 3);
+                member->sex = stat_parts[0];
+                member->age = stat_parts[1];
+                member->location = stat_parts[2];
+                g_free(stats);
+            }
+
+            nameslist->members =
+                g_slist_prepend(nameslist->members, member);
+        }
+        g_strfreev(parts);
+
+        pos = strrchr(args[1], '=');
+        int val = 0;
+        if (!pos)
+            return;
+        val = g_ascii_digit_value(*(++pos));
+        if (val < nameslist->num_rooms) {
+            gaim_debug_misc("msgs", "*******NEXT ROOM******\n");
+            const char *cmdargs[1] = { args[1] };
+            gaym_cmd_names(gaym, NULL, NULL, cmdargs);
+            nameslist->num_rooms = val;
+        }
     }
 
-     
-    
-    //Use the who msgs cross-referenced with the NAMES list to figure out who is who. Resolve conflicts.
-    
+
+    // Use the who msgs cross-referenced with the NAMES list to figure out 
+    // who is who. Resolve conflicts.
+
 }
 
 void hammer_stop_cb(gpointer data)
 {
-    struct hammer_cb_data* hdata = (struct hammer_cb_data *) data;
+    struct hammer_cb_data *hdata = (struct hammer_cb_data *) data;
 
-    gaim_debug_misc("gaym","hammer stopped, dialog is %x\n",hdata->cancel_dialog);
-    //This destroys the hammer data!
-    gaim_debug_misc("gaym", "Cancelling hammer: %s\n",hdata->room);
-    //I'm not sure if the dialog data is freed. 
-    //For now, I assume not. 
-    //hdata->cancel_dialog=0;
-    //The old key gets freed, so strdup it again
-    g_hash_table_replace(hdata->gaym->hammers, g_strdup(hdata->room), NULL); 
+    gaim_debug_misc("gaym", "hammer stopped, dialog is %x\n",
+                    hdata->cancel_dialog);
+    // This destroys the hammer data!
+    gaim_debug_misc("gaym", "Cancelling hammer: %s\n", hdata->room);
+    // I'm not sure if the dialog data is freed. 
+    // For now, I assume not. 
+    // hdata->cancel_dialog=0;
+    // The old key gets freed, so strdup it again
+    g_hash_table_replace(hdata->gaym->hammers, g_strdup(hdata->room),
+                         NULL);
 }
 
-void hammer_cb_data_destroy(struct hammer_cb_data *hdata) {
-    if(!hdata)
-	return;
-    if(hdata->cancel_dialog)
-	gaim_request_close(GAIM_REQUEST_ACTION, hdata->cancel_dialog);
-    if(hdata->room)
-	g_free(hdata->room);
+void hammer_cb_data_destroy(struct hammer_cb_data *hdata)
+{
+    if (!hdata)
+        return;
+    if (hdata->cancel_dialog)
+        gaim_request_close(GAIM_REQUEST_ACTION, hdata->cancel_dialog);
+    if (hdata->room)
+        g_free(hdata->room);
     g_free(hdata);
 }
 
-void hammer_cb_no(gpointer data) {
+void hammer_cb_no(gpointer data)
+{
     hammer_cb_data_destroy(data);
 }
 
 void hammer_cb_yes(gpointer data)
 {
     struct hammer_cb_data *hdata = (struct hammer_cb_data *) data;
-    char* room=g_strdup(hdata->room);
-    const char *args[1]={room};
-    
+    char *room = g_strdup(hdata->room);
+    const char *args[1] = { room };
+
     char *msg;
     msg = g_strdup_printf("Hammering into room %s", hdata->room);
     hdata->cancel_dialog =
-        gaim_request_action(hdata->gaym->account->gc, _("Cancel Hammer"), msg,
-                            NULL, 0, hdata, 1, ("Cancel"), hammer_stop_cb);
-    g_hash_table_insert(hdata->gaym->hammers, g_strdup(hdata->room), hdata);
+        gaim_request_action(hdata->gaym->account->gc, _("Cancel Hammer"),
+                            msg, NULL, 0, hdata, 1, ("Cancel"),
+                            hammer_stop_cb);
+    g_hash_table_insert(hdata->gaym->hammers, g_strdup(hdata->room),
+                        hdata);
     gaym_cmd_join(hdata->gaym, NULL, NULL, args);
     if (msg)
         g_free(msg);
     if (room)
-	g_free(room);
+        g_free(room);
 }
 void gaym_msg_chanfull(struct gaym_conn *gaym, const char *name,
                        const char *from, char **args)
@@ -1309,33 +1332,31 @@ void gaym_msg_chanfull(struct gaym_conn *gaym, const char *name,
 
     joinargs[0] = args[1];
 
-    gpointer unused=NULL;
-    gpointer data=NULL;
-    gboolean hammering=g_hash_table_lookup_extended
-	(gaym->hammers,args[1],&unused, &data);
+    gpointer unused = NULL;
+    gpointer data = NULL;
+    gboolean hammering = g_hash_table_lookup_extended
+        (gaym->hammers, args[1], &unused, &data);
 
-    if(hammering && data) {
-        //Add delay here?
-	gaym_cmd_join(gaym, NULL, NULL, joinargs);
-    }
-    else if(hammering && !data) { //hammer was cancelled.
-	    gaim_debug_misc("gaym","HAMMER CANCELLED ON FULL MESSAGE\n");
-	g_hash_table_remove(gaym->hammers, args[1]);
-    }
-    else {
+    if (hammering && data) {
+        // Add delay here?
+        gaym_cmd_join(gaym, NULL, NULL, joinargs);
+    } else if (hammering && !data) {    // hammer was cancelled.
+        gaim_debug_misc("gaym", "HAMMER CANCELLED ON FULL MESSAGE\n");
+        g_hash_table_remove(gaym->hammers, args[1]);
+    } else {
         buf =
             g_strdup_printf("%s is full. Do you want to keep trying?",
                             args[1]);
-	struct hammer_cb_data* hdata = g_new0(struct hammer_cb_data, 1);
-	hdata->gaym=gaym;
-	hdata->room=g_strdup(args[1]);
-	hdata->cancel_dialog=NULL;
+        struct hammer_cb_data *hdata = g_new0(struct hammer_cb_data, 1);
+        hdata->gaym = gaym;
+        hdata->room = g_strdup(args[1]);
+        hdata->cancel_dialog = NULL;
         gaim_request_yes_no(gc, _("Room Full"), _("Room Full"), buf, 0,
                             hdata, hammer_cb_yes, hammer_cb_no);
 
         g_free(buf);
     }
-	
+
 }
 
 void gaym_msg_create_pay_only(struct gaym_conn *gaym, const char *name,
