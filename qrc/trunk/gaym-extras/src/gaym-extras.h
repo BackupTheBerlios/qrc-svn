@@ -22,6 +22,12 @@
 #define GAYM_STOCK_ENTRY "entry"
 #define GAYM_STOCK_PIC "pic"
 
+// Messy.
+#ifdef _WIN32
+#include "win32/win32dep.h"
+#else
+#define DATADIR GAIM_DATADIR
+#endif
 
 struct fetch_thumbnail_data {
     const char *who;

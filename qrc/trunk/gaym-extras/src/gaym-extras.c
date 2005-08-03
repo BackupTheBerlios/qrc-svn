@@ -1,12 +1,7 @@
+
+#include "gaym-extras.h"
 /* Show icons in chat room windows */
 
-// Messy.
-#include "gaym-extras.h"
-#ifdef _WIN32
-#include "win32/win32dep.h"
-#else
-#define DATADIR GAIM_DATADIR
-#endif
 void get_icon_scale_size(GdkPixbuf * icon, GaimBuddyIconSpec * spec,
                          int *width, int *height)
 {

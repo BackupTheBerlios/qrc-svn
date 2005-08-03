@@ -44,6 +44,7 @@ void gaym_update_thumbnail(GaimConversation * conv, GdkPixbuf * pixbuf)
     // aspect=(double)gdk_pixbuf_get_width(pixbuf)/(double)gdk_pixbuf_get_height(pixbuf); 
     // 
     // 
+    // 
 
     scale =
         gdk_pixbuf_scale_simple(pixbuf,
@@ -194,10 +195,10 @@ void chaticon_replace(GaimConversation * conv, const char *name,
         g_print("Row %d: (%s)(%s)\n", row_count, str_data, name);
 
         if (!strcmp(str_data, name)) {
-            GdkPixbuf *pixbuf =
-                lookup_cached_thumbnail(conv->account,
-                                        gaim_normalize(conv->account,
-                                                       name));
+            GdkPixbuf *pixbuf = lookup_cached_thumbnail(conv->account,
+                                                        gaim_normalize
+                                                        (conv->account,
+                                                         name));
             gaim_debug_misc("chaticon", "Got pixbuf: %x\n");
             GtkTreePath *path = gtk_tree_model_get_path(list_store, &iter);
             gtk_list_store_set(GTK_LIST_STORE(list_store), &iter, 0,

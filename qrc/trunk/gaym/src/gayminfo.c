@@ -167,7 +167,7 @@ void gaym_fetch_thumbnail_cb(void *user_data, const char *pic_data,
     }
     if (GAIM_CONNECTION_IS_VALID(d->gc) && len) {
         gaim_signal_emit(gaim_accounts_get_handle(), "info-updated",
-                         d->gc, NULL, d->who);
+                         d->gc, d->who);
         if (gaim_find_conversation_with_account(d->who, d->gc->account)) {
             // gaim_buddy_icons_set_for_user(gaim_connection_get_account
             // (d->gc), d->who,
@@ -183,7 +183,8 @@ void gaym_fetch_thumbnail_cb(void *user_data, const char *pic_data,
 }
 
 void gaym_buddy_status(struct gaym_conn *gaym, char *name,
-                       gboolean online, char *info)
+                       gboolean online, char *info,
+                       gboolean fetch_thumbnail)
 {
     char *bio = NULL;
     char *thumbnail = NULL;
@@ -225,10 +226,12 @@ void gaym_buddy_status(struct gaym_conn *gaym, char *name,
     }
 
     struct gaym_buddy *ib = g_hash_table_lookup(gaym->buddies, name);
+    if (!ib)
+        ib = g_hash_table_lookup(gaym->channel_members, name);
 
     char *normalized = g_strdup(gaim_normalize(gaym->account, name));
 
-    if (thumbnail) {
+    if (thumbnail && fetch_thumbnail) {
         gboolean do_fetch = 1;
         GError *err = NULL;
         if (!ib || gaim_utf8_strcasecmp(thumbnail, ib->thumbnail)) {
@@ -258,13 +261,6 @@ void gaym_buddy_status(struct gaym_conn *gaym, char *name,
                 g_dir_close(gdir);
             }
             if (do_fetch) {
-
-                gaim_debug_misc("gaym",
-                                "********************************************\n");
-                gaim_debug_misc("gaym",
-                                "*****************FETCH**********************\n");
-                gaim_debug_misc("gaym",
-                                "********************************************\n");
                 char *hashurl = NULL;
                 hashurl =
                     g_hash_table_lookup(gaym->confighash,

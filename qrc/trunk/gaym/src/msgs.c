@@ -209,7 +209,7 @@ void gaym_msg_no_such_nick(struct gaym_conn *gaym, const char *name,
 
     gcom_nick_to_gaym(args[1]);
 
-    gaym_buddy_status(gaym, args[1], FALSE, NULL);
+    gaym_buddy_status(gaym, args[1], FALSE, NULL, FALSE);
 
     char *normalized = g_strdup(gaim_normalize(gaym->account, args[1]));
 
@@ -247,7 +247,7 @@ void gaym_msg_whois(struct gaym_conn *gaym, const char *name,
 
     gcom_nick_to_gaym(args[1]);
 
-    gaym_buddy_status(gaym, args[1], TRUE, args[5]);
+    gaym_buddy_status(gaym, args[1], TRUE, args[5], TRUE);
 
     char *normalized = g_strdup(gaim_normalize(gaym->account, args[1]));
 
@@ -257,6 +257,7 @@ void gaym_msg_whois(struct gaym_conn *gaym, const char *name,
     // during conversation-created.
     gaym_update_channel_member(gaym, normalized, args[5]);
     gaym_unreference_channel_member(gaym, normalized);
+    gaim_debug_misc("gaym", "signalling info update for %s\n", args[1]);
     gaim_signal_emit(gaim_accounts_get_handle(), "info-updated",
                      gaym->account, args[1]);
 
@@ -785,7 +786,7 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name,
     gint *entry = g_hash_table_lookup(gaym->entry_order, args[0]);
     g_return_if_fail(entry != NULL);
 
-    gaym_buddy_status(gaym, nick, TRUE, args[1]);
+    gaym_buddy_status(gaym, nick, TRUE, args[1], TRUE);
 
 
     gboolean gaym_botfilter_permit =
@@ -1183,7 +1184,7 @@ void gaym_msg_quit(struct gaym_conn *gaym, const char *name,
     /* XXX this should have an API, I shouldn't grab this directly */
     g_slist_foreach(gc->buddy_chats, (GFunc) gaym_chat_remove_buddy, data);
 
-    gaym_buddy_status(gaym, data[0], FALSE, NULL);
+    gaym_buddy_status(gaym, data[0], FALSE, NULL, FALSE);
 
     g_free(data[0]);
 
@@ -1262,8 +1263,8 @@ void gaym_msg_who(struct gaym_conn *gaym, const char *name,
         }
     }
 
-
     // Use the who msgs cross-referenced with the NAMES list to figure out 
+    // 
     // who is who. Resolve conflicts.
 
 }
@@ -1465,7 +1466,7 @@ void gaym_msg_richnames_list(struct gaym_conn *gaym, const char *name,
         gaym_botfilter_check(gc, nick, bio, FALSE);
     g_free(bio);
 
-    gaym_buddy_status(gaym, nick, TRUE, extra);
+    gaym_buddy_status(gaym, nick, TRUE, extra, FALSE);
 
     if (convo == NULL) {
         gaim_debug(GAIM_DEBUG_ERROR, "gaym", "690 for %s failed\n",

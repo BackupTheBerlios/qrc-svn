@@ -235,9 +235,11 @@ static char *gaym_tooltip_text(GaimBuddy * buddy)
         return NULL;
     }
 
-    struct gaym_buddy *ib =
-        g_hash_table_lookup(gaym->channel_members,
-                            gaim_normalize(gaym->account, buddy->name));
+    struct gaym_buddy *ib = g_hash_table_lookup(gaym->channel_members,
+                                                gaim_normalize(gaym->
+                                                               account,
+                                                               buddy->
+                                                               name));
     if (!ib)
         ib = g_hash_table_lookup(gaym->buddies,
                                  gaim_normalize(gaym->account,
@@ -768,6 +770,15 @@ static int gaym_im_send(GaimConnection * gc, const char *who,
     return 1;
 }
 
+static void gaym_get_info_quietly(GaimConnection * gc, const char *who)
+{
+    gaim_debug_misc("gaym", "request info quietly\n");
+    struct gaym_conn *gaym = gc->proto_data;
+    const char *args[1];
+    args[0] = who;
+
+    gaym_cmd_whois(gaym, "whois", NULL, args);
+}
 static void gaym_get_info(GaimConnection * gc, const char *who)
 {
     struct gaym_conn *gaym = gc->proto_data;
@@ -1672,9 +1683,21 @@ static void _init_plugin(GaimPlugin * plugin)
                                         GAIM_SUBTYPE_ACCOUNT),
                          gaim_value_new(GAIM_TYPE_POINTER,
                                         GAIM_TYPE_CHAR));
+    gaim_signal_register(gaim_accounts_get_handle(),
+                         "request-info-quietly",
+                         gaim_marshal_VOID__POINTER_POINTER, NULL, 2,
+                         gaim_value_new(GAIM_TYPE_SUBTYPE,
+                                        GAIM_SUBTYPE_ACCOUNT),
+                         gaim_value_new(GAIM_TYPE_POINTER,
+                                        GAIM_TYPE_CHAR));
+
     gaim_signal_connect(gaim_accounts_get_handle(), "request-namelist",
                         plugin, GAIM_CALLBACK(gaym_get_room_namelist),
                         NULL);
+    gaim_signal_connect(gaim_accounts_get_handle(), "request-info-quietly",
+                        plugin, GAIM_CALLBACK(gaym_get_info_quietly),
+                        NULL);
+
 
 
 

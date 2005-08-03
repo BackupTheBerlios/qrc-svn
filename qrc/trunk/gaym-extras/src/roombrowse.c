@@ -59,6 +59,80 @@ typedef struct RoomBrowseGui {
     GaimConnection *gc;
 } RoomBrowseGui;
 
+
+void update_photos(const char *room, const RoomBrowseGui * browser,
+                   const char *name)
+{
+
+    GaimPlugin *prpl = NULL;
+    GaimPluginProtocolInfo *prpl_info = NULL;
+    prpl =
+        gaim_find_prpl(gaim_account_get_protocol_id(browser->gc->account));
+    if (prpl)
+        prpl_info = GAIM_PLUGIN_PROTOCOL_INFO(prpl);
+
+    int scale_width = 0, scale_height = 0;
+    gboolean valid;
+    GtkTreeIter iter;
+    int row_count = 0;
+    GtkTreeModel *list_store =
+        gtk_tree_view_get_model(GTK_TREE_VIEW(browser->list));
+    /* Get the first iter in the list */
+    valid = gtk_tree_model_get_iter_first(list_store, &iter);
+
+    while (valid) {
+        /* Walk through the list, reading each row */
+        gchar *str_data;
+
+        /* Make sure you terminate calls to gtk_tree_model_get() with a
+           '-1' value */
+        gtk_tree_model_get(list_store, &iter, COLUMN_NAME, &str_data, -1);
+
+
+        if (!strcmp(str_data, name)) {
+            gaim_debug_misc("roombrowse", "Update user %s in %s\n", name,
+                            room);
+            GdkPixbuf *pixbuf =
+                lookup_cached_thumbnail(browser->gc->account,
+                                        gaim_normalize(browser->gc->
+                                                       account,
+                                                       name));
+            gaim_debug_misc("chaticon", "Got pixbuf: %x\n", pixbuf);
+            get_icon_scale_size(pixbuf,
+                                prpl_info ? &prpl_info->icon_spec : NULL,
+                                &scale_width, &scale_height);
+
+            GdkPixbuf *scale = gdk_pixbuf_scale_simple(pixbuf,
+                                                       scale_width,
+                                                       scale_height,
+                                                       GDK_INTERP_BILINEAR);
+
+            GtkTreePath *path = gtk_tree_model_get_path(list_store, &iter);
+            gtk_list_store_set(GTK_LIST_STORE(list_store), &iter,
+                               COLUMN_PHOTO, scale, -1);
+
+            gtk_tree_model_row_changed(list_store, path, &iter);
+            // g_free(pixbuf);
+            break;
+        }
+        row_count++;
+        valid = gtk_tree_model_iter_next(list_store, &iter);
+        g_free(str_data);
+    }
+
+
+}
+
+void roombrowse_update_list_row(GaimConnection * gc, const char *who)
+{
+
+    gaim_debug_misc("roombrowse",
+                    "in callback for info-updated signal, with who=%s\n",
+                    who);
+    g_hash_table_foreach(browsers, (GHFunc) update_photos, (char *) who);
+
+}
+
 void roombrowse_add_info(gpointer data, RoomBrowseGui * browser)
 {
     /* Add a new row to the model */
@@ -83,33 +157,54 @@ void roombrowse_add_info(gpointer data, RoomBrowseGui * browser)
     g_string_erase(info, 0, 1);
     char *infoc = g_string_free(info, FALSE);
     gtk_list_store_append(GTK_LIST_STORE(browser->model), &browser->iter);
+    GdkPixbuf *pixbuf = NULL;
     if (member->thumbnail) {
 
-        GdkPixbuf *pixbuf = lookup_cached_thumbnail(browser->gc->account,
-                                                    gaim_normalize
-                                                    (browser->gc->account,
-                                                     member->name));
+        pixbuf = lookup_cached_thumbnail(browser->gc->account,
+                                         gaim_normalize
+                                         (browser->gc->account,
+                                          member->name));
 
         if (browser->gc)
             prpl_info = GAIM_PLUGIN_PROTOCOL_INFO(browser->gc->prpl);
-        get_icon_scale_size(pixbuf,
-                            prpl_info ? &prpl_info->icon_spec : NULL,
-                            &scale_width, &scale_height);
 
-        GdkPixbuf *scale = gdk_pixbuf_scale_simple(pixbuf,
-                                                   scale_width,
-                                                   scale_height,
-                                                   GDK_INTERP_BILINEAR);
-        g_object_unref(pixbuf);
-        gtk_list_store_set(GTK_LIST_STORE(browser->model), &browser->iter,
-                           COLUMN_PHOTO, scale, -1);
 
+    } else {
+        GaimPlugin *prpl = NULL;
+        GaimPluginProtocolInfo *prpl_info = NULL;
+        prpl =
+            gaim_find_prpl(gaim_account_get_protocol_id
+                           (browser->gc->account));
+        if (prpl)
+            prpl_info = GAIM_PLUGIN_PROTOCOL_INFO(prpl);
+        if (prpl_info && prpl_info->list_icon) {
+            const char *protoname =
+                prpl_info->list_icon(browser->gc->account, NULL);
+
+            char *image = g_strdup_printf("%s.png", protoname);
+            char *filename =
+                g_build_filename(DATADIR, "pixmaps", "gaim", "status",
+                                 "default", image, NULL);
+
+            pixbuf = gdk_pixbuf_new_from_file(filename, NULL);
+        }
     }
+    get_icon_scale_size(pixbuf,
+                        prpl_info ? &prpl_info->icon_spec : NULL,
+                        &scale_width, &scale_height);
+
+    GdkPixbuf *scale = gdk_pixbuf_scale_simple(pixbuf,
+                                               scale_width,
+                                               scale_height,
+                                               GDK_INTERP_BILINEAR);
+    g_object_unref(pixbuf);
+
     gtk_list_store_set(GTK_LIST_STORE(browser->model), &browser->iter,
-                       COLUMN_SYNC, sync,
-                       COLUMN_NAME, member->name,
-                       COLUMN_PREFIX, member->prefix,
-                       COLUMN_INFO, infoc, -1);
+                       COLUMN_PHOTO, scale,
+#if DEBUG
+                       COLUMN_SYNC, sync, COLUMN_PREFIX, member->prefix,
+#endif
+                       COLUMN_NAME, member->name, COLUMN_INFO, infoc, -1);
 
 
 }
@@ -133,7 +228,7 @@ void roombrowse_update_list(GaimAccount * account, GaymNamelist * namelist)
 
 }
 
-gboolean update_list(GtkWidget * button, gpointer data)
+static gboolean update_list(GtkWidget * button, gpointer data)
 {
 
     gaim_debug_misc("roombrowse", "Doing list update!\n");
@@ -268,6 +363,28 @@ static gint chat_popup_menu_cb(GtkWidget * widget, RoomBrowseGui * browser)
 
     return TRUE;
 }
+static void changed_cb(GtkTreeSelection * selection, gpointer gc)
+{
+
+    g_return_if_fail(selection != NULL);
+
+    gaim_debug_misc("roombrowse", "Changed_cb\n");
+    GtkTreeIter iter;
+    GtkTreeModel *model = NULL;
+    gchar *name;
+    if (!gtk_tree_selection_get_selected(selection, &model, &iter))
+        return;
+
+    gtk_tree_model_get(model, &iter, COLUMN_NAME, &name, -1);
+
+    gaim_debug_misc("roombrowse",
+                    "emit request-info-quietly signal for %s\n", name);
+    gaim_signal_emit(gaim_accounts_get_handle(), "request-info-quietly",
+                     gc, name);
+
+    return;
+
+}
 
 // Right out of gtkconv.c
 static gint
@@ -312,7 +429,6 @@ click_cb(GtkWidget * widget, GdkEventButton * event,
         gtk_menu_popup(GTK_MENU(menu), NULL, NULL, NULL, NULL,
                        event->button, event->time);
     }
-
     g_free(who);
     gtk_tree_path_free(path);
 
@@ -373,13 +489,6 @@ static void roombrowse_menu_cb(GaimBlistNode * node, gpointer data)
                                                  COLUMN_PHOTO, NULL);
     gtk_tree_view_append_column(GTK_TREE_VIEW(browser->list), col);
 
-    rend = gtk_cell_renderer_text_new();
-    gtk_cell_renderer_set_fixed_size(rend, -1, 80);
-    col =
-        gtk_tree_view_column_new_with_attributes("?", rend, "text",
-                                                 COLUMN_SYNC, NULL);
-    gtk_tree_view_append_column(GTK_TREE_VIEW(browser->list), col);
-
 
     rend = gtk_cell_renderer_text_new();
     gtk_cell_renderer_set_fixed_size(rend, -1, 80);
@@ -387,7 +496,7 @@ static void roombrowse_menu_cb(GaimBlistNode * node, gpointer data)
         gtk_tree_view_column_new_with_attributes("Name", rend, "text",
                                                  COLUMN_NAME, NULL);
     gtk_tree_view_append_column(GTK_TREE_VIEW(browser->list), col);
-
+#if DEBUG
     rend = gtk_cell_renderer_text_new();
     gtk_cell_renderer_set_fixed_size(rend, -1, 80);
     col =
@@ -395,6 +504,13 @@ static void roombrowse_menu_cb(GaimBlistNode * node, gpointer data)
                                                  COLUMN_PREFIX, NULL);
     gtk_tree_view_append_column(GTK_TREE_VIEW(browser->list), col);
 
+    rend = gtk_cell_renderer_text_new();
+    gtk_cell_renderer_set_fixed_size(rend, -1, 80);
+    col =
+        gtk_tree_view_column_new_with_attributes("?", rend, "text",
+                                                 COLUMN_SYNC, NULL);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(browser->list), col);
+#endif
 
     rend = gtk_cell_renderer_text_new();
     gtk_cell_renderer_set_fixed_size(rend, -1, 80);
@@ -408,7 +524,13 @@ static void roombrowse_menu_cb(GaimBlistNode * node, gpointer data)
     g_signal_connect(G_OBJECT(browser->list), "popup-menu",
                      G_CALLBACK(chat_popup_menu_cb), browser);
 
+    GtkTreeSelection *select =
+        gtk_tree_view_get_selection(GTK_TREE_VIEW(browser->list));
 
+    gtk_tree_selection_set_mode(select, GTK_SELECTION_SINGLE);
+
+    g_signal_connect(G_OBJECT(select), "changed",
+                     G_CALLBACK(changed_cb), gc);
     gtk_container_add(GTK_CONTAINER(sw), browser->list);
     gtk_widget_show(browser->list);
 
@@ -468,6 +590,11 @@ void init_roombrowse(GaimPlugin * plugin)
     gaim_signal_connect(gaim_accounts_get_handle(),
                         "namelist-complete",
                         plugin, GAIM_CALLBACK(roombrowse_update_list),
+                        NULL);
+
+    gaim_signal_connect(gaim_accounts_get_handle(),
+                        "info-updated",
+                        plugin, GAIM_CALLBACK(roombrowse_update_list_row),
                         NULL);
 
     browsers =

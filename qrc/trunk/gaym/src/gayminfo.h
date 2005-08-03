@@ -89,9 +89,11 @@ char *gaym_stats_strdup(const char *info);
  * @param name The buddy name
  * @param online Is the buddy on line.
  * @param info The extra IRC info string about the buddy, if any.
+ * @param fetch_thumbnail Whether or not to trigger a url fetch of thumbnail photo.
  */
 void gaym_buddy_status(struct gaym_conn *gaym, char *name,
-                       gboolean online, char *info);
+                       gboolean online, char *info,
+                       gboolean fetch_thumbnail);
 
 
 void gaym_update_channel_member(struct gaym_conn *gaym, const char *nick,

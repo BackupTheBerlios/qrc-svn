@@ -245,7 +245,8 @@ typedef struct GaymNamelist {
     GSList *members;            // List of GaymBuddies;
     int num_rooms;
     GSList *current;            // Pointer to gaymbuddy to be updated next 
-                                // (during names pass)
+                                // 
+    // (during names pass)
 } GaymNamelist;
 void gaym_dccsend_send_file(GaimConnection * gc, const char *who,
                             const char *file);
