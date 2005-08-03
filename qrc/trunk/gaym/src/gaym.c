@@ -1434,9 +1434,11 @@ void deref_one_user(gpointer * user, gpointer * data)
 }
 static void gaym_clean_channel_members(GaimConversation * conv)
 {
+    if(strncmp(conv->account->protocol_id, "prpl-gaym", 9))
+        return;
 
     g_return_if_fail(conv != NULL);
-
+    
     if (conv->type == GAIM_CONV_CHAT) {
         GaimConvChat *chat = gaim_conversation_get_chat_data(conv);
         GaimConnection *gc = gaim_conversation_get_gc(conv);
