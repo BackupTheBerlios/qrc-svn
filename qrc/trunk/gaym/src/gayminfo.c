@@ -167,12 +167,14 @@ void gaym_fetch_thumbnail_cb(void *user_data, const char *pic_data,
     }
     if (GAIM_CONNECTION_IS_VALID(d->gc) && len) {
         gaim_signal_emit(gaim_accounts_get_handle(), "info-updated",
-                         d->gc, d->who);
-        if (gaim_find_conversation_with_account(d->who, d->gc->account)) {
-            // gaim_buddy_icons_set_for_user(gaim_connection_get_account
-            // (d->gc), d->who,
-            // (void *) pic_data, len);
-        }
+                         d->gc->account, d->who);
+      /*  if (gaim_find_conversation_with_account(d->who, d->gc->account)) {
+	    
+	    gaim_debug_misc("fetch_thumbnail_cb","setting buddy icon\n");
+            gaim_buddy_icons_set_for_user(gaim_connection_get_account
+             (d->gc), d->who,
+             (void *) pic_data, len);
+        }*/
 
     } else {
         gaim_debug_error("gaym", "Fetching buddy icon failed.\n");

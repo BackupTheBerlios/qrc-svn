@@ -213,8 +213,9 @@ void gaym_msg_no_such_nick(struct gaym_conn *gaym, const char *name,
 
     char *normalized = g_strdup(gaim_normalize(gaym->account, args[1]));
 
-    if (g_hash_table_lookup(gaym->info_window_needed, normalized)) {
-        g_hash_table_remove(gaym->info_window_needed, normalized);
+    if (g_hash_table_lookup(gaym->info_window_needed, normalized)) 
+    {
+	g_hash_table_remove(gaym->info_window_needed, normalized);
 
         char *hashurl =
             g_hash_table_lookup(gaym->confighash, "view-profile-url");

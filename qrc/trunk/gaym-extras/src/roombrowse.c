@@ -90,14 +90,11 @@ void update_photos(const char *room, const RoomBrowseGui * browser,
 
 
         if (!strcmp(str_data, name)) {
-            gaim_debug_misc("roombrowse", "Update user %s in %s\n", name,
-                            room);
             GdkPixbuf *pixbuf =
                 lookup_cached_thumbnail(browser->gc->account,
                                         gaim_normalize(browser->gc->
                                                        account,
                                                        name));
-            gaim_debug_misc("chaticon", "Got pixbuf: %x\n", pixbuf);
             get_icon_scale_size(pixbuf,
                                 prpl_info ? &prpl_info->icon_spec : NULL,
                                 &scale_width, &scale_height);
@@ -126,9 +123,6 @@ void update_photos(const char *room, const RoomBrowseGui * browser,
 void roombrowse_update_list_row(GaimConnection * gc, const char *who)
 {
 
-    gaim_debug_misc("roombrowse",
-                    "in callback for info-updated signal, with who=%s\n",
-                    who);
     g_hash_table_foreach(browsers, (GHFunc) update_photos, (char *) who);
 
 }
@@ -147,16 +141,19 @@ void roombrowse_add_info(gpointer data, RoomBrowseGui * browser)
          (MIN(strlen(member->name), strlen(member->prefix)) - 1))) {
         sync = "N";
     }
+    
     GString *info = g_string_new("");
     if (member->age)
-        g_string_append_printf(info, "\nAge: %s", member->age);
+        g_string_append_printf(info, "\n<b>Age:</b> %s", member->age);
     if (member->location)
-        g_string_append_printf(info, "\nLocation: %s", member->location);
+        g_string_append_printf(info, "\n<b>Location:</b> %s", member->location);
     if (member->bio)
-        g_string_append_printf(info, "\nInfo: %s", member->bio);
+        g_string_append_printf(info, "\n<b>Info</b>: %s", member->bio);
     g_string_erase(info, 0, 1);
     char *infoc = g_string_free(info, FALSE);
-    gtk_list_store_append(GTK_LIST_STORE(browser->model), &browser->iter);
+
+
+        gtk_list_store_append(GTK_LIST_STORE(browser->model), &browser->iter);
     GdkPixbuf *pixbuf = NULL;
     if (member->thumbnail) {
 
@@ -221,6 +218,8 @@ void roombrowse_update_list(GaimAccount * account, GaymNamelist * namelist)
     if (!browser && namelist->roomname) {
         gaim_debug_misc("roombrowse", "No browser found for %s\n",
                         namelist->roomname);
+	return;
+
     }
     gtk_list_store_clear(GTK_LIST_STORE(browser->model));
     g_slist_foreach(namelist->members, (GFunc) roombrowse_add_info,
@@ -368,7 +367,6 @@ static void changed_cb(GtkTreeSelection * selection, gpointer gc)
 
     g_return_if_fail(selection != NULL);
 
-    gaim_debug_misc("roombrowse", "Changed_cb\n");
     GtkTreeIter iter;
     GtkTreeModel *model = NULL;
     gchar *name;
@@ -377,8 +375,6 @@ static void changed_cb(GtkTreeSelection * selection, gpointer gc)
 
     gtk_tree_model_get(model, &iter, COLUMN_NAME, &name, -1);
 
-    gaim_debug_misc("roombrowse",
-                    "emit request-info-quietly signal for %s\n", name);
     gaim_signal_emit(gaim_accounts_get_handle(), "request-info-quietly",
                      gc, name);
 
@@ -435,7 +431,12 @@ click_cb(GtkWidget * widget, GdkEventButton * event,
     return TRUE;
 }
 
-
+static gboolean browser_window_destroyed(GtkWidget* window, GdkEvent* event, gpointer name) {
+    gaim_debug_misc("roombrowser","remove browser entry for %s\n",name);
+    g_hash_table_remove(browsers, name);
+    g_free(name);
+    return FALSE;
+}
 static void roombrowse_menu_cb(GaimBlistNode * node, gpointer data)
 {
     RoomBrowseGui *browser = g_new0(RoomBrowseGui, 1);
@@ -453,7 +454,8 @@ static void roombrowse_menu_cb(GaimBlistNode * node, gpointer data)
     gaim_debug_misc("roombrowse", "chat name: %s\n", room);
     gaim_debug_misc("roombrowse", "channel name: %s\n", channel);
     gtk_window_set_title(GTK_WINDOW(browser->window), room);
-
+    
+    g_signal_connect(browser->window, "delete-event", G_CALLBACK(browser_window_destroyed), g_strdup(channel));
     GtkWidget *vbox = gtk_vbox_new(FALSE, 6);
     gtk_container_add(GTK_CONTAINER(browser->window), vbox);
     gtk_widget_show(vbox);
@@ -491,6 +493,7 @@ static void roombrowse_menu_cb(GaimBlistNode * node, gpointer data)
 
 
     rend = gtk_cell_renderer_text_new();
+    g_object_set(rend, "wrap-mode", PANGO_WRAP_WORD, "wrap-width", 20);
     gtk_cell_renderer_set_fixed_size(rend, -1, 80);
     col =
         gtk_tree_view_column_new_with_attributes("Name", rend, "text",
@@ -515,7 +518,7 @@ static void roombrowse_menu_cb(GaimBlistNode * node, gpointer data)
     rend = gtk_cell_renderer_text_new();
     gtk_cell_renderer_set_fixed_size(rend, -1, 80);
     col =
-        gtk_tree_view_column_new_with_attributes("Info", rend, "text",
+        gtk_tree_view_column_new_with_attributes("Info", rend, "markup",
                                                  COLUMN_INFO, NULL);
     gtk_tree_view_append_column(GTK_TREE_VIEW(browser->list), col);
 
@@ -564,10 +567,6 @@ static void roombrowse_menu_create(GaimBlistNode * node, GList ** menu)
 
     gaym = chat->account->gc->proto_data;
 
-    // char* room = g_strdup(g_hash_table_lookup(chat->components,
-    // "alias"));
-    gaim_debug_misc("roombrowse", "chat: %xRoom name: %s\n", chat,
-                    gaim_chat_get_name(chat));
 
     label =
         g_strdup_printf("Browse users in %s", gaim_chat_get_name(chat));
@@ -598,7 +597,7 @@ void init_roombrowse(GaimPlugin * plugin)
                         NULL);
 
     browsers =
-        g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+        g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
 
     return;
 }

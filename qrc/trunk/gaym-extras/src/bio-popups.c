@@ -1,13 +1,19 @@
 #include "gaym-extras.h"
 // Consider combining into one popup hash...
-GHashTable *popup_rects;
-GHashTable *popup_timeouts;
-GHashTable *popups;
+// All three indexed by a widget (treeview, or tab_label)
+GHashTable *popup_rects; /* */
+GHashTable *popup_timeouts; /* contains *int */ 
+GHashTable *popups; /* contains *GtkWidget for popup window*/
+
+
+/*Called when a conversation is closed
+ * or on plugin unload*/
 void clean_popup_stuff(GaimConversation * c)
 {
 
     if (!g_strrstr(gaim_account_get_protocol_id(c->account), "prpl-gaym"))
         return;
+    
     GaimGtkConversation *gtkconv = GAIM_GTK_CONVERSATION(c);
     if (c->type == GAIM_CONV_IM) {
         g_hash_table_remove(popup_timeouts, gtkconv->tab_label);
@@ -25,6 +31,9 @@ static void namelist_leave_cb(GtkWidget * tv, GdkEventCrossing * e,
                               gpointer n)
 {
     // This prevent clicks from demloishing popups.
+    // However, right clicks *should* demolish the tooltip
+    // Otherwise, it crashes.
+    // I dunno why.
     if (e->mode != GDK_CROSSING_NORMAL && (e->state & GDK_BUTTON1_MASK))
         return;
 
@@ -78,36 +87,6 @@ static void namelist_paint_tip(GtkWidget * tipwindow,
     g_free(data);
 
     return;
-}
-
-GdkPixbuf *lookup_cached_thumbnail(GaimAccount * account,
-                                   const char *fullname)
-{
-    GDir *gdir = NULL;
-    GError *err = NULL;
-    GdkPixbuf *pixbuf = NULL;
-    const char *filename = NULL;
-    char *dirname = NULL;
-    char *path = NULL;
-    const char *name = gaim_normalize(account, fullname);
-    dirname =
-        g_build_filename(gaim_user_dir(), "icons", "gaym", name, NULL);
-    if (dirname) {
-        gdir = g_dir_open(dirname, 0, &err);
-        if (gdir) {
-            filename = g_dir_read_name(gdir);   // don't free filename:
-            // owned by glib.
-            if (filename) {
-                path = g_build_filename(dirname, filename, NULL);
-                if (path)
-                    pixbuf = gdk_pixbuf_new_from_file(path, &err);
-                g_free(path);
-            }
-            g_dir_close(gdir);
-        }
-        g_free(dirname);
-    }
-    return pixbuf;
 }
 
 static gboolean tooltip_timeout(struct timeout_cb_data *data)

@@ -12,7 +12,7 @@
 
 #include "gtkconv.h"
 #include "gtkplugin.h"
-
+#include "gtkutils.h"
 #ifndef GAYM_EXTRAS_H
 #define GAYM_EXTRAS_H
 

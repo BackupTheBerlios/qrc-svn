@@ -168,12 +168,110 @@ void add_chat_icon_stuff(GaimConversation * c)
 
 
 }
+void im_set_icon(GaimAccount* account, const char* name) {
 
+    gaim_debug_misc("chaticon","im_set_icon %x %x\n",account,name);
+    GaimPluginProtocolInfo *prpl_info = NULL;
+    GtkRequisition requisition;
+    
+    GdkPixmap *pm=NULL;
+    GdkBitmap *bm=NULL;
+
+
+
+    int scale_width, scale_height;
+    GaimConversation* conv=gaim_find_conversation_with_account(name,account);
+    if(!conv)
+	return;
+
+    gaim_debug_misc("chaticons","attempting to set icon for %s\n",name);
+    GaimGtkWindow *gtkwin = GAIM_GTK_WINDOW(gaim_conversation_get_window(conv));
+    GaimGtkConversation *gtkconv= GAIM_GTK_CONVERSATION(conv);
+
+    /* Remove the current icon stuff */
+	if (gtkconv->u.im->icon_container != NULL)
+		gtk_widget_destroy(gtkconv->u.im->icon_container);
+	gtkconv->u.im->icon_container = NULL;
+	if (gtkconv->u.im->anim != NULL)
+		g_object_unref(G_OBJECT(gtkconv->u.im->anim));
+
+	gtkconv->u.im->anim = NULL;
+
+	if (gtkconv->u.im->icon_timer != 0)
+		g_source_remove(gtkconv->u.im->icon_timer);
+
+	gtkconv->u.im->icon_timer = 0;
+
+	if (gtkconv->u.im->iter != NULL)
+		g_object_unref(G_OBJECT(gtkconv->u.im->iter));
+
+	gtkconv->u.im->iter = NULL;
+
+	GdkPixbuf *buf=lookup_cached_thumbnail(account, name);
+
+	gaim_debug_misc("chaticon","found cached thumbnail %x\n",buf);	
+	get_icon_scale_size(buf, prpl_info ? &prpl_info->icon_spec :
+			NULL, &scale_width, &scale_height);
+	GdkPixbuf* scale = gdk_pixbuf_scale_simple(buf, scale_width, scale_height,
+				GDK_INTERP_HYPER);
+
+	gdk_pixbuf_render_pixmap_and_mask(scale, &pm, &bm, 100);
+	g_object_unref(G_OBJECT(scale));
+
+
+	gtkconv->u.im->icon_container = gtk_vbox_new(FALSE, 0);
+
+	GtkWidget* frame = gtk_frame_new(NULL);
+	gtk_frame_set_shadow_type(GTK_FRAME(frame),
+							  (bm ? GTK_SHADOW_NONE : GTK_SHADOW_IN));
+	gtk_box_pack_start(GTK_BOX(gtkconv->u.im->icon_container), frame,
+					   FALSE, FALSE, 0);
+
+	GtkWidget* event = gtk_event_box_new();
+	gtk_container_add(GTK_CONTAINER(frame), event);
+	//g_signal_connect(G_OBJECT(event), "button-press-event",
+					 //G_CALLBACK(icon_menu), conv);
+	gtk_widget_show(event);
+
+	gtkconv->u.im->icon = gtk_image_new_from_pixmap(pm, bm);
+	gtk_widget_set_size_request(gtkconv->u.im->icon, scale_width, scale_height);
+	gtk_container_add(GTK_CONTAINER(event), gtkconv->u.im->icon);
+	gtk_widget_show(gtkconv->u.im->icon);
+
+	g_object_unref(G_OBJECT(pm));
+
+	if (bm)
+		g_object_unref(G_OBJECT(bm));
+
+	GaimButtonStyle button_type = gaim_prefs_get_int("/gaim/gtk/conversations/button_type");
+	/* the button seems to get its size before the box, so... */
+	gtk_widget_size_request(gtkconv->send, &requisition);
+	if (button_type == GAIM_BUTTON_NONE || requisition.height * 1.5 < scale_height) {
+		gtk_box_pack_start(GTK_BOX(gtkconv->lower_hbox),
+						   gtkconv->u.im->icon_container, FALSE, FALSE, 0);
+/*		gtk_box_reorder_child(GTK_BOX(gtkconv->lower_hbox), vbox, 0); */
+	} else {
+		gtk_box_pack_start(GTK_BOX(gtkconv->bbox),
+						   gtkconv->u.im->icon_container, FALSE, FALSE, 0);
+		gtk_box_reorder_child(GTK_BOX(gtkconv->bbox),
+							  gtkconv->u.im->icon_container, 0);
+	}
+
+	gtk_widget_show(gtkconv->u.im->icon_container);
+	gtk_widget_show(frame);
+
+	/* The buddy icon code needs badly to be fixed. */
+	buf = gdk_pixbuf_animation_get_static_image(gtkconv->u.im->anim);
+	if(conv == gaim_conv_window_get_active_conversation(gaim_conversation_get_window(conv)))
+		gtk_window_set_icon(GTK_WINDOW(gtkwin->window), buf);
+	
+}
 void chaticon_replace(GaimConversation * conv, const char *name,
                       GaimConvChatBuddyFlags flags)
 {
     GaimGtkConversation *gtkconv = GAIM_GTK_CONVERSATION(conv);
     GaimGtkChatPane *gtkchat = gtkconv->u.chat;
+
     gboolean valid;
     GtkTreeIter iter;
     int row_count = 0;
@@ -217,9 +315,9 @@ void chaticon_replace(GaimConversation * conv, const char *name,
 void init_chat_icons(GaimPlugin * plugin)
 {
 
-    // gaim_signal_connect(gaim_conversations_get_handle(),
-    // "chat-buddy-joined",
-    // plugin, GAIM_CALLBACK(chaticon_replace), NULL);
+    gaim_signal_connect(gaim_accounts_get_handle(),
+     "info-updated",
+     plugin, GAIM_CALLBACK(im_set_icon), NULL);
 
     icons = g_hash_table_new(g_direct_hash, g_direct_equal);
 }

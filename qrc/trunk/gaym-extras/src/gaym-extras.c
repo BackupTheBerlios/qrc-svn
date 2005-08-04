@@ -126,6 +126,49 @@ void extras_register_stock()
 
 
 }
+
+GdkPixbuf *lookup_cached_thumbnail(GaimAccount * account,
+                                   const char *fullname)
+{
+    GDir *gdir = NULL;
+    GError *err = NULL;
+    GdkPixbuf *pixbuf = NULL;
+    const char *filename = NULL;
+    char *dirname = NULL;
+    char *path = NULL;
+    const char *name = gaim_normalize(account, fullname);
+    dirname =
+        g_build_filename(gaim_user_dir(), "icons", "gaym", name, NULL);
+    if (dirname) {
+        gdir = g_dir_open(dirname, 0, &err);
+        if (gdir) {
+            filename = g_dir_read_name(gdir);   // don't free filename:
+            // owned by glib.
+            if (filename) {
+                path = g_build_filename(dirname, filename, NULL);
+                if (path)
+                    pixbuf = gdk_pixbuf_new_from_file(path, &err);
+                g_free(path);
+            }
+            g_dir_close(gdir);
+        }
+        g_free(dirname);
+    }
+    return pixbuf;
+}
+
+static gboolean plugin_unload(GaimPlugin * plugin) {
+
+    /* Ok, this is hell. I need to:
+     * Remove any icons from the IM windows.
+     * Disconnect signals
+     * Close and destroy roombrowsers/memory associated with
+     * Destroy all popups
+     * Remove chaticon buttons
+     */
+
+
+}
 static gboolean plugin_load(GaimPlugin * plugin)
 {
     init_chat_icons(plugin);
@@ -188,7 +231,7 @@ static GaimPluginInfo info = {
     "Jason LeBrun gaym@jasonlebrun.info",
     GAIM_WEBSITE,
     plugin_load,
-    NULL,
+    plugin_unload,
     NULL,
     NULL,
     &prefs_info,
