@@ -170,7 +170,9 @@ static gboolean tooltip_timeout(struct timeout_cb_data *data)
     gtk_widget_set_name(tipwindow, "gtk-tooltips");
 
     struct paint_data *pdata = g_new0(struct paint_data, 1);
-    pdata->tooltiptext = tooltiptext;
+    pdata->tooltiptext = g_strdup_printf("<b><i>%s</i></b>%s",name,tooltiptext);
+    //pdata->tooltiptext = tooltiptext;
+    g_free(tooltiptext);
     pdata->pixbuf = lookup_cached_thumbnail(account, name);
     g_signal_connect(G_OBJECT(tipwindow), "expose_event",
                      G_CALLBACK(namelist_paint_tip), pdata);
@@ -178,7 +180,7 @@ static gboolean tooltip_timeout(struct timeout_cb_data *data)
     layout = gtk_widget_create_pango_layout(tipwindow, NULL);
     pango_layout_set_wrap(layout, PANGO_WRAP_WORD);
     pango_layout_set_width(layout, 300000);
-    pango_layout_set_markup(layout, tooltiptext, strlen(tooltiptext));
+    pango_layout_set_markup(layout, pdata->tooltiptext, strlen(pdata->tooltiptext));
     pango_layout_get_size(layout, &w, &h);
 
 #if GTK_CHECK_VERSION(2,2,0)

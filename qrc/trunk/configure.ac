@@ -36,6 +36,10 @@ fi
 # Build preferences
 
 
+AC_ARG_ENABLE([display-options],
+	[AS_HELP_STRING(--enable-display_options,build the bot-challenger plugin @<:@default=yes@:>@)],,
+	[enable_display_options="yes"])
+	
 AC_ARG_ENABLE([bot-challenger],
 	[AS_HELP_STRING(--enable-bot-challenger,build the bot-challenger plugin @<:@default=yes@:>@)],,
 	[enable_bot_challenger="yes"])
@@ -49,6 +53,7 @@ AC_ARG_ENABLE([gaym-extras],
 	[enable_gaym_extras="yes"])
 
 AM_CONDITIONAL([COND_BOT_CHALLENGER], [test "$enable_bot_challenger" = "yes"])
+AM_CONDITIONAL([COND_DISPLAY_OPTIONS], [test "$enable_display_options" = "yes"])
 AM_CONDITIONAL([COND_GAYM], [test "$enable_gaym" = "yes"])
 AM_CONDITIONAL([COND_GAYM_EXTRAS], [test "$enable_gaym_extras" = "yes"])
 
@@ -56,6 +61,9 @@ if test "$enable_bot_challenger" != "yes" ; then
 	enable_bot_challenger="no"
 fi
 
+if test "$enable_display_options" != "yes" ; then
+	enable_display_options="no"
+fi
 if test "$enable_gaym" != "yes" ; then
 	enable_gaym="no"
 fi
@@ -72,6 +80,14 @@ export PKG_CONFIG_PATH
 
 PKG_PROG_PKG_CONFIG([$REQUIRED_PKG_CONFIG])
 if test "$enable_gaym_extras" = "yes" ; then
+	PKG_CHECK_MODULES([GTK], [$REQUIRED_GTK],
+		[
+		AC_SUBST(GTK_CFLAGS)
+		AC_SUBST(GTK_LIBS)
+		]
+	)
+fi
+if test "$enable_display_options" = "yes" ; then
 	PKG_CHECK_MODULES([GTK], [$REQUIRED_GTK],
 		[
 		AC_SUBST(GTK_CFLAGS)
@@ -124,6 +140,7 @@ AC_SUBST(CFLAGS)
 
 AC_CONFIG_FILES([Makefile
                  bot-challenger/Makefile
+		 display-options/Makefile
                  gaym/Makefile
                  gaym/pixmaps/Makefile
                  gaym/src/Makefile
@@ -138,6 +155,7 @@ echo
 echo $PACKAGE $VERSION
 echo
 echo Build bot-challenger plugin...... : $enable_bot_challenger
+echo Build display_options plugin...... : $enable_display_options
 echo Build gaym plugin................ : $enable_gaym
 echo Build gaym-extras plugin......... : $enable_gaym_extras
 echo

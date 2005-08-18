@@ -166,7 +166,7 @@ static gboolean plugin_unload(GaimPlugin * plugin) {
      * Destroy all popups
      * Remove chaticon buttons
      */
-
+    return TRUE;
 
 }
 static gboolean plugin_load(GaimPlugin * plugin)

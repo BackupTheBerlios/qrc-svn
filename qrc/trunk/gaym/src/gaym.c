@@ -779,20 +779,38 @@ static void gaym_get_info_quietly(GaimConnection * gc, const char *who)
 
     gaym_cmd_whois(gaym, "whois", NULL, args);
 }
+
+struct get_info_data {
+    char* who;
+    struct gaym_conn* gaym;
+} get_info_data;
+
+static void cancel_get_info_cb(gpointer cb_data) {
+    
+    struct get_info_data* data=(struct get_info_data*)cb_data;
+    if(!data->who || !data->gaym)
+	return;
+    g_hash_table_remove(data->gaym->info_window_needed, data->who);
+
+}
 static void gaym_get_info(GaimConnection * gc, const char *who)
 {
     struct gaym_conn *gaym = gc->proto_data;
     const char *args[1];
+    char buf[100];
     args[0] = who;
 
     char *normalized = g_strdup(gaim_normalize(gc->account, who));
-    /**
-     * We are adding the same char* to both the key and the value.
-     * If this changes, we need to change the corresponding
-     * g_hash_table_new_full() so that things are properly cleaned
-     * up during the remove/destroy phase.
-     */
-    g_hash_table_insert(gaym->info_window_needed, normalized, normalized);
+   
+    struct get_info_data* data=g_new0(struct get_info_data,1);
+    data->who=normalized;
+    data->gaym=gaym;
+    snprintf(buf, 100, "Fetching info for %s...\n",who);
+    void* dialog =
+        gaim_request_action(gc, who,
+                            buf, NULL, 0, data, 1, ("Cancel"),
+                            cancel_get_info_cb);
+    g_hash_table_insert(gaym->info_window_needed, normalized, dialog);
     gaym_cmd_whois(gaym, "whois", NULL, args);
 }
 

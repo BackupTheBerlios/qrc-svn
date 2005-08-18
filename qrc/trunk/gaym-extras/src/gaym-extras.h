@@ -39,6 +39,7 @@ struct fetch_thumbnail_data {
 struct paint_data {
     char *tooltiptext;
     GdkPixbuf *pixbuf;
+    char *name;
 };
 
 // Additional UI info for a conversation.

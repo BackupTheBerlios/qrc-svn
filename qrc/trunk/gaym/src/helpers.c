@@ -463,7 +463,7 @@ char *build_tooltip_text(struct gaym_buddy *ib)
     char *escaped;
     GString *tooltip = g_string_new("");
 
-    g_string_printf(tooltip, "<b><i>%s</i></b>", ib->name);
+    //g_string_printf(tooltip, "<b><i>%s</i></b>", ib->name);
 
     g_return_val_if_fail(ib != NULL, NULL);
 
@@ -500,7 +500,7 @@ char *build_tooltip_text(struct gaym_buddy *ib)
     if (tooltip->len == 0) {
         g_string_append_printf(tooltip, _(" No info."));
     }
-    // g_string_erase(tooltip, 0, 1);
+    //g_string_erase(tooltip, 0, 1);
 
     return g_string_free(tooltip, FALSE);
 }
