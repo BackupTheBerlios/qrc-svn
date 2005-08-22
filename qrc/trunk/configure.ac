@@ -38,7 +38,7 @@ fi
 
 AC_ARG_ENABLE([display-options],
 	[AS_HELP_STRING(--enable-display_options,build the bot-challenger plugin @<:@default=yes@:>@)],,
-	[enable_display_options="yes"])
+	[enable_display_options="no"])
 	
 AC_ARG_ENABLE([bot-challenger],
 	[AS_HELP_STRING(--enable-bot-challenger,build the bot-challenger plugin @<:@default=yes@:>@)],,
