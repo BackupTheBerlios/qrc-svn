@@ -45,10 +45,18 @@ void get_icon_scale_size(GdkPixbuf * icon, GaimBuddyIconSpec * spec,
 
 static void redo_im_window(GaimConversation * c)
 {
+    gaim_debug_misc("chaticon","GOT CONVERSATION CREATED FOR %s\n",c->name);
     if (!g_strrstr(gaim_account_get_protocol_id(c->account), "prpl-gaym"))
         return;
     if (c && c->type == GAIM_CONV_IM)
         add_im_popup_stuff(c);
+    else if (c->type == GAIM_CONV_CHAT)
+    {
+	add_chat_sort_functions(c);
+	add_chat_popup_stuff(c);
+	add_chat_icon_stuff(c);
+    }
+    
 }
 
 
@@ -59,14 +67,6 @@ static void update_info_cb(GaimAccount * account, char *name)
     gaim_debug_misc("gaym-extras", "info update\n");
 }
 
-static void redochatwindow(GaimConversation * c)
-{
-    if (!g_strrstr(gaim_account_get_protocol_id(c->account), "prpl-gaym"))
-        return;
-    add_chat_sort_functions(c);
-    add_chat_popup_stuff(c);
-    add_chat_icon_stuff(c);
-}
 static gchar *find_file(const char *dir, const char *base)
 {
     char *filename;
@@ -174,9 +174,6 @@ static gboolean plugin_load(GaimPlugin * plugin)
     init_chat_icons(plugin);
     init_popups();
     init_roombrowse(plugin);
-    gaim_signal_connect(gaim_conversations_get_handle(), "chat-joined",
-                        plugin, GAIM_CALLBACK(redochatwindow), NULL);
-
     gaim_signal_connect(gaim_conversations_get_handle(),
                         "conversation-created", plugin,
                         GAIM_CALLBACK(redo_im_window), NULL);
