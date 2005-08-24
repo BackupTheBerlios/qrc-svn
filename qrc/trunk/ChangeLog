@@ -1,3 +1,21 @@
+0.9.6:
+	Bug fixes:
+
+	-Disconnects followed by reconnects would cause a second thumbnail to
+	be added in chat windows that were left open.
+	-Photos are updated when you click on a name in the roombrowser.
+	-Room joins don't request 8 zillion thumbnails at once.
+	
+	Features:
+
+	-Requesting info now gives better feedback.	
+	-Added very experimental "display options" plugin.
+
+	Known bugs:
+	-Odd behavior with bio/stats column in roombrowse. It will change
+	erratically.
+	
+
 0.9.5:
 	Bug Fixes:
 	- Can handle room browsing of rooms you are currently in.
