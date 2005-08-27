@@ -37,7 +37,7 @@ fi
 
 
 AC_ARG_ENABLE([display-options],
-	[AS_HELP_STRING(--enable-display_options,build the bot-challenger plugin @<:@default=yes@:>@)],,
+	[AS_HELP_STRING(--enable-display-options,build the bot-challenger plugin @<:@default=no@:>@)],,
 	[enable_display_options="no"])
 	
 AC_ARG_ENABLE([bot-challenger],
@@ -155,7 +155,7 @@ echo
 echo $PACKAGE $VERSION
 echo
 echo Build bot-challenger plugin...... : $enable_bot_challenger
-echo Build display_options plugin...... : $enable_display_options
+echo Build display-options plugin...... : $enable_display_options
 echo Build gaym plugin................ : $enable_gaym
 echo Build gaym-extras plugin......... : $enable_gaym_extras
 echo

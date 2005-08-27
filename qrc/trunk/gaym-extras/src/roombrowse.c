@@ -146,9 +146,15 @@ void roombrowse_add_info(gpointer data, RoomBrowseGui * browser)
     if (member->age)
         g_string_append_printf(info, "\n<b>Age:</b> %s", member->age);
     if (member->location)
-        g_string_append_printf(info, "\n<b>Location:</b> %s", member->location);
-    if (member->bio)
-        g_string_append_printf(info, "\n<b>Info</b>: %s", member->bio);
+    {
+	char* escaped=g_markup_escape_text(member->location, strlen(member->location));
+        g_string_append_printf(info, "\n<b>Location:</b> %s", escaped);
+    }
+    if (member->bio) 
+    {
+	char* escaped=g_markup_escape_text(member->bio, strlen(member->bio));
+        g_string_append_printf(info, "\n<b>Info</b>: %s", escaped);
+    }
     g_string_erase(info, 0, 1);
     char *infoc = g_string_free(info, FALSE);
 
@@ -366,6 +372,7 @@ static void changed_cb(GtkTreeSelection * selection, gpointer gc)
 {
 
     g_return_if_fail(selection != NULL);
+    gaim_debug_misc("roombrowse","changed_cb\n");
 
     GtkTreeIter iter;
     GtkTreeModel *model = NULL;
@@ -493,7 +500,6 @@ static void roombrowse_menu_cb(GaimBlistNode * node, gpointer data)
 
 
     rend = gtk_cell_renderer_text_new();
-    g_object_set(rend, "wrap-mode", PANGO_WRAP_WORD, "wrap-width", 20);
     gtk_cell_renderer_set_fixed_size(rend, -1, 80);
     col =
         gtk_tree_view_column_new_with_attributes("Name", rend, "text",
