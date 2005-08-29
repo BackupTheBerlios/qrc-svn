@@ -228,6 +228,9 @@ static char *gaym_status_text(GaimBuddy * buddy)
 
 static char *gaym_tooltip_text(GaimBuddy * buddy)
 {
+    if(!buddy || !buddy->account || !buddy->account->gc)
+	return NULL;
+    
     struct gaym_conn *gaym =
         (struct gaym_conn *) buddy->account->gc->proto_data;
 
@@ -1639,6 +1642,10 @@ void gaym_get_room_namelist(GaimAccount * account, const char *room)
     struct gaym_conn *gaym = (struct gaym_conn *) account->gc->proto_data;
     GaymNamelist *namelist = g_new0(GaymNamelist, 1);
     namelist->roomname = g_strdup(room);
+    if(g_str_has_suffix(room, "*"))
+	namelist->multi_room=TRUE;
+    else
+	namelist->multi_room=FALSE;
     namelist->members = NULL;
     namelist->num_rooms = 100;
     namelist->current = 0;

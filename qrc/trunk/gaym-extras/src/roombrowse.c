@@ -34,6 +34,7 @@ enum {
     COLUMN_SYNC,
     COLUMN_NAME,
     COLUMN_PREFIX,
+    COLUMN_ROOM,
     COLUMN_INFO,
     N_COLUMNS
 };
@@ -207,7 +208,10 @@ void roombrowse_add_info(gpointer data, RoomBrowseGui * browser)
 #if DEBUG
                        COLUMN_SYNC, sync, COLUMN_PREFIX, member->prefix,
 #endif
-                       COLUMN_NAME, member->name, COLUMN_INFO, infoc, -1);
+                       COLUMN_ROOM, member->room,
+		       COLUMN_NAME, member->name, 
+		       COLUMN_INFO, infoc, -1);
+    
 
 
 }
@@ -480,6 +484,7 @@ static void roombrowse_menu_cb(GaimBlistNode * node, gpointer data)
                                           G_TYPE_STRING,
                                           G_TYPE_STRING,
                                           G_TYPE_STRING,
+					  G_TYPE_STRING,
                                           G_TYPE_STRING);
     browser->model = GTK_TREE_MODEL(ls);
 
@@ -520,6 +525,12 @@ static void roombrowse_menu_cb(GaimBlistNode * node, gpointer data)
                                                  COLUMN_SYNC, NULL);
     gtk_tree_view_append_column(GTK_TREE_VIEW(browser->list), col);
 #endif
+    rend = gtk_cell_renderer_text_new();
+    gtk_cell_renderer_set_fixed_size(rend, -1, 80);
+    col =
+        gtk_tree_view_column_new_with_attributes("Room", rend, "text",
+                                                 COLUMN_ROOM, NULL);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(browser->list), col);
 
     rend = gtk_cell_renderer_text_new();
     gtk_cell_renderer_set_fixed_size(rend, -1, 80);

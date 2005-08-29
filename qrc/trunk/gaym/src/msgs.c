@@ -1249,6 +1249,10 @@ void gaym_msg_who(struct gaym_conn *gaym, const char *name,
         GaymBuddy *member = g_new0(GaymBuddy, 1);
         gchar **parts = g_strsplit(args[2], " ", 7);
 
+	gchar* equals;
+	if((equals=strchr(args[1], '=')))
+	   member->room = g_strdup(equals+1);
+	gaim_debug_misc("roombrowse","args[1]: %s, args[0]: %s\n",args[1],args[0]);
         if (parts[6]) {
             member->bio = gaym_bio_strdup(parts[6]);
             member->thumbnail = gaym_thumbnail_strdup(parts[6]);
@@ -1259,6 +1263,7 @@ void gaym_msg_who(struct gaym_conn *gaym, const char *name,
             else
                 member->prefix = g_strdup(parts[3]);
 
+	    
             gchar *stats = gaym_stats_strdup(parts[6]);
             if (stats) {
                 gchar **stat_parts = g_strsplit(stats, "|", 3);
@@ -1278,7 +1283,7 @@ void gaym_msg_who(struct gaym_conn *gaym, const char *name,
         if (!pos)
             return;
         val = g_ascii_digit_value(*(++pos));
-        if (val < nameslist->num_rooms) {
+        if (val != nameslist->num_rooms) {
             gaim_debug_misc("msgs", "*******NEXT ROOM******\n");
             const char *cmdargs[1] = { args[1] };
             gaym_cmd_names(gaym, NULL, NULL, cmdargs);
