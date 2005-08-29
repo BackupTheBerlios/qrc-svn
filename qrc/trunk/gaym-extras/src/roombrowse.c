@@ -95,7 +95,9 @@ void update_photos(const char *room, const RoomBrowseGui * browser,
                 lookup_cached_thumbnail(browser->gc->account,
                                         gaim_normalize(browser->gc->
                                                        account,
-                                                       name));
+		                                         name));
+	    if(!pixbuf)
+		break;
             get_icon_scale_size(pixbuf,
                                 prpl_info ? &prpl_info->icon_spec : NULL,
                                 &scale_width, &scale_height);
