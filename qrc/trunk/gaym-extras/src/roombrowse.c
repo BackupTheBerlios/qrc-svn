@@ -27,6 +27,7 @@
 
 
 static GHashTable *browsers = NULL;
+static GHashTable *browser_channels = NULL;
 
 
 enum {
@@ -58,6 +59,7 @@ typedef struct RoomBrowseGui {
     GtkWidget *label;
     GtkTreeIter iter;
     GaimConnection *gc;
+    char* channel;
 } RoomBrowseGui;
 
 
@@ -84,13 +86,12 @@ void update_photos(const char *room, const RoomBrowseGui * browser,
     while (valid) {
         /* Walk through the list, reading each row */
         gchar *str_data;
-
         /* Make sure you terminate calls to gtk_tree_model_get() with a
            '-1' value */
         gtk_tree_model_get(list_store, &iter, COLUMN_NAME, &str_data, -1);
 
-
-        if (!strcmp(str_data, name)) {
+	
+        if (!strcmp(name, gaim_normalize(browser->gc->account, str_data))) {
             GdkPixbuf *pixbuf =
                 lookup_cached_thumbnail(browser->gc->account,
                                         gaim_normalize(browser->gc->
@@ -112,6 +113,7 @@ void update_photos(const char *room, const RoomBrowseGui * browser,
                                COLUMN_PHOTO, scale, -1);
 
             gtk_tree_model_row_changed(list_store, path, &iter);
+	    gaim_debug_misc("roombrowse","Signaled row change for %s\n",name);
             // g_free(pixbuf);
             break;
         }
@@ -126,6 +128,7 @@ void update_photos(const char *room, const RoomBrowseGui * browser,
 void roombrowse_update_list_row(GaimConnection * gc, const char *who)
 {
 
+    gaim_debug_misc("roombrowse","Info update: %s\n",who);
     g_hash_table_foreach(browsers, (GHFunc) update_photos, (char *) who);
 
 }
@@ -450,37 +453,22 @@ static gboolean browser_window_destroyed(GtkWidget* window, GdkEvent* event, gpo
     g_free(name);
     return FALSE;
 }
-static void roombrowse_menu_cb(GaimBlistNode * node, gpointer data)
-{
-    RoomBrowseGui *browser = g_new0(RoomBrowseGui, 1);
-    GaimConnection *gc = (GaimConnection *) data;
-    browser->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-
-    browser->gc = gc;
-    // GaimAccount *account = ((GaimChat *) node)->account;
-    // if (!win)
-    // win = gaim_conv_window_new();
-    GaimChat *chat = ((GaimChat *) node);
-
-    const char *room = gaim_chat_get_name(chat);
-    const char *channel = g_hash_table_lookup(chat->components, "channel");
-    gaim_debug_misc("roombrowse", "chat name: %s\n", room);
-    gaim_debug_misc("roombrowse", "channel name: %s\n", channel);
-    gtk_window_set_title(GTK_WINDOW(browser->window), room);
+static void roombrowse_fix_conv(GaimConversation* conv) {
+  
+    GtkWidget* pane;
+    g_return_if_fail(conv != NULL);
+    if(!g_str_has_prefix(conv->name, "BROWSE:"))
+	    return;
+    GaimGtkConversation* gtkconv=GAIM_GTK_CONVERSATION(conv);
+    gaim_signal_emit(gaim_conversations_get_handle(),  "conversation-destroyed", conv);
+    conv->type=GAIM_CONV_MISC;
+    gchar* channel = g_hash_table_lookup(browser_channels, conv->name);
+    RoomBrowseGui* browser=g_hash_table_lookup(browsers, channel); 
+    gtk_container_foreach(GTK_CONTAINER(gtkconv->tab_cont), (GtkCallback)(gtk_widget_hide), NULL);
     
-    g_signal_connect(browser->window, "delete-event", G_CALLBACK(browser_window_destroyed), g_strdup(channel));
-    GtkWidget *vbox = gtk_vbox_new(FALSE, 6);
-    gtk_container_add(GTK_CONTAINER(browser->window), vbox);
-    gtk_widget_show(vbox);
-
-    browser->label = gtk_label_new(room);
-    gtk_box_pack_start(GTK_BOX(vbox), browser->label, FALSE, FALSE, 0);
-    gtk_widget_show(browser->label);
     GtkWidget *sw = gtk_scrolled_window_new(NULL, NULL);
-    gtk_box_pack_start(GTK_BOX(vbox), sw, TRUE, TRUE, 0);
-    gtk_widget_set_size_request(GTK_WIDGET(sw), 400, 600);
+	gtk_box_pack_start(GTK_BOX(gtkconv->tab_cont), sw, TRUE, TRUE, 0);
     gtk_widget_show(sw);
-
     GtkListStore *ls = gtk_list_store_new(N_COLUMNS,
                                           GDK_TYPE_PIXBUF,
                                           G_TYPE_STRING,
@@ -552,26 +540,48 @@ static void roombrowse_menu_cb(GaimBlistNode * node, gpointer data)
     gtk_tree_selection_set_mode(select, GTK_SELECTION_SINGLE);
 
     g_signal_connect(G_OBJECT(select), "changed",
-                     G_CALLBACK(changed_cb), gc);
+                     G_CALLBACK(changed_cb), browser->gc);
     gtk_container_add(GTK_CONTAINER(sw), browser->list);
     gtk_widget_show(browser->list);
 
 
     browser->button = gtk_button_new_with_label("Update");
     struct update_cb_data *udata = g_new0(struct update_cb_data, 1);
-    udata->gc = gc;
-    udata->room = channel;
+    udata->gc = browser->gc;
+    udata->room = browser->channel;
 
     g_signal_connect(browser->button, "clicked", G_CALLBACK(update_list),
                      udata);
-    gtk_box_pack_start(GTK_BOX(vbox), browser->button, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(gtkconv->tab_cont), browser->button, FALSE, FALSE, 0);
     gtk_widget_show(browser->button);
 
-    gtk_widget_show(browser->window);
 
-    g_hash_table_insert(browsers, g_strdup(channel), browser);
     update_list(browser->button, udata);
+
 }
+static void roombrowse_menu_cb(GaimBlistNode * node, gpointer data)
+{
+    RoomBrowseGui *browser = g_new0(RoomBrowseGui, 1);
+    GaimConnection *gc = (GaimConnection *) data;
+	    
+    // GaimAccount *account = ((GaimChat *) node)->account;
+    GaimChat *chat = ((GaimChat *) node);
+    const char *channel = g_hash_table_lookup(chat->components, "channel");
+    const char *room = gaim_chat_get_name(chat);
+    const char *tempname;
+    gaim_debug_misc("roombrowse", "chat name: %s\n", room);
+    gaim_debug_misc("roombrowse", "channel name: %s\n", channel);
+   
+    browser->channel=g_strdup(channel);
+    browser->gc=gc;
+    tempname=g_strdup_printf("BROWSE:%s",room);
+    g_hash_table_insert(browsers, g_strdup(channel), browser);
+    g_hash_table_insert(browser_channels, g_strdup(tempname), g_strdup(channel));
+    GaimConversation* conv = gaim_conversation_new(GAIM_CONV_CHAT, gc->account, tempname); 
+    gaim_debug_misc("roombrowse","New conv: %x\n",conv);
+        return;
+
+    }
 static void roombrowse_menu_create(GaimBlistNode * node, GList ** menu)
 {
 
@@ -615,8 +625,15 @@ void init_roombrowse(GaimPlugin * plugin)
                         plugin, GAIM_CALLBACK(roombrowse_update_list_row),
                         NULL);
 
+    gaim_signal_connect(gaim_conversations_get_handle(),
+			"conversation-created",
+			plugin,
+			GAIM_CALLBACK(roombrowse_fix_conv),
+			NULL);
     browsers =
         g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
 
+    browser_channels =
+        g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
     return;
 }

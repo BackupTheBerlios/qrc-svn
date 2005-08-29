@@ -277,9 +277,9 @@ void gaym_msg_whois(struct gaym_conn *gaym, const char *name,
     // during conversation-created.
     gaym_update_channel_member(gaym, normalized, args[5]);
     gaym_unreference_channel_member(gaym, normalized);
-    gaim_debug_misc("gaym", "signalling info update for %s\n", args[1]);
+    gaim_debug_misc("gaym", "signalling info update for %s\n", normalized);
     gaim_signal_emit(gaim_accounts_get_handle(), "info-updated",
-                     gaym->account, args[1]);
+                     gaym->account, normalized);
 
     if (g_hash_table_lookup(gaym->info_window_needed, normalized)) {
 
