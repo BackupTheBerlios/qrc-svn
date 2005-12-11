@@ -1,0 +1,3 @@
+indent -kr -lc75 -fc1 -fca -nut gaym/src/*.[ch]
+indent -kr -lc75 -fc1 -fca -nut gaym-extras/src/*.[ch]
+indent -kr -lc75 -fc1 -fca -nut bot-challenger/*.[ch]
