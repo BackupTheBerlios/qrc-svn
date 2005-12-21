@@ -82,7 +82,7 @@ void gaym_msg_away(struct gaym_conn *gaym, const char *name,
     }
 
     gcom_nick_to_gaym(args[1]);
-    serv_got_im(gc, args[1], args[2], GAIM_CONV_IM_AUTO_RESP, time(NULL));
+    serv_got_im(gc, args[1], args[2], GAIM_MESSAGE_AUTO_RESP, time(NULL));
 }
 
 static void gaym_fetch_photo_cb(void *user_data, const char *info_data,
@@ -94,19 +94,20 @@ static void gaym_fetch_photo_cb(void *user_data, const char *info_data,
 
     struct gaym_fetch_thumbnail_data *d = user_data;
 
-    char *info, *t;
+    char *info, *t = 0;
 
     struct gaym_conn *gaym = d->gc->proto_data;
 
     char *hashurl =
         g_hash_table_lookup(gaym->confighash, "view-profile-url");
     g_return_if_fail(hashurl != NULL);
-    
-    void *dialog =
-	g_hash_table_lookup(gaym->info_window_needed, gaim_normalize(d->gc->account, d->who));
 
-    if(!dialog)
-	return;
+    void *dialog =
+        g_hash_table_lookup(gaym->info_window_needed,
+                            gaim_normalize(d->gc->account, d->who));
+
+    if (!dialog)
+        return;
 
     int id = gaim_imgstore_add(info_data, len, NULL);
     if (d->stats && d->bio)
@@ -131,10 +132,9 @@ static void gaym_fetch_photo_cb(void *user_data, const char *info_data,
              id, hashurl, d->who);
 
     gaim_request_close(GAIM_REQUEST_ACTION, dialog);
-    g_hash_table_remove(gaym->info_window_needed, gaim_normalize(d->gc->account, d->who));
-    gaim_notify_userinfo(d->gc, d->who,
-                         t = g_strdup_printf("Gay.com - %s", d->who),
-                         d->who, NULL, info, NULL, NULL);
+    g_hash_table_remove(gaym->info_window_needed,
+                        gaim_normalize(d->gc->account, d->who));
+    gaim_notify_userinfo(d->gc, d->who, info, NULL, NULL);
     g_free(t);
 
     if (d) {
@@ -155,7 +155,7 @@ static void gaym_fetch_info_cb(void *user_data, const char *info_data,
     struct gaym_fetch_thumbnail_data *d = user_data;
     char *picpath;
     char *picurl;
-    char *info, *t;
+    char *info;
     char *match = "pictures.0.url=";
 
     struct gaym_conn *gaym = d->gc->proto_data;
@@ -163,12 +163,13 @@ static void gaym_fetch_info_cb(void *user_data, const char *info_data,
     char *hashurl =
         g_hash_table_lookup(gaym->confighash, "view-profile-url");
     g_return_if_fail(hashurl != NULL);
-    
+
     void *dialog =
-	g_hash_table_lookup(gaym->info_window_needed, gaim_normalize(d->gc->account, d->who));
-    
-    if(!dialog)
-	return;
+        g_hash_table_lookup(gaym->info_window_needed,
+                            gaim_normalize(d->gc->account, d->who));
+
+    if (!dialog)
+        return;
 
     if (d->stats && d->bio)
         info =
@@ -193,12 +194,10 @@ static void gaym_fetch_info_cb(void *user_data, const char *info_data,
 
     picpath = return_string_between(match, "\n", info_data);
     if (!picpath || strlen(picpath) == 0) {
-	gaim_request_close(GAIM_REQUEST_ACTION, dialog);
-	g_hash_table_remove(gaym->info_window_needed, gaim_normalize(d->gc->account, d->who));
-        gaim_notify_userinfo(d->gc, d->who,
-                             t = g_strdup_printf("Gay.com - %s", d->who),
-                             d->who, NULL, info, NULL, NULL);
-        g_free(t);
+        gaim_request_close(GAIM_REQUEST_ACTION, dialog);
+        g_hash_table_remove(gaym->info_window_needed,
+                            gaim_normalize(d->gc->account, d->who));
+        gaim_notify_userinfo(d->gc, d->who, info, NULL, NULL);
         return;
     }
 
@@ -228,11 +227,11 @@ void gaym_msg_no_such_nick(struct gaym_conn *gaym, const char *name,
     gaym_buddy_status(gaym, args[1], FALSE, NULL, FALSE);
 
     char *normalized = g_strdup(gaim_normalize(gaym->account, args[1]));
-    
-    void* dialog;
-    if ((dialog=g_hash_table_lookup(gaym->info_window_needed, normalized)))
-    {
-	g_hash_table_remove(gaym->info_window_needed, normalized);
+
+    void *dialog;
+    if ((dialog =
+         g_hash_table_lookup(gaym->info_window_needed, normalized))) {
+        g_hash_table_remove(gaym->info_window_needed, normalized);
 
         char *hashurl =
             g_hash_table_lookup(gaym->confighash, "view-profile-url");
@@ -244,10 +243,9 @@ void gaym_msg_no_such_nick(struct gaym_conn *gaym, const char *name,
             ("That user is not logged on. Check <a href='%s%s'>here</a> to see if that user has a profile.",
              hashurl, args[1]);
         gaim_request_close(GAIM_REQUEST_ACTION, dialog);
-	gaim_notify_userinfo(gaim_account_get_connection(gaym->account),
-                             NULL, NULL, "No such user", NULL, buf, NULL,
-                             NULL);
-	
+        gaim_notify_userinfo(gaim_account_get_connection(gaym->account),
+                             args[1], buf, NULL, NULL);
+
     }
     g_free(normalized);
 }
@@ -299,11 +297,9 @@ void gaym_msg_whois(struct gaym_conn *gaym, const char *name,
                            "Mozilla/4.0 (compatible; MSIE 5.0)", FALSE,
                            gaym_fetch_info_cb, data);
             g_free(infourl);
+        } else {
+            g_hash_table_remove(gaym->info_window_needed, normalized);
         }
-	else
-	{
-	    g_hash_table_remove(gaym->info_window_needed, normalized);
-	}
     }
     g_free(normalized);
 }
@@ -473,7 +469,8 @@ void gaym_msg_names(struct gaym_conn *gaym, const char *name,
         if (!gaym->nameconv)
             return;
         convo =
-            gaim_find_conversation_with_account(gaym->nameconv ? gaym->
+            gaim_find_conversation_with_account(GAIM_CONV_TYPE_CHAT,
+                                                gaym->nameconv ? gaym->
                                                 nameconv : args[1],
                                                 gaym->account);
         if (!convo) {
@@ -494,7 +491,7 @@ void gaym_msg_names(struct gaym_conn *gaym, const char *name,
                 g_strdup_printf(_("Users on %s: %s"),
                                 args[1] ? args[1] : "",
                                 names ? names : "");
-            if (gaim_conversation_get_type(convo) == GAIM_CONV_CHAT)
+            if (gaim_conversation_get_type(convo) == GAIM_CONV_TYPE_CHAT)
                 gaim_conv_chat_write(GAIM_CONV_CHAT(convo), "", msg,
                                      GAIM_MESSAGE_SYSTEM |
                                      GAIM_MESSAGE_NO_LOG, time(NULL));
@@ -523,7 +520,7 @@ void gaym_msg_names(struct gaym_conn *gaym, const char *name,
                 GList *l;
 
                 gaim_conv_chat_add_users(GAIM_CONV_CHAT(convo), users,
-                                         NULL);
+                                         NULL, NULL, FALSE);
 
                 for (l = users; l != NULL; l = l->next)
                     g_free(l->data);
@@ -548,8 +545,6 @@ void gaym_msg_names(struct gaym_conn *gaym, const char *name,
                             "names[i]: %s, nameslist->current: %x\n",
                             names[i], nameslist->current);
             while (names[i] && strlen(names[i]) && nameslist->current) {
-                gaim_debug_misc("names", "append %s (length %i)\n",
-                                names[i], strlen(names[i]));
                 ((GaymBuddy *) (nameslist->current->data))->name =
                     g_strdup(names[i]);
                 nameslist->current = g_slist_next(nameslist->current);
@@ -570,6 +565,7 @@ void gaym_msg_endmotd(struct gaym_conn *gaym, const char *name,
 {
     GaimConnection *gc;
 
+    GaimBlistNode *gnode, *cnode, *bnode;
     gaim_debug_misc("gaym", "Got motd\n");
 
     gc = gaim_account_get_connection(gaym->account);
@@ -578,8 +574,29 @@ void gaym_msg_endmotd(struct gaym_conn *gaym, const char *name,
         return;
     }
     gaim_connection_set_state(gc, GAIM_CONNECTED);
-    serv_finish_login(gc);
+    // serv_finish_login(gc);
+    /* this used to be in the core, but it's not now */
+    for (gnode = gaim_get_blist()->root; gnode; gnode = gnode->next) {
+        if (!GAIM_BLIST_NODE_IS_GROUP(gnode))
+            continue;
+        for (cnode = gnode->child; cnode; cnode = cnode->next) {
+            if (!GAIM_BLIST_NODE_IS_CONTACT(cnode))
+                continue;
+            for (bnode = cnode->child; bnode; bnode = bnode->next) {
+                GaimBuddy *b;
+                if (!GAIM_BLIST_NODE_IS_BUDDY(bnode))
+                    continue;
+                b = (GaimBuddy *) bnode;
+                if (b->account == gc->account) {
+                    struct gaym_buddy *ib = g_new0(struct gaym_buddy, 1);
+                    ib->name = g_strdup(b->name);
+                    g_hash_table_insert(gaym->buddies, ib->name, ib);
+                }
+            }
+        }
+    }
 
+    gaim_debug_misc("gaym", "Calling blist timeout\n");
     gaym_blist_timeout(gaym);
     if (!gaym->timer)
         gaym->timer =
@@ -605,9 +622,11 @@ void gaym_msg_nonick_chan(struct gaym_conn *gaym, const char *name,
     GaimConnection *gc = gaim_account_get_connection(gaym->account);
     GaimConversation *convo;
 
-    convo = gaim_find_conversation_with_account(args[1], gaym->account);
+    convo =
+        gaim_find_conversation_with_account(GAIM_CONV_TYPE_ANY, args[1],
+                                            gaym->account);
     if (convo) {
-        if (gaim_conversation_get_type(convo) == GAIM_CONV_CHAT) {
+        if (gaim_conversation_get_type(convo) == GAIM_CONV_TYPE_CHAT) {
             /* does this happen? */
             gaim_conv_chat_write(GAIM_CONV_CHAT(convo), args[1],
                                  _("no such channel"),
@@ -637,9 +656,11 @@ void gaym_msg_nonick(struct gaym_conn *gaym, const char *name,
     GaimConnection *gc;
     GaimConversation *convo;
 
-    convo = gaim_find_conversation_with_account(args[1], gaym->account);
+    convo =
+        gaim_find_conversation_with_account(GAIM_CONV_TYPE_ANY, args[1],
+                                            gaym->account);
     if (convo) {
-        if (gaim_conversation_get_type(convo) == GAIM_CONV_CHAT) {
+        if (gaim_conversation_get_type(convo) == GAIM_CONV_TYPE_CHAT) {
             /* does this happen? */
             gaim_conv_chat_write(GAIM_CONV_CHAT(convo), args[1],
                                  _("no such channel"),
@@ -664,7 +685,9 @@ void gaym_msg_nosend(struct gaym_conn *gaym, const char *name,
     GaimConnection *gc;
     GaimConversation *convo;
 
-    convo = gaim_find_conversation_with_account(args[1], gaym->account);
+    convo =
+        gaim_find_conversation_with_account(GAIM_CONV_TYPE_CHAT, args[1],
+                                            gaym->account);
     if (convo) {
         gaim_conv_chat_write(GAIM_CONV_CHAT(convo), args[1], args[2],
                              GAIM_MESSAGE_SYSTEM | GAIM_MESSAGE_NO_LOG,
@@ -683,7 +706,8 @@ void gaym_msg_notinchan(struct gaym_conn *gaym, const char *name,
                         const char *from, char **args)
 {
     GaimConversation *convo =
-        gaim_find_conversation_with_account(args[1], gaym->account);
+        gaim_find_conversation_with_account(GAIM_CONV_TYPE_CHAT, args[1],
+                                            gaym->account);
 
     gaim_debug(GAIM_DEBUG_INFO, "gaym",
                "We're apparently not in %s, but tried to use it\n",
@@ -746,7 +770,8 @@ void gaym_msg_trace(struct gaym_conn *gaym, const char *name,
                     const char *from, char **args)
 {
     GaimConversation *conv =
-        gaim_find_conversation_with_account(gaym->traceconv ? gaym->
+        gaim_find_conversation_with_account(GAIM_CONV_TYPE_ANY,
+                                            gaym->traceconv ? gaym->
                                             traceconv : args[1],
                                             gaym->account);
     gaim_conversation_write(conv, "TRACE", args[3],
@@ -798,7 +823,9 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name,
         return;
     }
 
-    convo = gaim_find_conversation_with_account(args[0], gaym->account);
+    convo =
+        gaim_find_conversation_with_account(GAIM_CONV_TYPE_ANY, args[0],
+                                            gaym->account);
     if (convo == NULL) {
         gaim_debug(GAIM_DEBUG_ERROR, "gaym", "JOIN for %s failed\n",
                    args[0]);
@@ -868,7 +895,8 @@ void gaym_msg_mode(struct gaym_conn *gaym, const char *name,
 
     if (*args[0] == '#' || *args[0] == '&') {   /* Channel */
         convo =
-            gaim_find_conversation_with_account(args[0], gaym->account);
+            gaim_find_conversation_with_account(GAIM_CONV_TYPE_ANY,
+                                                args[0], gaym->account);
         if (!convo) {
             gaim_debug(GAIM_DEBUG_ERROR, "gaym",
                        "MODE received for %s, which we are not in\n",
@@ -989,7 +1017,9 @@ void gaym_msg_part(struct gaym_conn *gaym, const char *name,
         return;
     }
 
-    convo = gaim_find_conversation_with_account(args[0], gaym->account);
+    convo =
+        gaim_find_conversation_with_account(GAIM_CONV_TYPE_ANY, args[0],
+                                            gaym->account);
     gboolean show_part =
         gaim_prefs_get_bool("/plugins/prpl/gaym/show_part");
 
@@ -1070,10 +1100,12 @@ void gaym_msg_pong(struct gaym_conn *gaym, const char *name,
                             time(NULL) - oldstamp);
     }
 
-    convo = gaim_find_conversation_with_account(parts[0], gaym->account);
+    convo =
+        gaim_find_conversation_with_account(GAIM_CONV_TYPE_ANY, parts[0],
+                                            gaym->account);
     g_strfreev(parts);
     if (convo) {
-        if (gaim_conversation_get_type(convo) == GAIM_CONV_CHAT)
+        if (gaim_conversation_get_type(convo) == GAIM_CONV_TYPE_CHAT)
             gaim_conv_chat_write(GAIM_CONV_CHAT(convo), "PONG", msg,
                                  GAIM_MESSAGE_SYSTEM | GAIM_MESSAGE_NO_LOG,
                                  time(NULL));
@@ -1135,7 +1167,9 @@ void gaym_msg_privmsg(struct gaym_conn *gaym, const char *name,
         gcom_nick_to_gaym(args[0]);
     }
 
-    convo = gaim_find_conversation_with_account(args[0], gaym->account);
+    convo =
+        gaim_find_conversation_with_account(GAIM_CONV_TYPE_ANY, args[0],
+                                            gaym->account);
 
     notice = !strcmp(args[0], " notice ");
     tmp = gaym_parse_ctcp(gaym, nick, args[0], args[1], notice);
@@ -1150,7 +1184,7 @@ void gaym_msg_privmsg(struct gaym_conn *gaym, const char *name,
         return;
     }
 
-    msg = gaim_escape_html(tmp);
+    msg = g_markup_escape_text(tmp, -1);
 
     g_free(tmp);
 
@@ -1249,10 +1283,9 @@ void gaym_msg_who(struct gaym_conn *gaym, const char *name,
         GaymBuddy *member = g_new0(GaymBuddy, 1);
         gchar **parts = g_strsplit(args[2], " ", 7);
 
-	gchar* equals;
-	if((equals=strchr(args[1], '=')))
-	   member->room = g_strdup(equals+1);
-	gaim_debug_misc("roombrowse","args[1]: %s, args[0]: %s\n",args[1],args[0]);
+        gchar *equals;
+        if ((equals = strchr(args[1], '=')))
+            member->room = g_strdup(equals + 1);
         if (parts[6]) {
             member->bio = gaym_bio_strdup(parts[6]);
             member->thumbnail = gaym_thumbnail_strdup(parts[6]);
@@ -1263,7 +1296,7 @@ void gaym_msg_who(struct gaym_conn *gaym, const char *name,
             else
                 member->prefix = g_strdup(parts[3]);
 
-	    
+
             gchar *stats = gaym_stats_strdup(parts[6]);
             if (stats) {
                 gchar **stat_parts = g_strsplit(stats, "|", 3);
@@ -1290,8 +1323,8 @@ void gaym_msg_who(struct gaym_conn *gaym, const char *name,
             nameslist->num_rooms = val;
         }
     }
-
     // Use the who msgs cross-referenced with the NAMES list to figure out 
+    // 
     // 
     // who is who. Resolve conflicts.
 
@@ -1487,7 +1520,9 @@ void gaym_msg_richnames_list(struct gaym_conn *gaym, const char *name,
                "gaym_msg_richnames_list() Channel: %s Nick: %s Extra: %s\n",
                channel, nick, extra);
 
-    convo = gaim_find_conversation_with_account(channel, gaym->account);
+    convo =
+        gaim_find_conversation_with_account(GAIM_CONV_TYPE_ANY, channel,
+                                            gaym->account);
 
     char *bio = gaym_bio_strdup(extra);
     gboolean gaym_botfilter_permit =

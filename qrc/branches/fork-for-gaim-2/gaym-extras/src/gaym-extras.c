@@ -5,9 +5,11 @@
 void get_icon_scale_size(GdkPixbuf * icon, GaimBuddyIconSpec * spec,
                          int *width, int *height)
 {
+    g_return_if_fail(icon != NULL);
     *width = gdk_pixbuf_get_width(icon);
     *height = gdk_pixbuf_get_height(icon);
-    gaim_debug_misc("popups", "current: w: %i, h: %i\n", *width, *height);
+    // gaim_debug_misc("popups", "current: w: %i, h: %i\n", *width,
+    // *height);
     /* this should eventually get smarter about preserving the aspect
        ratio when scaling, but gimmie a break, I just woke up */
     if (spec && spec->scale_rules & GAIM_ICON_SCALE_DISPLAY) {
@@ -38,25 +40,26 @@ void get_icon_scale_size(GdkPixbuf * icon, GaimBuddyIconSpec * spec,
         *width = 100;
     if (*height > 100)
         *height = 100;
-    gaim_debug_misc("popups", "scaled: w: %i, h: %i\n", *width, *height);
+    // gaim_debug_misc("popups", "scaled: w: %i, h: %i\n", *width,
+    // *height);
 }
 
 // Adds motion handlers to IM tab labels.
 
 static void redo_im_window(GaimConversation * c)
 {
-    gaim_debug_misc("chaticon","GOT CONVERSATION CREATED FOR %s\n",c->name);
+    gaim_debug_misc("chaticon", "GOT CONVERSATION CREATED FOR %s\n",
+                    c->name);
     if (!g_strrstr(gaim_account_get_protocol_id(c->account), "prpl-gaym"))
         return;
-    if (c && c->type == GAIM_CONV_IM)
+    if (c && c->type == GAIM_CONV_TYPE_IM)
         add_im_popup_stuff(c);
-    else if (c->type == GAIM_CONV_CHAT)
-    {
-	add_chat_sort_functions(c);
-	add_chat_popup_stuff(c);
-	add_chat_icon_stuff(c);
+    else if (c->type == GAIM_CONV_TYPE_CHAT) {
+        add_chat_sort_functions(c);
+        add_chat_popup_stuff(c);
+        add_chat_icon_stuff(c);
     }
-    
+
 }
 
 
@@ -130,42 +133,59 @@ void extras_register_stock()
 GdkPixbuf *lookup_cached_thumbnail(GaimAccount * account,
                                    const char *fullname)
 {
-    GDir *gdir = NULL;
-    GError *err = NULL;
-    GdkPixbuf *pixbuf = NULL;
-    const char *filename = NULL;
-    char *dirname = NULL;
-    char *path = NULL;
-    const char *name = gaim_normalize(account, fullname);
-    dirname =
-        g_build_filename(gaim_user_dir(), "icons", "gaym", name, NULL);
-    if (dirname) {
-        gdir = g_dir_open(dirname, 0, &err);
-        if (gdir) {
-            filename = g_dir_read_name(gdir);   // don't free filename:
-            // owned by glib.
-            if (filename) {
-                path = g_build_filename(dirname, filename, NULL);
-                if (path)
-                    pixbuf = gdk_pixbuf_new_from_file(path, &err);
-                g_free(path);
-            }
-            g_dir_close(gdir);
-        }
-        g_free(dirname);
+    guint len;
+    GaimBuddyIcon *icon = gaim_buddy_icons_find(account, fullname);
+    if (!icon) {
+        gaim_debug_misc("gaym-extras", "No icon found for %s\n", fullname);
+        return NULL;
     }
+    const guchar *icon_bytes = gaim_buddy_icon_get_data(icon, &len);
+    if (!icon_bytes) {
+        gaim_debug_misc("gaym-extras", "No icon data found for %s\n",
+                        fullname);
+        return NULL;
+    }
+
+    GError *err = NULL;
+    GdkPixbufLoader *loader = gdk_pixbuf_loader_new();
+    if (!gdk_pixbuf_loader_write(loader, icon_bytes, len, &err))
+        gaim_debug_misc("roombrowse", "write error: %s\n", err->message);
+    else
+        gaim_debug_misc("roombrowse", "write %d bytes without errors.\n",
+                        len);
+    GdkPixbuf *pixbuf = gdk_pixbuf_loader_get_pixbuf(loader);
+    GdkPixbufFormat *format = gdk_pixbuf_loader_get_format(loader);
+    if (format) {
+        gaim_debug_misc("gaym-extras", "pixbuf name: %s\n",
+                        gdk_pixbuf_format_get_name(format));
+        // gaim_debug_misc("gaym-extras","pixbuf domain:
+        // %s\n",gdk_pixbuf_format_get_domain(format));
+        gaim_debug_misc("gaym-extras", "pixbuf description: %s\n",
+                        gdk_pixbuf_format_get_description(format));
+        int i = 0;
+        gchar **mime_types = gdk_pixbuf_format_get_mime_types(format);
+        gchar **extensions = gdk_pixbuf_format_get_extensions(format);
+        while (mime_types[i] != NULL)
+            gaim_debug_misc("gaym-extras", "pixbuf mime_type: %s\n",
+                            mime_types[i++]);
+        i = 0;
+        while (extensions[i] != NULL)
+            gaim_debug_misc("gaym-extras", "pixbuf extensions: %s\n",
+                            extensions[i++]);
+
+
+    }
+    gdk_pixbuf_loader_close(loader, NULL);
+
     return pixbuf;
 }
 
-static gboolean plugin_unload(GaimPlugin * plugin) {
+static gboolean plugin_unload(GaimPlugin * plugin)
+{
 
-    /* Ok, this is hell. I need to:
-     * Remove any icons from the IM windows.
-     * Disconnect signals
-     * Close and destroy roombrowsers/memory associated with
-     * Destroy all popups
-     * Remove chaticon buttons
-     */
+    /* Ok, this is hell. I need to: Remove any icons from the IM windows.
+       Disconnect signals Close and destroy roombrowsers/memory associated 
+       with Destroy all popups Remove chaticon buttons */
     return TRUE;
 
 }
@@ -174,6 +194,8 @@ static gboolean plugin_load(GaimPlugin * plugin)
     init_chat_icons(plugin);
     init_popups();
     init_roombrowse(plugin);
+    gaim_debug_misc("gaym-extras", "gaim_conversations_get_handle(): %x\n",
+                    gaim_conversations_get_handle());
     gaim_signal_connect(gaim_conversations_get_handle(),
                         "conversation-created", plugin,
                         GAIM_CALLBACK(redo_im_window), NULL);

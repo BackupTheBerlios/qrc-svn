@@ -109,14 +109,13 @@ void change_sort_order(GtkWidget * button, void *data)
 
     GtkBox *buttonbox = GTK_BOX(button->parent);
     gtk_widget_destroy(button);
-    button = GTK_WIDGET(gaim_gtkconv_button_new(order[current].icon, NULL,      // _("E"), 
-                                                                                // 
-                                                // 
-                                                // 
-                                                order[current].tooltip,
-                                                gtkconv->tooltips,
-                                                change_sort_order,
-                                                gtkconv));
+    button =
+        GTK_WIDGET(gaim_pixbuf_button_from_stock
+                   (NULL, order[current].icon, GAIM_BUTTON_VERTICAL));
+    g_signal_connect(G_OBJECT(button), "clicked",
+                     G_CALLBACK(change_sort_order), gtkconv);
+    gtk_tooltips_set_tip(gtkconv->tooltips, button, order[current].tooltip,
+                         NULL);
     gtk_box_pack_end(buttonbox, button, FALSE, FALSE, 0);
     gtk_widget_show(button);
     gtk_tree_sortable_set_sort_func(GTK_TREE_SORTABLE(model),
@@ -132,16 +131,17 @@ void add_chat_sort_functions(GaimConversation * c)
 {
 
     GaimGtkConversation *gtkconv = GAIM_GTK_CONVERSATION(c);
+    int current = 0;
+    GtkBox *iconbox = (GtkBox *) gtkconv->u.chat->userlist_info->parent;
+    GtkWidget *button =
+        gaim_pixbuf_button_from_stock(NULL, order[current].icon,
+                                      GAIM_BUTTON_VERTICAL);
+    gtk_button_set_relief(GTK_BUTTON(button), GTK_RELIEF_NONE);
+    gtk_tooltips_set_tip(gtkconv->tooltips, button, order[current].tooltip,
+                         NULL);
+    g_signal_connect(G_OBJECT(button), "clicked",
+                     G_CALLBACK(change_sort_order), gtkconv);
 
-    GtkBox *iconbox = (GtkBox *) gtkconv->info->parent;
-    // GtkWidget *button = gtk_button_new_with_label("E");
-    GtkWidget *button = gaim_gtkconv_button_new(GAYM_STOCK_ENTRY,
-                                                NULL,   // _("E"), 
-                                                _
-                                                ("Currently sorting by entry"),
-                                                gtkconv->tooltips,
-                                                change_sort_order,
-                                                gtkconv);
     gtk_box_pack_end(iconbox, button, FALSE, FALSE, 0);
     gtk_widget_show(button);
 

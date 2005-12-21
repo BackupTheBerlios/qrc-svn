@@ -223,7 +223,7 @@ static void gaym_dccsend_send_read(gpointer data, int source,
     }
 }
 
-ssize_t gaym_dccsend_send_write(const char *buffer, size_t size,
+ssize_t gaym_dccsend_send_write(const guchar * buffer, size_t size,
                                 GaimXfer * xfer)
 {
     ssize_t s;

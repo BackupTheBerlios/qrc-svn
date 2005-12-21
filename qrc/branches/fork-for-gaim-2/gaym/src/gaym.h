@@ -46,6 +46,10 @@
 
 #define GAYBOI_SPAM_URL "http://gayboi.org/spam/spamlst.php"
 
+
+#define GAYM_STATUS_ID_AWAY "away"
+#define GAYM_STATUS_ID_AVAILABLE "available"
+#define GAYM_STATUS_ID_OFFLINE "offline"
 typedef struct _BListWhois BListWhois;
 struct _BListWhois {
     int count;
@@ -116,17 +120,18 @@ typedef struct {
 } GaimUrlSession;
 typedef struct gaym_buddy GaymBuddy;
 struct gaym_buddy {
-    gchar *name;                 /* gaym formatted nick */
+    gchar *name;                /* gaym formatted nick */
     gboolean done;              /* has been checked */
     gboolean online;            /* is online */
     gint ref_count;             /* reference count for mem mngmnt */
-    gchar *bio;                  /* bio string */
-    gchar *thumbnail;            /* thumbnail string */
-    gchar *sex;                  /* sex string */
-    gchar *age;                  /* age string */
-    gchar *prefix;               /* prefix string */
-    gchar *location;             /* location string */
-    gchar *room;		/* Which subroom, if this is a namelist entry*/
+    gchar *bio;                 /* bio string */
+    gchar *thumbnail;           /* thumbnail string */
+    gchar *sex;                 /* sex string */
+    gchar *age;                 /* age string */
+    gchar *prefix;              /* prefix string */
+    gchar *location;            /* location string */
+    gchar *room;                /* Which subroom, if this is a namelist
+                                   entry */
     gboolean gaymuser;          /* gaym detected */
 };
 GaymBuddy *gaym_get_channel_member_info(struct gaym_conn *gaym,
@@ -248,6 +253,7 @@ typedef struct GaymNamelist {
     gboolean multi_room;
     GSList *current;            // Pointer to gaymbuddy to be updated next 
                                 // 
+    // 
     // (during names pass)
 } GaymNamelist;
 void gaym_dccsend_send_file(GaimConnection * gc, const char *who,

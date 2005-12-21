@@ -160,7 +160,7 @@ void send_auto_reply(GaimAccount * account, const char *recipient,
 
     if (prpl_info && prpl_info->send_im) {
         i = prpl_info->send_im(gc, recipient, message,
-                               GAIM_CONV_IM_AUTO_RESP);
+                               GAIM_MESSAGE_AUTO_RESP);
     }
 
     return;
@@ -197,7 +197,8 @@ static gboolean receiving_im_msg_cb(GaimAccount * account, char **sender,
     }
 
     /* if there is already an open conversation, allowed it */
-    if (gaim_find_conversation_with_account(*sender, account)) {
+    if (gaim_find_conversation_with_account
+        (GAIM_CONV_TYPE_IM, *sender, account)) {
         return retval;
     }
 

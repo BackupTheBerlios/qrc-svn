@@ -2,14 +2,14 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT([qrc],[0.34.1+svn],[gaymplugin@yahoogroups.com])
+AC_INIT([qrc],[2.0],[gaymplugin@yahoogroups.com])
 AC_CANONICAL_TARGET([])
 AM_INIT_AUTOMAKE([1.9.5 no-dist-gzip dist-bzip2])
 
 REQUIRED_PKG_CONFIG="0.15.0"
 AC_SUBST(REQUIRED_PKG_CONFIG)
 
-REQUIRED_GAIM="gaim >= 1.2 gaim < 2.0"
+REQUIRED_GAIM="gaim gaim >= 2.0"
 AC_SUBST(REQUIRED_GAIM)
 
 REQUIRED_GTK="gtk+-2.0"
@@ -36,9 +36,6 @@ fi
 # Build preferences
 
 
-AC_ARG_ENABLE([display-options],
-	[AS_HELP_STRING(--enable-display-options,build the bot-challenger plugin @<:@default=no@:>@)],,
-	[enable_display_options="no"])
 	
 AC_ARG_ENABLE([bot-challenger],
 	[AS_HELP_STRING(--enable-bot-challenger,build the bot-challenger plugin @<:@default=yes@:>@)],,
@@ -140,7 +137,6 @@ AC_SUBST(CFLAGS)
 
 AC_CONFIG_FILES([Makefile
                  bot-challenger/Makefile
-		 display-options/Makefile
                  gaym/Makefile
                  gaym/pixmaps/Makefile
                  gaym/src/Makefile
@@ -155,7 +151,6 @@ echo
 echo $PACKAGE $VERSION
 echo
 echo Build bot-challenger plugin...... : $enable_bot_challenger
-echo Build display-options plugin...... : $enable_display_options
 echo Build gaym plugin................ : $enable_gaym
 echo Build gaym-extras plugin......... : $enable_gaym_extras
 echo

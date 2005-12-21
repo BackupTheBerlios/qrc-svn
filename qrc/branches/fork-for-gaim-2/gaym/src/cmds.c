@@ -38,14 +38,15 @@ int gaym_cmd_default(struct gaym_conn *gaym, const char *cmd,
                      const char *target, const char **args)
 {
     GaimConversation *convo =
-        gaim_find_conversation_with_account(target, gaym->account);
+        gaim_find_conversation_with_account(GAIM_CONV_TYPE_ANY, target,
+                                            gaym->account);
     char *buf;
 
     if (!convo)
         return 1;
 
     buf = g_strdup_printf(_("Unknown command: %s"), cmd);
-    if (gaim_conversation_get_type(convo) == GAIM_CONV_IM)
+    if (gaim_conversation_get_type(convo) == GAIM_CONV_TYPE_IM)
         gaim_conv_im_write(GAIM_CONV_IM(convo), "", buf,
                            GAIM_MESSAGE_SYSTEM | GAIM_MESSAGE_NO_LOG,
                            time(NULL));
@@ -120,12 +121,14 @@ int gaym_cmd_ctcp_action(struct gaym_conn *gaym, const char *cmd,
     g_free(newargs[1]);
     g_free(newargs);
 
-    convo = gaim_find_conversation_with_account(target, gaym->account);
+    convo =
+        gaim_find_conversation_with_account(GAIM_CONV_TYPE_ANY, target,
+                                            gaym->account);
     if (convo) {
         action = g_strdup_printf("/me %s", args[0]);
         if (action[strlen(action) - 1] == '\n')
             action[strlen(action) - 1] = '\0';
-        if (gaim_conversation_get_type(convo) == GAIM_CONV_CHAT)
+        if (gaim_conversation_get_type(convo) == GAIM_CONV_TYPE_CHAT)
             serv_got_chat_in(gc,
                              gaim_conv_chat_get_id(GAIM_CONV_CHAT(convo)),
                              gaim_connection_get_display_name(gc), 0,
@@ -196,8 +199,10 @@ int gaym_cmd_kick(struct gaym_conn *gaym, const char *cmd,
     if (!args || !args[0])
         return 0;
 
-    convo = gaim_find_conversation_with_account(target, gaym->account);
-    if (!convo || gaim_conversation_get_type(convo) != GAIM_CONV_CHAT)
+    convo =
+        gaim_find_conversation_with_account(GAIM_CONV_TYPE_CHAT, target,
+                                            gaym->account);
+    if (!convo)
         return 0;
 
     if (args[1])
@@ -462,7 +467,8 @@ int gaym_cmd_query(struct gaym_conn *gaym, const char *cmd,
     if (!args || !args[0])
         return 0;
 
-    convo = gaim_conversation_new(GAIM_CONV_IM, gaym->account, args[0]);
+    convo =
+        gaim_conversation_new(GAIM_CONV_TYPE_IM, gaym->account, args[0]);
 
     if (args[1]) {
         gc = gaim_account_get_connection(gaym->account);
@@ -507,8 +513,10 @@ int gaym_cmd_topic(struct gaym_conn *gaym, const char *cmd,
     if (!args)
         return 0;
 
-    convo = gaim_find_conversation_with_account(target, gaym->account);
-    if (!convo || gaim_conversation_get_type(convo) != GAIM_CONV_CHAT)
+    convo =
+        gaim_find_conversation_with_account(GAIM_CONV_TYPE_CHAT, target,
+                                            gaym->account);
+    if (!convo)
         return 0;
 
     if (!args[0]) {
@@ -516,7 +524,7 @@ int gaym_cmd_topic(struct gaym_conn *gaym, const char *cmd,
 
         if (topic) {
             char *tmp, *tmp2;
-            tmp = gaim_escape_html(topic);
+            tmp = g_markup_escape_text(topic, -1);
             tmp2 = gaim_markup_linkify(tmp);
             buf = g_strdup_printf(_("current topic is: %s"), tmp2);
             g_free(tmp);

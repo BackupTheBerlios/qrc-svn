@@ -1,24 +1,23 @@
 #include "gaym-extras.h"
 // Consider combining into one popup hash...
 // All three indexed by a widget (treeview, or tab_label)
-GHashTable *popup_rects; /* */
-GHashTable *popup_timeouts; /* contains *int */ 
-GHashTable *popups; /* contains *GtkWidget for popup window*/
+GHashTable *popup_rects;        /* */
+GHashTable *popup_timeouts;     /* contains *int */
+GHashTable *popups;             /* contains *GtkWidget for popup window */
 
 
-/*Called when a conversation is closed
- * or on plugin unload*/
+/* Called when a conversation is closed or on plugin unload */
 void clean_popup_stuff(GaimConversation * c)
 {
 
     if (!g_strrstr(gaim_account_get_protocol_id(c->account), "prpl-gaym"))
         return;
-    
+
     GaimGtkConversation *gtkconv = GAIM_GTK_CONVERSATION(c);
-    if (c->type == GAIM_CONV_IM) {
+    if (c->type == GAIM_CONV_TYPE_IM) {
         g_hash_table_remove(popup_timeouts, gtkconv->tab_label);
         g_hash_table_remove(popups, gtkconv->tab_label);
-    } else if (c->type == GAIM_CONV_CHAT) {
+    } else if (c->type == GAIM_CONV_TYPE_CHAT) {
         GaimGtkChatPane *gtkchat = gtkconv->u.chat;
         g_hash_table_remove(popup_timeouts, gtkchat->list);
         g_hash_table_remove(popup_rects, gtkchat->list);
@@ -170,9 +169,11 @@ static gboolean tooltip_timeout(struct timeout_cb_data *data)
     gtk_widget_set_name(tipwindow, "gtk-tooltips");
 
     struct paint_data *pdata = g_new0(struct paint_data, 1);
-    pdata->tooltiptext = g_strdup_printf("<b><i>%s</i></b>%s",name,tooltiptext);
-    //pdata->tooltiptext = tooltiptext;
+    pdata->tooltiptext =
+        g_strdup_printf("<b><i>%s</i></b>%s", name, tooltiptext);
+    // pdata->tooltiptext = tooltiptext;
     g_free(tooltiptext);
+
     pdata->pixbuf = lookup_cached_thumbnail(account, name);
     g_signal_connect(G_OBJECT(tipwindow), "expose_event",
                      G_CALLBACK(namelist_paint_tip), pdata);
@@ -180,7 +181,8 @@ static gboolean tooltip_timeout(struct timeout_cb_data *data)
     layout = gtk_widget_create_pango_layout(tipwindow, NULL);
     pango_layout_set_wrap(layout, PANGO_WRAP_WORD);
     pango_layout_set_width(layout, 300000);
-    pango_layout_set_markup(layout, pdata->tooltiptext, strlen(pdata->tooltiptext));
+    pango_layout_set_markup(layout, pdata->tooltiptext,
+                            strlen(pdata->tooltiptext));
     pango_layout_get_size(layout, &w, &h);
 
 #if GTK_CHECK_VERSION(2,2,0)
