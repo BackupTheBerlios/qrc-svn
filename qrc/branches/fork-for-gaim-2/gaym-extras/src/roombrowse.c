@@ -630,8 +630,8 @@ static void roombrowse_menu_create(GaimBlistNode * node, GList ** menu)
 
     label =
         g_strdup_printf("Browse users in %s", gaim_chat_get_name(chat));
-    GaimBlistNodeAction *act = gaim_blist_node_action_new(label,
-                                                          roombrowse_menu_cb,
+    GaimMenuAction *act = gaim_menu_action_new(label,
+                                                          GAIM_CALLBACK(roombrowse_menu_cb),
                                                           chat->account->
                                                           gc, NULL);
 

@@ -163,10 +163,11 @@ GaimConvChatBuddyFlags chat_pecking_order(const char *extra);
  * Format and return the tooltip text for a buddy/user
  *
  * @param ib The stuct containing the information about the buddy
+ * @param str The GString in which to place the tooltop
  *
- * @return   The correctly formatted tooltip text
+ * @return   A pointer to the GString object
  */
-char *build_tooltip_text(struct gaym_buddy *ib);
+GString* build_tooltip_text(struct gaym_buddy *ib, GString* str);
 
 GaimConvChatBuddyFlags include_chat_entry_order(GaimConvChatBuddyFlags
                                                 flags, gint entry);

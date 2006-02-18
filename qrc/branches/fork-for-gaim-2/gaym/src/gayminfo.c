@@ -137,38 +137,37 @@ void gaym_fetch_thumbnail_cb(void *user_data, const char *pic_data,
     if (!pic_data) {
         return;
     }
-
+     
     if (!d->gc)
-        return;
+	return;
     if (len && !g_strrstr_len(pic_data, len, "Server Error")) {
-        gaim_debug_misc("gaym", "Setting buddy icon for %s\n", d->who);
-        if (len < 1024) {
-            void *new_pic_data = NULL;
-            gaim_debug_misc("gaym", "Short icon file, padding to 1024\n");
-            new_pic_data = g_malloc0(1024);
-            memcpy(new_pic_data, pic_data, len);
-            len = 1024;
-            gaim_buddy_icon_new(d->gc->account, d->who,
-                                (void *) new_pic_data, len);
-            g_free(new_pic_data);
-        } else {
-            gaim_buddy_icon_new(d->gc->account, d->who, (void *) pic_data,
-                                len);
-        }
-        GaimBuddyIcon *icon =
-            gaim_buddy_icons_find(d->gc->account, d->who);
-        guint len;
-        const guchar *data = gaim_buddy_icon_get_data(icon, &len);
+	gaim_debug_misc("gaym","Setting buddy icon for %s\n",d->who);
+	if(len<1024) {
+	    void* new_pic_data=NULL;
+	    gaim_debug_misc("gaym","Short icon file, padding to 1024\n");
+	    new_pic_data=g_malloc0(1024);
+	    memcpy(new_pic_data, pic_data, len);
+	    len=1024;
+	    gaim_buddy_icon_new(d->gc->account, d->who, (void*)new_pic_data, len);
+	    g_free(new_pic_data);
+	}
+	else {
+	    gaim_buddy_icon_new(d->gc->account, d->who, (void*)pic_data, len);
+	}
+	GaimBuddyIcon *icon=gaim_buddy_icons_find(d->gc->account,d->who);
+	guint len;
+	const guchar* data=gaim_buddy_icon_get_data(icon, &len);
     }
     if (GAIM_CONNECTION_IS_VALID(d->gc) && len) {
         gaim_signal_emit(gaim_accounts_get_handle(), "info-updated",
                          d->gc->account, d->who);
-        /* if (gaim_find_conversation_with_account(d->who,
-           d->gc->account)) {
-
-           gaim_debug_misc("fetch_thumbnail_cb","setting buddy icon\n");
-           gaim_buddy_icons_set_for_user(gaim_connection_get_account
-           (d->gc), d->who, (void *) pic_data, len); } */
+      /*  if (gaim_find_conversation_with_account(d->who, d->gc->account)) {
+	    
+	    gaim_debug_misc("fetch_thumbnail_cb","setting buddy icon\n");
+            gaim_buddy_icons_set_for_user(gaim_connection_get_account
+             (d->gc), d->who,
+             (void *) pic_data, len);
+        }*/
 
     } else {
         gaim_debug_error("gaym", "Fetching buddy icon failed.\n");
@@ -229,21 +228,21 @@ void gaym_buddy_status(struct gaym_conn *gaym, char *name,
 
     if (thumbnail && fetch_thumbnail) {
         if (!ib || gaim_utf8_strcasecmp(thumbnail, ib->thumbnail)) {
-            char *hashurl = NULL;
-            hashurl =
-                g_hash_table_lookup(gaym->confighash,
-                                    "mini-profile-panel.thumbnail-prefix");
-            g_return_if_fail(hashurl != NULL);
-            data = g_new0(struct gaym_fetch_thumbnail_data, 1);
-            data->gc = gaim_account_get_connection(gaym->account);
-            data->who = g_strdup(gaim_normalize(gaym->account, name));
-            data->filename = g_strdup(g_strrstr(thumbnail, "/"));
-            gaim_debug_misc("gayminfo", "Found filename: %s\n",
-                            data->filename);
-            url = g_strdup_printf("%s%s", hashurl, thumbnail);
-            gaim_url_fetch(url, FALSE, "Mozilla/4.0", FALSE,
-                           gaym_fetch_thumbnail_cb, data);
-            g_free(url);
+                char *hashurl = NULL;
+                hashurl =
+                    g_hash_table_lookup(gaym->confighash,
+                                        "mini-profile-panel.thumbnail-prefix");
+                g_return_if_fail(hashurl != NULL);
+                data = g_new0(struct gaym_fetch_thumbnail_data, 1);
+                data->gc = gaim_account_get_connection(gaym->account);
+                data->who = g_strdup(gaim_normalize(gaym->account, name));
+                data->filename = g_strdup(g_strrstr(thumbnail, "/"));
+                gaim_debug_misc("gayminfo", "Found filename: %s\n",
+                                data->filename);
+                url = g_strdup_printf("%s%s", hashurl, thumbnail);
+                gaim_url_fetch(url, FALSE, "Mozilla/4.0", FALSE,
+                               gaym_fetch_thumbnail_cb, data);
+                g_free(url);
 
         }
     }
@@ -287,13 +286,11 @@ void gaym_buddy_status(struct gaym_conn *gaym, char *name,
         ib->gaymuser = gaymuser;
         GaimBuddy *buddy = gaim_find_buddy(gaym->account, name);
         if (buddy) {
-            if (ib->online)
-                gaim_prpl_got_user_status(gaym->account, buddy->name,
-                                          GAYM_STATUS_ID_AVAILABLE, NULL);
-            else
-                gaim_prpl_got_user_status(gaym->account, buddy->name,
-                                          GAYM_STATUS_ID_OFFLINE, NULL);
-        }
+	if(ib->online)
+	    gaim_prpl_got_user_status(gaym->account, buddy->name, GAYM_STATUS_ID_AVAILABLE, NULL);
+	else
+	    gaim_prpl_got_user_status(gaym->account, buddy->name, GAYM_STATUS_ID_OFFLINE, NULL);
+	}
     }
     return;
 }

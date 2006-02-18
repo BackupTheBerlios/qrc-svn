@@ -1041,8 +1041,9 @@ void gaym_msg_part(struct gaym_conn *gaym, const char *name,
         } else {
             GaimConversationUiOps *ops =
                 gaim_conversation_get_ui_ops(convo);
-            if (ops != NULL && ops->chat_remove_user != NULL) {
-                ops->chat_remove_user(convo, nick);
+            if (ops != NULL && ops->chat_remove_users != NULL) {
+		GList* users = g_list_append(NULL, (char*)nick);
+                ops->chat_remove_users(convo, users);
             }
             GaimConvChatBuddy *cb =
                 gaim_conv_chat_cb_find(GAIM_CONV_CHAT(convo), nick);
@@ -1172,7 +1173,7 @@ void gaym_msg_privmsg(struct gaym_conn *gaym, const char *name,
                                             gaym->account);
 
     notice = !strcmp(args[0], " notice ");
-    tmp = gaym_parse_ctcp(gaym, nick, args[0], args[1], notice);
+    msg = gaym_parse_ctcp(gaym, nick, args[0], args[1], notice);
 
     if (!tmp) {
         g_free(nick);
@@ -1184,9 +1185,9 @@ void gaym_msg_privmsg(struct gaym_conn *gaym, const char *name,
         return;
     }
 
-    msg = g_markup_escape_text(tmp, -1);
+    //msg = g_markup_escape_text(tmp, -1);
 
-    g_free(tmp);
+    //g_free(tmp);
 
     if (notice) {
         tmp = g_strdup_printf("(notice) %s", msg);

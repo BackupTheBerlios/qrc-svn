@@ -414,6 +414,7 @@ int gaym_cmd_privmsg(struct gaym_conn *gaym, const char *cmd,
             end = cur + strlen(cur);
         msg = g_strndup(cur, end - cur);
         buf = gaym_format(gaym, "vt:", "PRIVMSG", nick, msg);
+	gaim_debug_misc("gaym_cmd_privmsg",buf);
         gaym_send(gaym, buf);
         g_free(msg);
         g_free(buf);

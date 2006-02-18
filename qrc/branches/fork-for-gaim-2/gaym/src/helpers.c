@@ -456,12 +456,11 @@ GaimConvChatBuddyFlags chat_pecking_order(const char *extra)
     return flags;
 }
 
-char *build_tooltip_text(struct gaym_buddy *ib)
+GString* build_tooltip_text(struct gaym_buddy *ib, GString* tooltip)
 {
     if (!ib->name)
-        return g_strdup("No info found.");
+        return g_string_assign(tooltip, "No info found.");
     char *escaped;
-    GString *tooltip = g_string_new("");
 
     // g_string_printf(tooltip, "<b><i>%s</i></b>", ib->name);
 
@@ -502,7 +501,7 @@ char *build_tooltip_text(struct gaym_buddy *ib)
     }
     // g_string_erase(tooltip, 0, 1);
 
-    return g_string_free(tooltip, FALSE);
+    return tooltip;
 }
 
 GaimConvChatBuddyFlags include_chat_entry_order(GaimConvChatBuddyFlags

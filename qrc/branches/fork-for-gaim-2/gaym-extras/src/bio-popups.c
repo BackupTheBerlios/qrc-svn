@@ -98,7 +98,8 @@ static gboolean tooltip_timeout(struct timeout_cb_data *data)
 #endif
     PangoLayout *layout;
     gboolean tooltip_top = FALSE;
-    char *tooltiptext = NULL;
+    GString *tooltip_str = g_string_new("");
+    char* tooltiptext = NULL;
     GdkRectangle mon_size;
     guint *timeout;
     GtkWidget *tipwindow;
@@ -147,13 +148,12 @@ static gboolean tooltip_timeout(struct timeout_cb_data *data)
     GaimBuddy *gb = g_new0(GaimBuddy, 1);
     gb->name = g_strdup(name);
     gb->account = account;
-    tooltiptext = prpl_info->tooltip_text(gb);
+    prpl_info->tooltip_text(gb, tooltip_str, TRUE);
     g_free(gb->name);
     g_free(gb);
-
+    tooltiptext = g_string_free(tooltip_str, FALSE);
     if (!tooltiptext)
         return FALSE;
-
 
     g_return_val_if_fail(tooltiptext != NULL, FALSE);
 
@@ -172,7 +172,7 @@ static gboolean tooltip_timeout(struct timeout_cb_data *data)
     pdata->tooltiptext =
         g_strdup_printf("<b><i>%s</i></b>%s", name, tooltiptext);
     // pdata->tooltiptext = tooltiptext;
-    g_free(tooltiptext);
+   g_free(tooltiptext);
 
     pdata->pixbuf = lookup_cached_thumbnail(account, name);
     g_signal_connect(G_OBJECT(tipwindow), "expose_event",

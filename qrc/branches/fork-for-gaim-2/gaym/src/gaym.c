@@ -229,16 +229,16 @@ static char *gaym_status_text(GaimBuddy * buddy)
     return status;
 }
 
-static char *gaym_tooltip_text(GaimBuddy * buddy)
+static void gaym_tooltip_text(GaimBuddy * buddy, GString *str, gboolean full)
 {
     if (!buddy || !buddy->account || !buddy->account->gc)
-        return NULL;
+        return;
 
     struct gaym_conn *gaym =
         (struct gaym_conn *) buddy->account->gc->proto_data;
 
     if (!gaym) {
-        return NULL;
+        return;
     }
 
     struct gaym_buddy *ib = g_hash_table_lookup(gaym->channel_members,
@@ -252,10 +252,12 @@ static char *gaym_tooltip_text(GaimBuddy * buddy)
                                                 buddy->name));
 
     if (!ib) {
-        return g_strdup("No info found.");
+	g_string_assign(str, "No info found.");
+        return;
     }
 
-    return build_tooltip_text(ib);
+    build_tooltip_text(ib, str);
+    
 }
 
 static GList *gaym_status_types(GaimAccount * account)
@@ -390,7 +392,7 @@ static void gaym_blist_join_chat_cb(GaimBlistNode * node, gpointer data)
 static GList *gaym_blist_node_menu(GaimBlistNode * node)
 {
     GList *m = NULL;
-    GaimBlistNodeAction *act = NULL;
+    GaimMenuAction *act = NULL;
     int i = 0;
 
     if (node->type != GAIM_BLIST_CHAT_NODE) {
@@ -418,7 +420,7 @@ static GList *gaym_blist_node_menu(GaimBlistNode * node)
         instance =
             g_strdup_printf("%.*s%d", strlen(channel) - 1, channel, i);
         act =
-            gaim_blist_node_action_new(label, gaym_blist_join_chat_cb,
+            gaim_menu_action_new(label, GAIM_CALLBACK(gaym_blist_join_chat_cb),
                                        instance, NULL);
         m = g_list_prepend(m, act);
     }
@@ -782,19 +784,22 @@ static int gaym_im_send(GaimConnection * gc, const char *who,
     } else {
         args[0] = who;
     }
+    stripped_msg = gaim_markup_strip_html(what);
     if (flags & GAIM_MESSAGE_AUTO_RESP) {
-        stripped_msg = gaim_markup_strip_html(what);
         automsg = g_strdup_printf("<AUTO-REPLY> %s", stripped_msg);
         g_free(stripped_msg);
         args[1] = automsg;
 
     } else {
-        args[1] = what;
+        args[1] = stripped_msg;
     }
     gaym_cmd_privmsg(gaym, "msg", NULL, args);
     if (automsg) {
         g_free(automsg);
     }
+    if (stripped_msg)
+	g_free(stripped_msg);
+
     return 1;
 }
 
