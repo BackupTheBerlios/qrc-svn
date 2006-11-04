@@ -128,8 +128,8 @@ void gaym_update_channel_member(struct gaym_conn *gaym, const char *nick,
 
     }
 }
-void gaym_fetch_thumbnail_cb(void *user_data, const char *pic_data,
-                             size_t len)
+void gaym_fetch_thumbnail_cb(GaimUtilFetchUrlData *url_data, void *user_data, const gchar *pic_data,
+                             gsize len, const gchar* error_message)
 {
     if (!user_data)
         return;
@@ -154,9 +154,9 @@ void gaym_fetch_thumbnail_cb(void *user_data, const char *pic_data,
 	else {
 	    gaim_buddy_icon_new(d->gc->account, d->who, (void*)pic_data, len);
 	}
-	GaimBuddyIcon *icon=gaim_buddy_icons_find(d->gc->account,d->who);
-	guint len;
-	const guchar* data=gaim_buddy_icon_get_data(icon, &len);
+	//GaimBuddyIcon *icon=gaim_buddy_icons_find(d->gc->account,d->who);
+	//guint len;
+	//const guchar* data=gaim_buddy_icon_get_data(icon, &len);
     }
     if (GAIM_CONNECTION_IS_VALID(d->gc) && len) {
         gaim_signal_emit(gaim_accounts_get_handle(), "info-updated",
@@ -240,7 +240,7 @@ void gaym_buddy_status(struct gaym_conn *gaym, char *name,
                 gaim_debug_misc("gayminfo", "Found filename: %s\n",
                                 data->filename);
                 url = g_strdup_printf("%s%s", hashurl, thumbnail);
-                gaim_url_fetch(url, FALSE, "Mozilla/4.0", FALSE,
+                gaim_util_fetch_url(url, FALSE, "Mozilla/4.0", FALSE,
                                gaym_fetch_thumbnail_cb, data);
                 g_free(url);
 

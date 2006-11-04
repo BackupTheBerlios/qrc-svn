@@ -23,9 +23,22 @@
 #ifndef _GAIM_GAYM_H
 #define _GAIM_GAYM_H
 
-#include "internal.h"
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+//#include "internal.h"
 
 #include <glib.h>
+#include <string.h>
+#include <ctype.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <fcntl.h>
+
+#include <glib-2.0/glib/gi18n.h>
 
 #include "roomlist.h"
 
@@ -256,10 +269,6 @@ typedef struct GaymNamelist {
     // 
     // (during names pass)
 } GaymNamelist;
-void gaym_dccsend_send_file(GaimConnection * gc, const char *who,
-                            const char *file);
-void gaym_dccsend_recv(struct gaym_conn *gaym, const char *from,
-                       const char *msg);
 void gaym_get_chat_key_from_weblogin(GaimAccount * account,
                                      void (*callback) (GaimAccount *));
 

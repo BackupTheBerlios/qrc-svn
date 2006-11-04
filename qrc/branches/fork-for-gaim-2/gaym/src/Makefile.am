@@ -5,7 +5,6 @@ GAYMSOURCES = \
 	botfilter.c \
 	botfilter.h \
 	cmds.c \
-	dcc_send.c \
 	gaym.c \
 	gaym.h \
 	gayminfo.c \
@@ -34,4 +33,6 @@ libgaym_la_SOURCES = \
 
 AM_CPPFLAGS = \
 	$(DEBUG_CFLAGS) \
-	$(GAIM_CFLAGS)
+	$(GAIM_CFLAGS) \
+	$(GLIB_CFLAGS) \
+	-DGAIM_PLUGINS

@@ -23,7 +23,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "internal.h"
 #include "accountopt.h"
 #include "blist.h"
 #include "conversation.h"
@@ -51,8 +50,7 @@ static GList *gaym_status_types(GaimAccount * account);
 static GList *gaym_actions(GaimPlugin * plugin, gpointer context);
 /* static GList *gaym_chat_info(GaimConnection *gc); */
 static void gaym_login(GaimAccount * account);
-static void gaym_login_cb(gpointer data, gint source,
-                          GaimInputCondition cond);
+static void gaym_login_cb(gpointer data, gint source, const gchar* error_message);
 static void gaym_close(GaimConnection * gc);
 static int gaym_im_send(GaimConnection * gc, const char *who,
                         const char *what, GaimMessageFlags flags);
@@ -460,7 +458,6 @@ static void gaym_login_with_chat_key(GaimAccount * account)
     struct gaym_conn *gaym;
     char *buf;
     const char *username = gaim_account_get_username(account);
-    int err;
 
     gc = gaim_account_get_connection(account);
     gaym = gc->proto_data;
@@ -469,14 +466,14 @@ static void gaym_login_with_chat_key(GaimAccount * account)
     gaim_connection_update_progress(gc, buf, 5, 6);
     g_free(buf);
     gaim_debug_misc("gaym", "Trying login to %s\n", gaym->server);
-    err = gaim_proxy_connect(account, gaym->server,
-                             gaim_account_get_int(account, "port",
-                                                  IRC_DEFAULT_PORT),
-                             gaym_login_cb, gc);
-    if (err || !account->gc) {
+    GaimProxyConnectData* pdata = gaim_proxy_connect(account, 
+			     gaym->server,
+                             gaim_account_get_int(account, "port", IRC_DEFAULT_PORT),
+                             *gaym_login_cb, 
+			     gc);
+    if (!pdata || !account->gc) {
         gaim_connection_error(gc, _("Couldn't create socket"));
-        gaim_debug_misc("gaym", "err: %d, account->gc: %x\n", err,
-                        account->gc);
+        gaim_debug_misc("gaym", "account->gc: %x\n", account->gc);
         return;
     }
 
@@ -579,10 +576,10 @@ static void gaym_login(GaimAccount * account)
 }
 
 
-static void gaym_get_configtxt_cb(gpointer proto_data,
-                                  const gchar * config_text, size_t len)
+static void gaym_get_configtxt_cb(GaimUtilFetchUrlData* data, gpointer proto_data,
+                                  const gchar * config_text, size_t len, const gchar* error_message)
 {
-    struct gaym_conn *gaym = (struct gaym_conn *) proto_data;
+    struct gaym_conn *gaym = (struct gaym_conn*)proto_data;
     // GaimConnection *gc = gaim_account_get_connection(gaym->account);
 
     g_return_if_fail(config_text != NULL);
@@ -596,8 +593,7 @@ static void gaym_get_configtxt_cb(gpointer proto_data,
 
     return;
 }
-static void gaym_login_cb(gpointer data, gint source,
-                          GaimInputCondition cond)
+static void gaym_login_cb(gpointer data, gint source, const gchar *error_message)
 {
     GaimConnection *gc = data;
     struct gaym_conn *gaym = gc->proto_data;
@@ -689,7 +685,7 @@ static void gaym_login_cb(gpointer data, gint source,
         char *user_agent = "Mozilla/4.0";
 
         get_spamlist_from_web();
-        gaim_url_fetch(url, FALSE, user_agent, FALSE,
+        gaim_util_fetch_url(url, FALSE, user_agent, FALSE,
                        gaym_get_configtxt_cb, gaym);
 
         g_free(url);
@@ -1433,7 +1429,11 @@ static GaimPluginProtocolInfo prpl_info = {
     gaym_roomlist_cancel,       /* roomlist_cancel */
     gaym_roomlist_expand_category,      /* roomlist_expand_category */
     NULL,                       /* can_receive_file */
-    gaym_dccsend_send_file      /* send_file */
+    NULL,      /* send_file */
+    NULL,	/*new_xfr */
+    NULL,	/* offline_mode */
+    NULL,	/* whiteboard_prpl_ops */
+    NULL,	/* send_raw */
 };
 
 void deref_one_user(gpointer * user, gpointer * data)
@@ -1622,7 +1622,7 @@ static GaimPluginInfo info = {
     NULL,                                                 /**< destroy        */
     NULL,                                                  /**< ui_info        */
     &prpl_info,                                           /**< extra_info     */
-    &prefs_info,
+    NULL,//&prefs_info,
     gaym_actions
 };
 
@@ -1687,6 +1687,7 @@ static void connect_signals(GaimConnection * plugin)
 static void _init_plugin(GaimPlugin * plugin)
 {
 
+    printf("INIT PLUGIN DAMMIT!\n");
     GaimAccountOption *option;
 
     option = gaim_account_option_string_new(_("Bio Line"), "bioline", "");

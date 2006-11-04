@@ -20,8 +20,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "internal.h"
-
 #include "accountopt.h"
 #include "conversation.h"
 #include "notify.h"
@@ -369,7 +367,7 @@ char *gaym_parse_ctcp(struct gaym_conn *gaym, const char *from,
         gaym_send(gaym, buf);
         g_free(buf);
     } else if (!strncmp(cur, "DCC SEND ", 9)) {
-        gaym_dccsend_recv(gaym, from, msg + 10);
+        //gaym_dccsend_recv(gaym, from, msg + 10);
         return NULL;
     }
 

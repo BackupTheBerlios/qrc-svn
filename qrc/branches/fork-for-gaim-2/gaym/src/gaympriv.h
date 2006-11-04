@@ -60,8 +60,8 @@ void gaym_privacy_change(GaimConnection * gc, const char *name);
  * @param result The information fetched by the http GET.
  * @param len    The length of the result.
  */
-void gaym_server_change_deny_status_cb(void *data, const char *result,
-                                       size_t len);
+void gaym_server_change_deny_status_cb(GaimUtilFetchUrlData *url_data, void *data, const gchar *result,
+                                       gsize len, const gchar* error_message);
 
 /**
  * Add a name to (or remove a name from) the Gay.com server's deny list.

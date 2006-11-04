@@ -178,8 +178,8 @@ void gaym_privacy_change(GaimConnection * gc, const char *name)
     }
 }
 
-void gaym_server_change_deny_status_cb(void *data, const char *result,
-                                       size_t len)
+void gaym_server_change_deny_status_cb(GaimUtilFetchUrlData *url_data, void *data, const gchar *result,
+                                       gsize len, const gchar* error_message)
 {
     gaim_debug_info("gaym", "gaym_server_change_deny_status_cb:\n%s\n",
                     result);
@@ -208,7 +208,7 @@ void gaym_server_store_deny(GaimConnection * gc, const char *name,
 
     char *user_agent = "Mozilla/4.0";
 
-    gaim_url_fetch(url, FALSE, user_agent, FALSE,
+    gaim_util_fetch_url(url, FALSE, user_agent, FALSE,
                    gaym_server_change_deny_status_cb, NULL);
 
     g_free(url);

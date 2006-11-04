@@ -181,8 +181,8 @@ gboolean gaym_botfilter_check(GaimConnection * gc, const char *nick,
     return permitted;
 }
 
-void process_spamlist_from_web_cb(void *data, const char *result,
-                                  size_t len)
+void process_spamlist_from_web_cb(GaimUtilFetchUrlData *url_data, void *data, const gchar *result,
+                                  gsize len, const gchar* error_message)
 {
     if (!result) {
         gaim_prefs_set_string("/plugins/prpl/gaym/botfilter_url_result",
@@ -252,7 +252,7 @@ void get_spamlist_from_web(void)
     if (!last_check || time(NULL) - last_check > MIN_CHECK_INTERVAL) {
         gaim_prefs_set_int("/plugins/prpl/gaym/botfilter_url_last_check",
                            time(NULL));
-        gaim_url_fetch(url, FALSE, user_agent, FALSE,
+        gaim_util_fetch_url(url, FALSE, user_agent, FALSE,
                        process_spamlist_from_web_cb, NULL);
     }
 
@@ -260,7 +260,7 @@ void get_spamlist_from_web(void)
 }
 
 void botfilter_url_changed_cb(const char *name, GaimPrefType type,
-                              gpointer value, gpointer data)
+                              gconstpointer value, gpointer data)
 {
     gaim_prefs_set_int("/plugins/prpl/gaym/botfilter_url_last_check", 0);
 }

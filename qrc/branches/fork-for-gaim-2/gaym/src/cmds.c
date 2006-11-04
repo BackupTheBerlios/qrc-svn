@@ -20,7 +20,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "internal.h"
 
 #include "conversation.h"
 #include "debug.h"
@@ -433,8 +432,7 @@ int gaym_cmd_quit(struct gaym_conn *gaym, const char *cmd,
         buf =
             gaym_format(gaym, "v:", "QUIT",
                         (args
-                         && args[0]) ? args[0] : "Download Gaim: "
-                        GAIM_WEBSITE);
+                         && args[0]) ? args[0] : "Leaving");
         gaym_send(gaym, buf);
         g_free(buf);
 

@@ -50,7 +50,7 @@ gboolean gaym_botfilter_check(GaimConnection * gc, const char *nick,
 void get_spamlist_from_web(void);
 
 void botfilter_url_changed_cb(const char *name, GaimPrefType type,
-                              gpointer value, gpointer data);
+                              gconstpointer value, gpointer data);
 
 #endif                          /* _GAIM_GAYM_BOTFILTER_H_ */
 

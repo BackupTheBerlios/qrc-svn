@@ -27,6 +27,7 @@
 #include <glib.h>
 
 #include "gaym.h"
+#include "util.h"
 
 /**
  * Begin temporary, pending further refactoring
@@ -42,8 +43,8 @@ struct gaym_fetch_thumbnail_data {
     // gint pic_data_len;
 };
 
-void gaym_fetch_thumbnail_cb(void *user_data, const char *pic_data,
-                             size_t len);
+void gaym_fetch_thumbnail_cb(GaimUtilFetchUrlData *url_data, void *user_data, const gchar *pic_data,
+                             gsize len, const gchar* error_message);
 /**
  * End temporary, pending further refactoring
  */

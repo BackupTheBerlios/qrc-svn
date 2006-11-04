@@ -1,10 +1,12 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ(2.59)
 AC_INIT([qrc],[2.0],[gaymplugin@yahoogroups.com])
-AC_CANONICAL_TARGET([])
-AM_INIT_AUTOMAKE([1.9.5 no-dist-gzip dist-bzip2])
+AC_CANONICAL_SYSTEM
+AM_CONFIG_HEADER(config.h)
+AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
+
+AC_PREREQ([2.50])
 
 REQUIRED_PKG_CONFIG="0.15.0"
 AC_SUBST(REQUIRED_PKG_CONFIG)
@@ -16,9 +18,7 @@ REQUIRED_GTK="gtk+-2.0"
 AC_SUBST(REQUIRED_GTK)
 
 AC_CONFIG_SRCDIR([gaym/src/gaym.h])
-AC_CONFIG_HEADER([config.h])
 
-AC_DEFINE(GAIM_PLUGINS, 1, [Define if plugins are enabled.])
 
 # Checks for programs.
 AC_PROG_CC
@@ -39,7 +39,7 @@ fi
 	
 AC_ARG_ENABLE([bot-challenger],
 	[AS_HELP_STRING(--enable-bot-challenger,build the bot-challenger plugin @<:@default=yes@:>@)],,
-	[enable_bot_challenger="yes"])
+	[enable_bot_challenger="no"])
 
 AC_ARG_ENABLE([gaym],
 	[AS_HELP_STRING(--enable-gaym,build the gaym plugin @<:@default=yes@:>@)],,
@@ -49,7 +49,7 @@ AC_ARG_ENABLE([gaym-extras],
 	[AS_HELP_STRING(--enable-gaym-extras,build the gaym-extras plugin @<:@default=yes@:>@)],,
 	[enable_gaym_extras="yes"])
 
-AM_CONDITIONAL([COND_BOT_CHALLENGER], [test "$enable_bot_challenger" = "yes"])
+AM_CONDITIONAL([COND_BOT_CHALLENGER], [test "$enable_bot_challenger" = "no"])
 AM_CONDITIONAL([COND_DISPLAY_OPTIONS], [test "$enable_display_options" = "yes"])
 AM_CONDITIONAL([COND_GAYM], [test "$enable_gaym" = "yes"])
 AM_CONDITIONAL([COND_GAYM_EXTRAS], [test "$enable_gaym_extras" = "yes"])

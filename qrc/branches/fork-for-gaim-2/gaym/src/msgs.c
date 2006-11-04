@@ -22,7 +22,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "internal.h"
 #include "conversation.h"
 #include "blist.h"
 #include "notify.h"
@@ -85,8 +84,8 @@ void gaym_msg_away(struct gaym_conn *gaym, const char *name,
     serv_got_im(gc, args[1], args[2], GAIM_MESSAGE_AUTO_RESP, time(NULL));
 }
 
-static void gaym_fetch_photo_cb(void *user_data, const char *info_data,
-                                size_t len)
+static void gaym_fetch_photo_cb(GaimUtilFetchUrlData *url_data, void *user_data, const gchar *info_data,
+                                gsize len, const gchar* err)
 {
     if (!info_data || !user_data) {
         return;
@@ -149,8 +148,8 @@ static void gaym_fetch_photo_cb(void *user_data, const char *info_data,
     gaim_imgstore_unref(id);
 }
 
-static void gaym_fetch_info_cb(void *user_data, const char *info_data,
-                               size_t len)
+static void gaym_fetch_info_cb(GaimUtilFetchUrlData *url_data, void *user_data, const gchar *info_data,
+                               gsize len, const gchar* error_message)
 {
     struct gaym_fetch_thumbnail_data *d = user_data;
     char *picpath;
@@ -203,7 +202,7 @@ static void gaym_fetch_info_cb(void *user_data, const char *info_data,
 
     picurl = g_strdup_printf("http://www.gay.com%s", picpath);
     if (picurl) {
-        gaim_url_fetch(picurl, FALSE, "Mozilla/4.0 (compatible; MSIE 5.0)",
+        gaim_util_fetch_url(picurl, FALSE, "Mozilla/4.0 (compatible; MSIE 5.0)",
                        FALSE, gaym_fetch_photo_cb, user_data);
         return;
     }
@@ -293,7 +292,7 @@ void gaym_msg_whois(struct gaym_conn *gaym, const char *name,
         char *infourl = g_strdup_printf("%s?pw=%s&name=%s", hashurl,
                                         gaym->chat_key, args[1]);
         if (infourl) {
-            gaim_url_fetch(infourl, FALSE,
+            gaim_util_fetch_url(infourl, FALSE,
                            "Mozilla/4.0 (compatible; MSIE 5.0)", FALSE,
                            gaym_fetch_info_cb, data);
             g_free(infourl);
@@ -1129,7 +1128,7 @@ void gaym_msg_privmsg(struct gaym_conn *gaym, const char *name,
                       const char *from, char **args)
 {
     GaimConversation *convo;
-    char *tmp, *msg;
+    char *tmp=0, *msg=0;
     int notice = 0;
 
     GaimConnection *gc = gaim_account_get_connection(gaym->account);
