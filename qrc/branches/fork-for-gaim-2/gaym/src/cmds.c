@@ -405,13 +405,15 @@ int gaym_cmd_privmsg(struct gaym_conn *gaym, const char *cmd,
     } else {
         nick = g_strdup(args[0]);
     }
-    cur = args[1];
-    end = args[1];
+    gchar* unescaped=gaim_unescape_html(args[1]);
+    cur = unescaped;
+    end = unescaped;
     while (*end && *cur) {
         end = strchr(cur, '\n');
         if (!end)
             end = cur + strlen(cur);
         msg = g_strndup(cur, end - cur);
+
         buf = gaym_format(gaym, "vt:", "PRIVMSG", nick, msg);
 	gaim_debug_misc("gaym_cmd_privmsg",buf);
         gaym_send(gaym, buf);
@@ -420,6 +422,7 @@ int gaym_cmd_privmsg(struct gaym_conn *gaym, const char *cmd,
         cur = end + 1;
     }
     g_free(nick);
+    g_free(unescaped);
     return 0;
 }
 

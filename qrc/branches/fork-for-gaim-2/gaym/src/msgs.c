@@ -1172,7 +1172,7 @@ void gaym_msg_privmsg(struct gaym_conn *gaym, const char *name,
                                             gaym->account);
 
     notice = !strcmp(args[0], " notice ");
-    msg = gaym_parse_ctcp(gaym, nick, args[0], args[1], notice);
+    tmp = gaym_parse_ctcp(gaym, nick, args[0], args[1], notice);
 
     if (!tmp) {
         g_free(nick);
@@ -1180,13 +1180,14 @@ void gaym_msg_privmsg(struct gaym_conn *gaym, const char *name,
     }
 
     if (!gaym_privacy_check(gc, nick)) {
+	g_free(tmp);
         g_free(nick);
         return;
     }
 
     //msg = g_markup_escape_text(tmp, -1);
-
     //g_free(tmp);
+    msg=tmp;
 
     if (notice) {
         tmp = g_strdup_printf("(notice) %s", msg);

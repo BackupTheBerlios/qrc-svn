@@ -104,8 +104,13 @@ gchar* gaym_build_session_request(gchar* url, GaimUrlSession* session)
 	    if(!url || !session)
 		return 0;
 
-	    gchar* buf = g_strdup_printf("GET %s HTTP/1.1\r\n" "Accept-Encoding: identity\r\n"
-                       "Host: www.gay.com\r\n" "Cookie: %s\r\n",
+	    gchar* buf = g_strdup_printf(   "GET %s HTTP/1.0\r\n" 
+					    "Accept-Charset: utf-8\r\n"
+					    "User-Agent: Mozilla/4.0\r\n"
+					    "Accept-Encoding: identity\r\n"
+					    "Host: www.gay.com\r\n" 
+					    "Cookie: %s\r\n"
+					    "Connction: Close\r\n",
                        url, session->cookies);
 	gchar* res; 
 	if (session->hasFormData)
@@ -233,9 +238,10 @@ gaym_weblogin_step4(GaimUtilFetchUrlData *url_data, gpointer data, const gchar *
 	gaim_debug_misc("weblogin","About to build url\n");
 	gchar* request=gaym_build_session_request(url, session);
 	gaim_debug_misc("weblogin","Requesting: %s\n",request);
-        gaim_util_fetch_url_request(url, FALSE, NULL, FALSE, 
+        gaim_util_fetch_url_request(url, FALSE, NULL, TRUE, 
 				    request, TRUE, gaym_weblogin_step5,
 				    session);
+	gaim_debug_misc("weblogin","applet fetched");
     } else {
         gaim_debug_misc("gaym", "Connection was cancelled before step4\n");
         gaim_debug_misc("gaym", "session: %x\n", session);

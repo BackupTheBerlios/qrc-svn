@@ -1622,7 +1622,7 @@ static GaimPluginInfo info = {
     NULL,                                                 /**< destroy        */
     NULL,                                                  /**< ui_info        */
     &prpl_info,                                           /**< extra_info     */
-    NULL,//&prefs_info,
+    &prefs_info,
     gaym_actions
 };
 
@@ -1687,7 +1687,6 @@ static void connect_signals(GaimConnection * plugin)
 static void _init_plugin(GaimPlugin * plugin)
 {
 
-    printf("INIT PLUGIN DAMMIT!\n");
     GaimAccountOption *option;
 
     option = gaim_account_option_string_new(_("Bio Line"), "bioline", "");
