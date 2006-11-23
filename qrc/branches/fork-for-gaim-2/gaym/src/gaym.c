@@ -466,7 +466,7 @@ static void gaym_login_with_chat_key(GaimAccount * account)
     gaim_connection_update_progress(gc, buf, 5, 6);
     g_free(buf);
     gaim_debug_misc("gaym", "Trying login to %s\n", gaym->server);
-    GaimProxyConnectData* pdata = gaim_proxy_connect(account, 
+    GaimProxyConnectData* pdata = gaim_proxy_connect(NULL, account, 
 			     gaym->server,
                              gaim_account_get_int(account, "port", IRC_DEFAULT_PORT),
                              *gaym_login_cb, 
