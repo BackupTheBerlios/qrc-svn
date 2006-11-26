@@ -109,26 +109,11 @@ static void gaym_fetch_photo_cb(GaimUtilFetchUrlData *url_data, void *user_data,
         return;
 
     int id = gaim_imgstore_add(info_data, len, NULL);
-    if (d->stats && d->bio)
-        info =
-            g_strdup_printf
-            ("<b>Stats:</b> %s<br><b>Bio:</b> %s<br><img id=%d><br><a href='%s%s'>Full Profile</a>",
-             d->stats, d->bio, id, hashurl, d->who);
-    else if (d->stats)
-        info =
-            g_strdup_printf
-            ("<b>Stats:</b> %s<br><img id=%d><br><a href='%s%s'>Full Profile</a>",
-             d->stats, id, hashurl, d->who);
-    else if (d->bio)
-        info =
-            g_strdup_printf
-            ("<b>Bio:</b> %s<br><img id=%d><br><a href='%s%s'>Full Profile</a>",
-             d->bio, id, hashurl, d->who);
-    else
-        info =
-            g_strdup_printf
-            ("No Info Found<br><img id=%d><br><a href='%s%s'>Full Profile</a>",
-             id, hashurl, d->who);
+    info = g_strdup_printf ("<a href='%s%s'> Full Profile</a><br>"
+                            "<b>Stats:</b> %s<br>"
+                            "<b>Bio:</b> %s<br>"
+                            "<img id=%d>",
+                            hashurl, d->who, d->stats, d->bio, id);
 
     gaim_request_close(GAIM_REQUEST_ACTION, dialog);
     g_hash_table_remove(gaym->info_window_needed,

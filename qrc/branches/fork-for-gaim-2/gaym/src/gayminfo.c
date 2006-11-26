@@ -69,7 +69,7 @@ char *gaym_bio_strdup(const char *info)
     if ((end) && (start < end)) {
         return g_strdup_printf("%.*s", end - start, start);
     } else {
-        return 0;
+        return g_strdup_printf("Not entered");
     }
 }
 
@@ -90,7 +90,7 @@ char *gaym_stats_strdup(const char *info)
     if (start != end && end) {
         return g_strdup_printf("%.*s", end - start, start);
     } else {
-        return 0;
+        return g_strdup_printf("Not entered|-|-");
     }
 }
 
