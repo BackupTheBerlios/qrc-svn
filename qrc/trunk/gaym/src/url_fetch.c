@@ -1,6 +1,8 @@
 #include "gaym.h"
 #include "util.h"
 #include "debug.h"
+
+
 struct _PurpleUtilFetchUrlData
 {
 	PurpleUtilFetchUrlCallback callback;
@@ -235,10 +237,12 @@ url_fetch_send_cb(gpointer data, gint source, PurpleInputCondition cond)
 
 	len = write(gfud->fd, gfud->request + gfud->request_written,
 			total_len - gfud->request_written);
-
+	
+	purple_debug_misc("send_cb","called write with fd=%d and got %d\n",gfud->fd,len);
 	if (len < 0 && errno == EAGAIN)
 		return;
 	else if (len < 0) {
+		purple_debug_misc("send_cb","error: %s\n",strerror(errno));
 		purple_util_fetch_url_error(gfud, _("Error writing to %s: %s"),
 				gfud->website.address, strerror(errno));
 		return;
@@ -270,7 +274,6 @@ url_fetch_connect_cb(gpointer url_data, gint source, const gchar *error_message)
 	}
 
 	gfud->fd = source;
-
 	if (!gfud->request)
 	{
 		if (gfud->user_agent) {
@@ -344,7 +347,8 @@ gaym_util_fetch_url_request(const char *url, gboolean full,
 	gfud->connect_data = purple_proxy_connect(NULL, NULL,
 			gfud->website.address, gfud->website.port,
 			url_fetch_connect_cb, gfud);
-
+	
+	purple_debug_misc("url_fetch","connect_data: %x\n",gfud->connect_data);
 	if (gfud->connect_data == NULL)
 	{
 		purple_util_fetch_url_error(gfud, _("Unable to connect to %s"),

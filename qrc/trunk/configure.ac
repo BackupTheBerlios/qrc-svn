@@ -141,6 +141,9 @@ AC_CONFIG_FILES([Makefile
                  bot-challenger/Makefile
                  gaym/Makefile
                  gaym/pixmaps/Makefile
+                 gaym/pixmaps/16/Makefile
+                 gaym/pixmaps/22/Makefile
+                 gaym/pixmaps/48/Makefile
                  gaym/src/Makefile
                  gaym-extras/Makefile
 		 gaym-extras/src/Makefile

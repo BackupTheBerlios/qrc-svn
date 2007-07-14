@@ -378,34 +378,35 @@ static GList *gaym_blist_node_menu(PurpleBlistNode * node)
     PurpleMenuAction *act = NULL;
     int i = 0;
 
-    if (node->type != PURPLE_BLIST_CHAT_NODE) {
-        return m;
+    if (node->type == PURPLE_BLIST_CHAT_NODE) {
+
+        PurpleChat *chat = (PurpleChat *) node;
+        char *channel = g_hash_table_lookup(chat->components, "channel");
+
+        if (!channel) {
+            return m;
+        }
+
+        if (!g_str_has_suffix(channel, "=*")) {
+            return m;
+        }
+
+        char *label = NULL;
+        char *instance = NULL;
+
+        int max = purple_prefs_get_int("/plugins/prpl/gaym/chat_room_instances");
+
+        for (i = max; i > 0; i--) {
+            label = g_strdup_printf(_("Join Room %d"), i);
+            instance =
+                g_strdup_printf("%.*s%d", strlen(channel) - 1, channel, i);
+            act =
+                purple_menu_action_new(label, PURPLE_CALLBACK(gaym_blist_join_chat_cb), instance, NULL);
+            m = g_list_prepend(m, act);
+        }
     }
-
-    PurpleChat *chat = (PurpleChat *) node;
-    char *channel = g_hash_table_lookup(chat->components, "channel");
-
-    if (!channel) {
-        return m;
-    }
-
-    if (!g_str_has_suffix(channel, "=*")) {
-        return m;
-    }
-
-    char *label = NULL;
-    char *instance = NULL;
-
-    int max = purple_prefs_get_int("/plugins/prpl/gaym/chat_room_instances");
-
-    for (i = max; i > 0; i--) {
-        label = g_strdup_printf(_("Join Room %d"), i);
-        instance =
-            g_strdup_printf("%.*s%d", strlen(channel) - 1, channel, i);
-        act =
-            purple_menu_action_new(label, PURPLE_CALLBACK(gaym_blist_join_chat_cb),
-                                       instance, NULL);
-        m = g_list_prepend(m, act);
+    if (PURPLE_BLIST_NODE_IS_BUDDY(node)) {
+        
     }
     return m;
 }
@@ -582,7 +583,7 @@ static void gaym_login_cb(gpointer data, gint source, const gchar *error_message
 {
     PurpleConnection *gc = data;
     struct gaym_conn *gaym = gc->proto_data;
-    char hostname[256];
+    char hostname[256]="Peacock";
     char *buf;
     const char *username;
     const char *user_bioline = NULL;
@@ -621,8 +622,6 @@ static void gaym_login_cb(gpointer data, gint source, const gchar *error_message
                                   ("Password wasn't recorded. Report bug."));
             return;
         }
-        gethostname(hostname, sizeof(hostname));
-        hostname[sizeof(hostname) - 1] = '\0';
         username = purple_account_get_string(gaym->account, "username", "");
         user_bioline =
             g_strdup(purple_account_get_string

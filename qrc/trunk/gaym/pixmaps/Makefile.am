@@ -1,8 +1,8 @@
+SUBDIRS = 16 22 48
+
 EXTRA_DIST = \
-	gaym.png
+	Makefile.mingw \
+	16/Makefile.mingw \
+	22/Makefile.mingw \
+	48/Makefile.mingw
 
-gaymstatuspixdir = \
-	$(GAIM_DATADIR)/pixmaps/gaim/status/default
-
-gaymstatuspix_DATA = \
-	gaym.png

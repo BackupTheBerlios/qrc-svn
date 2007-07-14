@@ -77,6 +77,8 @@ static void add_cookie(gpointer key, gpointer value, gpointer data)
 static void parse_cookies(const char *webdata, PurpleUrlSession * session,
                           size_t len)
 {
+    if (!webdata)
+        return;
     gchar **cookies = g_strsplit(webdata, "\n", -1);
     gchar **cookie_parts;
     char *cookie;
@@ -223,7 +225,9 @@ gaym_weblogin_step5(PurpleUtilFetchUrlData *url_data, gpointer data, const gchar
 static void
 gaym_weblogin_step4(PurpleUtilFetchUrlData *url_data, gpointer data, const gchar *text, gsize len, const gchar* err)
 {
-
+    if(!text)
+        text=g_strdup("Got nothin!\n");
+    purple_debug_misc("step4","text: %s\n",text); 
     PurpleUrlSession *session = (PurpleUrlSession *) data;
     parse_cookies(text, session, len);
     purple_debug_misc("gaym", "Step 4: session: %x\n", session);

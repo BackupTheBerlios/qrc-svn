@@ -27,8 +27,9 @@
 #include "config.h"
 #endif
 
-//#include "internal.h"
-
+#ifdef _WIN32
+#include "internal.h"
+#else
 #include <glib.h>
 #include <string.h>
 #include <ctype.h>
@@ -37,8 +38,8 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <fcntl.h>
-
 #include <glib-2.0/glib/gi18n.h>
+#endif
 
 #include "roomlist.h"
 #include "util.h"
@@ -273,6 +274,7 @@ void gaym_get_chat_key_from_weblogin(PurpleAccount * account,
                                      void (*callback) (PurpleAccount *));
 
 void gaym_get_room_namelist(PurpleAccount * account, const char *room);
+int gethostname(char *name, size_t size);
 
 PurpleUtilFetchUrlData* gaym_util_fetch_url_request(const char *url, gboolean full,
 		const char *user_agent, gboolean http11,
