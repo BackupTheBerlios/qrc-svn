@@ -469,12 +469,14 @@ void build_tooltip_text(struct gaym_buddy *ib, PurpleNotifyUserInfo* info)
     if (ib->sex) {
         escaped = g_markup_escape_text(ib->sex, strlen(ib->sex));
         purple_notify_user_info_add_pair(info, _("Sex"), escaped);
+        purple_debug_misc("tooltip","adding sex\n");
         g_free(escaped);
     }
 
     if (ib->age) {
         escaped = g_markup_escape_text(ib->age, strlen(ib->age));
         purple_notify_user_info_add_pair(info, _("Age"), escaped);
+        purple_debug_misc("tooltip","adding age\n");
         g_free(escaped);
     }
     if (ib->location) {

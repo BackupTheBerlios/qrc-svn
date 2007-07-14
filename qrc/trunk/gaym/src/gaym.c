@@ -221,7 +221,6 @@ static void gaym_tooltip_text(PurpleBuddy * buddy, PurpleNotifyUserInfo *user_in
     if (!buddy || !buddy->account || !buddy->account->gc)
         return;
 
-    PurpleNotifyUserInfo *info = purple_notify_user_info_new();
     
     struct gaym_conn *gaym =
         (struct gaym_conn *) buddy->account->gc->proto_data;
@@ -240,7 +239,7 @@ static void gaym_tooltip_text(PurpleBuddy * buddy, PurpleNotifyUserInfo *user_in
                                  purple_normalize(gaym->account,
                                                 buddy->name));
 
-    build_tooltip_text(ib, info);
+    build_tooltip_text(ib, user_info);
     
 }
 
