@@ -1,7 +1,7 @@
 /**
  * @file parse.c
  *
- * gaim
+ * purple
  *
  * Copyright (C) 2003, Ethan Blanton <eblanton@cs.purdue.edu>
  *
@@ -198,38 +198,38 @@ static struct _gaym_user_cmd {
 
 };
 
-static GaimCmdRet gaym_parse_gaim_cmd(GaimConversation * conv,
+static PurpleCmdRet gaym_parse_purple_cmd(PurpleConversation * conv,
                                       const gchar * cmd, gchar ** args,
                                       gchar ** error, void *data)
 {
-    GaimConnection *gc;
+    PurpleConnection *gc;
     struct gaym_conn *gaym;
     struct _gaym_user_cmd *cmdent;
 
-    gc = gaim_conversation_get_gc(conv);
+    gc = purple_conversation_get_gc(conv);
     if (!gc)
-        return GAIM_CMD_RET_FAILED;
+        return PURPLE_CMD_RET_FAILED;
 
     gaym = gc->proto_data;
 
     if ((cmdent = g_hash_table_lookup(gaym->cmds, cmd)) == NULL)
-        return GAIM_CMD_RET_FAILED;
+        return PURPLE_CMD_RET_FAILED;
 
-    (cmdent->cb) (gaym, cmd, gaim_conversation_get_name(conv),
+    (cmdent->cb) (gaym, cmd, purple_conversation_get_name(conv),
                   (const char **) args);
 
-    return GAIM_CMD_RET_OK;
+    return PURPLE_CMD_RET_OK;
 }
 
 static void gaym_register_command(struct _gaym_user_cmd *c)
 {
-    GaimCmdFlag f;
+    PurpleCmdFlag f;
     char args[10];
     char *format;
     int i;
 
-    f = GAIM_CMD_FLAG_CHAT | GAIM_CMD_FLAG_IM | GAIM_CMD_FLAG_PRPL_ONLY
-        | GAIM_CMD_FLAG_ALLOW_WRONG_ARGS;
+    f = PURPLE_CMD_FLAG_CHAT | PURPLE_CMD_FLAG_IM | PURPLE_CMD_FLAG_PRPL_ONLY
+        | PURPLE_CMD_FLAG_ALLOW_WRONG_ARGS;
 
     format = c->format;
 
@@ -249,8 +249,8 @@ static void gaym_register_command(struct _gaym_user_cmd *c)
 
     args[i] = '\0';
 
-    gaim_cmd_register(c->name, args, GAIM_CMD_P_PRPL, f, "prpl-gaym",
-                      gaym_parse_gaim_cmd, _(c->help), NULL);
+    purple_cmd_register(c->name, args, PURPLE_CMD_P_PRPL, f, "prpl-gaym",
+                      gaym_parse_purple_cmd, _(c->help), NULL);
 }
 
 void gaym_register_commands(void)
@@ -268,7 +268,7 @@ static char *gaym_send_convert(struct gaym_conn *gaym, const char *string)
     const gchar *charset;
 
     charset =
-        gaim_account_get_string(gaym->account, "encoding",
+        purple_account_get_string(gaym->account, "encoding",
                                 IRC_DEFAULT_CHARSET);
     if (!strcasecmp("UTF-8", charset))
         return g_strdup(string);
@@ -277,9 +277,9 @@ static char *gaym_send_convert(struct gaym_conn *gaym, const char *string)
         g_convert(string, strlen(string), charset, "UTF-8", NULL, NULL,
                   &err);
     if (err) {
-        gaim_debug(GAIM_DEBUG_ERROR, "gaym", "Send conversion error: %s\n",
+        purple_debug(PURPLE_DEBUG_ERROR, "gaym", "Send conversion error: %s\n",
                    err->message);
-        gaim_debug(GAIM_DEBUG_ERROR, "gaym",
+        purple_debug(PURPLE_DEBUG_ERROR, "gaym",
                    "Sending as UTF-8 instead of %s\n", charset);
         utf8 = g_strdup(string);
         g_error_free(err);
@@ -295,7 +295,7 @@ static char *gaym_recv_convert(struct gaym_conn *gaym, const char *string)
     const gchar *charset;
 
     charset =
-        gaim_account_get_string(gaym->account, "encoding",
+        purple_account_get_string(gaym->account, "encoding",
                                 IRC_DEFAULT_CHARSET);
 
     if (!strcasecmp("UTF-8", charset)) {
@@ -308,7 +308,7 @@ static char *gaym_recv_convert(struct gaym_conn *gaym, const char *string)
     }
 
     if (err) {
-        gaim_debug(GAIM_DEBUG_ERROR, "gaym", "recv conversion error: %s\n",
+        purple_debug(PURPLE_DEBUG_ERROR, "gaym", "recv conversion error: %s\n",
                    err->message);
         g_error_free(err);
     }
@@ -325,7 +325,7 @@ static char *gaym_recv_convert(struct gaym_conn *gaym, const char *string)
 char *gaym_parse_ctcp(struct gaym_conn *gaym, const char *from,
                       const char *to, const char *msg, int notice)
 {
-    GaimConnection *gc;
+    PurpleConnection *gc;
     const char *cur = msg + 1;
     char *buf, *ctcp;
     time_t timestamp;
@@ -345,25 +345,25 @@ char *gaym_parse_ctcp(struct gaym_conn *gaym, const char *from,
     } else if (!strncmp(cur, "PING ", 5)) {
         if (notice) {           /* reply */
             sscanf(cur, "PING %lu", &timestamp);
-            gc = gaim_account_get_connection(gaym->account);
+            gc = purple_account_get_connection(gaym->account);
             if (!gc)
                 return NULL;
             buf =
                 g_strdup_printf(_("Reply time from %s: %lu seconds"), from,
                                 time(NULL) - timestamp);
-            gaim_notify_info(gc, _("PONG"), _("CTCP PING reply"), buf);
+            purple_notify_info(gc, _("PONG"), _("CTCP PING reply"), buf);
             g_free(buf);
             return NULL;
         } else {
             buf = gaym_format(gaym, "vt:", "NOTICE", from, msg);
             gaym_send(gaym, buf);
             g_free(buf);
-            gc = gaim_account_get_connection(gaym->account);
+            gc = purple_account_get_connection(gaym->account);
         }
     } else if (!strncmp(cur, "VERSION", 7) && !notice) {
         buf =
             gaym_format(gaym, "vt:", "NOTICE", from,
-                        "\001VERSION Gaim IRC\001");
+                        "\001VERSION Purple IRC\001");
         gaym_send(gaym, buf);
         g_free(buf);
     } else if (!strncmp(cur, "DCC SEND ", 9)) {
@@ -385,7 +385,7 @@ void gaym_msg_table_build(struct gaym_conn *gaym)
     int i;
 
     if (!gaym || !gaym->msgs) {
-        gaim_debug(GAIM_DEBUG_ERROR, "gaym",
+        purple_debug(PURPLE_DEBUG_ERROR, "gaym",
                    "Attempt to build a message table on a bogus structure\n");
         return;
     }
@@ -401,7 +401,7 @@ void gaym_cmd_table_build(struct gaym_conn *gaym)
     int i;
 
     if (!gaym || !gaym->cmds) {
-        gaim_debug(GAIM_DEBUG_ERROR, "gaym",
+        purple_debug(PURPLE_DEBUG_ERROR, "gaym",
                    "Attempt to build a command table on a bogus structure\n");
         return;
     }
@@ -442,7 +442,7 @@ char *gaym_format(struct gaym_conn *gaym, const char *format, ...)
             g_free(tmp);
             break;
         default:
-            gaim_debug(GAIM_DEBUG_ERROR, "gaym",
+            purple_debug(PURPLE_DEBUG_ERROR, "gaym",
                        "Invalid format character '%c'\n", *cur);
             break;
         }
@@ -459,7 +459,7 @@ void gaym_parse_msg(struct gaym_conn *gaym, char *input)
         NULL, *fmt = NULL, **args = NULL, *msg = NULL;
     guint i;
 
-    /* gaim_debug(GAIM_DEBUG_INFO, "gaym", "RAW Protocol: %s\n", input); */
+    /* purple_debug(PURPLE_DEBUG_INFO, "gaym", "RAW Protocol: %s\n", input); */
 
     if (!strncmp(input, "PING ", 5)) {
         msg = gaym_format(gaym, "vv", "PONG", input + 5);
@@ -467,7 +467,7 @@ void gaym_parse_msg(struct gaym_conn *gaym, char *input)
         g_free(msg);
         return;
     } else if (!strncmp(input, "ERROR ", 6)) {
-        gaim_connection_error(gaim_account_get_connection(gaym->account),
+        purple_connection_error(purple_account_get_connection(gaym->account),
                               _("Disconnected."));
         return;
     }
@@ -527,7 +527,7 @@ void gaym_parse_msg(struct gaym_conn *gaym, char *input)
             cur = cur + strlen(cur);
             break;
         default:
-            gaim_debug(GAIM_DEBUG_ERROR, "gaym",
+            purple_debug(PURPLE_DEBUG_ERROR, "gaym",
                        "invalid message format character '%c'\n", fmt[i]);
             break;
         }
@@ -544,7 +544,7 @@ void gaym_parse_msg(struct gaym_conn *gaym, char *input)
 
 static void gaym_parse_error_cb(struct gaym_conn *gaym, char *input)
 {
-    gaim_debug(GAIM_DEBUG_WARNING, "gaym", "Unrecognized string: %s\n",
+    purple_debug(PURPLE_DEBUG_WARNING, "gaym", "Unrecognized string: %s\n",
                input);
 }
 

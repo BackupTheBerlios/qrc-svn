@@ -21,8 +21,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-#ifndef _GAIM_GAYM_GAYMINFO_H_
-#define _GAIM_GAYM_GAYMINFO_H_
+#ifndef _PURPLE_GAYM_GAYMINFO_H_
+#define _PURPLE_GAYM_GAYMINFO_H_
 
 #include <glib.h>
 
@@ -34,7 +34,7 @@
  */
 #include "connection.h"
 struct gaym_fetch_thumbnail_data {
-    GaimConnection *gc;
+    PurpleConnection *gc;
     char *who;
     char *filename;
     char *bio;
@@ -43,7 +43,7 @@ struct gaym_fetch_thumbnail_data {
     // gint pic_data_len;
 };
 
-void gaym_fetch_thumbnail_cb(GaimUtilFetchUrlData *url_data, void *user_data, const gchar *pic_data,
+void gaym_fetch_thumbnail_cb(PurpleUtilFetchUrlData *url_data, void *user_data, const gchar *pic_data,
                              gsize len, const gchar* error_message);
 /**
  * End temporary, pending further refactoring
@@ -99,7 +99,7 @@ void gaym_buddy_status(struct gaym_conn *gaym, char *name,
 
 void gaym_update_channel_member(struct gaym_conn *gaym, const char *nick,
                                 const char *info);
-#endif                          /* _GAIM_GAYM_GAYMINFO_H_ */
+#endif                          /* _PURPLE_GAYM_GAYMINFO_H_ */
 
 /**
  * vim:tabstop=4:shiftwidth=4:expandtab:

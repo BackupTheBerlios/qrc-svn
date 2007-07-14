@@ -11,8 +11,10 @@ AC_PREREQ([2.50])
 REQUIRED_PKG_CONFIG="0.15.0"
 AC_SUBST(REQUIRED_PKG_CONFIG)
 
-REQUIRED_GAIM="gaim gaim >= 2.0"
-AC_SUBST(REQUIRED_GAIM)
+#REQUIRED_GAIM="gaim gaim >= 2.0"
+#AC_SUBST(REQUIRED_GAIM)
+REQUIRED_PURPLE="purple purple >= 2.0"
+AC_SUBST(REQUIRED_PURPLE)
 
 REQUIRED_GTK="gtk+-2.0"
 AC_SUBST(REQUIRED_GTK)
@@ -38,7 +40,7 @@ fi
 
 	
 AC_ARG_ENABLE([bot-challenger],
-	[AS_HELP_STRING(--enable-bot-challenger,build the bot-challenger plugin @<:@default=yes@:>@)],,
+	[AS_HELP_STRING(--enable-bot-challenger,build the bot-challenger plugin @<:@default=no@:>@)],,
 	[enable_bot_challenger="no"])
 
 AC_ARG_ENABLE([gaym],
@@ -46,8 +48,8 @@ AC_ARG_ENABLE([gaym],
 	[enable_gaym="yes"])
 
 AC_ARG_ENABLE([gaym-extras],
-	[AS_HELP_STRING(--enable-gaym-extras,build the gaym-extras plugin @<:@default=yes@:>@)],,
-	[enable_gaym_extras="yes"])
+	[AS_HELP_STRING(--enable-gaym-extras,build the gaym-extras plugin @<:@default=no@:>@)],,
+	[enable_gaym_extras="no"])
 
 AM_CONDITIONAL([COND_BOT_CHALLENGER], [test "$enable_bot_challenger" = "no"])
 AM_CONDITIONAL([COND_DISPLAY_OPTIONS], [test "$enable_display_options" = "yes"])
@@ -70,8 +72,8 @@ if test "$enable_gaym_extras" != "yes" ; then
 fi
 
 # Checks for libraries.
-AC_ARG_WITH([gaim-prefix],
-	[AS_HELP_STRING(--with-gaim-prefix,specify the prefix where gaim is found)],
+AC_ARG_WITH([purple-prefix],
+	[AS_HELP_STRING(--with-purple-prefix,specify the prefix where Pidgin is found)],
 	PKG_CONFIG_PATH=$withval/lib/pkgconfig,[])
 export PKG_CONFIG_PATH
 
@@ -92,22 +94,22 @@ if test "$enable_display_options" = "yes" ; then
 		]
 	)
 fi
-PKG_CHECK_MODULES([GAIM], [$REQUIRED_GAIM],
+PKG_CHECK_MODULES([PURPLE], [$REQUIRED_PURPLE],
 	[
-	AC_SUBST(GAIM_CFLAGS)
-	AC_SUBST(GAIM_LIBS)
+	AC_SUBST(PURPLE_CFLAGS)
+	AC_SUBST(PURPLE_LIBS)
 	]
 )
-AC_ARG_VAR([GAIM_DATADIR], [datadir of GAIM, overriding pkg-config])dnl
-AC_ARG_VAR([GAIM_LIBDIR], [libdir of GAIM, overriding pkg-config])dnl
-AC_CACHE_CHECK([for GAIM][_DATADIR], [pkg_cv_][GAIM][_DATADIR],
-	[_PKG_CONFIG([GAIM][_DATADIR], [variable=datadir], [gaim])])
-AC_CACHE_CHECK([for GAIM][_LIBDIR], [pkg_cv_][GAIM][_LIBDIR],
-	[_PKG_CONFIG([GAIM][_LIBDIR], [variable=libdir], [gaim])])
-GAIM[]_DATADIR=$pkg_cv_[]GAIM[]_DATADIR
-GAIM[]_LIBDIR=$pkg_cv_[]GAIM[]_LIBDIR
-AC_SUBST(GAIM_DATADIR)
-AC_SUBST(GAIM_LIBDIR)
+AC_ARG_VAR([PURPLE_DATADIR], [datadir of PURPLE, overriding pkg-config])dnl
+AC_ARG_VAR([PURPLE_LIBDIR], [libdir of PURPLE, overriding pkg-config])dnl
+AC_CACHE_CHECK([for PURPLE][_DATADIR], [pkg_cv_][PURPLE][_DATADIR],
+	[_PKG_CONFIG([PURPLE][_DATADIR], [variable=datadir], [purple])])
+AC_CACHE_CHECK([for PURPLE][_LIBDIR], [pkg_cv_][PURPLE][_LIBDIR],
+	[_PKG_CONFIG([PURPLE][_LIBDIR], [variable=libdir], [purple])])
+PURPLE[]_DATADIR=$pkg_cv_[]PURPLE[]_DATADIR
+PURPLE[]_LIBDIR=$pkg_cv_[]PURPLE[]_LIBDIR
+AC_SUBST(PURPLE_DATADIR)
+AC_SUBST(PURPLE_LIBDIR)
 
 # Checks for header files.
 AC_HEADER_STDC
@@ -154,7 +156,9 @@ echo Build bot-challenger plugin...... : $enable_bot_challenger
 echo Build gaym plugin................ : $enable_gaym
 echo Build gaym-extras plugin......... : $enable_gaym_extras
 echo
-echo Installation directory........... : $GAIM_LIBDIR/gaim
+echo Installation directory........... : $PURPLE_LIBDIR/purple-2
 echo
+echo CFLAGS: $CFLAGS
+echo PURPLE_CFLAGS: $PURPLE_CFLAGS
 echo configure complete, now type \'make\'
 echo

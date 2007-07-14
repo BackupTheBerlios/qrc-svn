@@ -1,7 +1,7 @@
 /**
  * @file gaym.h
  * 
- * gaim
+ * purple
  *
  * Copyright (C) 2003, Ethan Blanton <eblanton@cs.purdue.edu>
  * 
@@ -20,8 +20,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef _GAIM_GAYM_H
-#define _GAIM_GAYM_H
+#ifndef _PURPLE_GAYM_H
+#define _PURPLE_GAYM_H
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -41,12 +41,12 @@
 #include <glib-2.0/glib/gi18n.h>
 
 #include "roomlist.h"
-
+#include "util.h"
 #define IRC_DEFAULT_SERVER "www.gay.com"
 #define IRC_DEFAULT_PORT 7514
 
 #define IRC_DEFAULT_CHARSET "UTF-8"
-#define IRC_DEFAULT_ALIAS "gaim"
+#define IRC_DEFAULT_ALIAS "purple"
 
 #define IRC_INITIAL_BUFSIZE 1024
 
@@ -74,7 +74,7 @@ enum gaym_state { IRC_STATE_NEW, IRC_STATE_ESTABLISHED };
 enum info_string { INFO_AGE, INFO_LOCATION, INFO_BIO, INFO_URL };
 
 struct gaym_conn {
-    GaimAccount *account;
+    PurpleAccount *account;
     GHashTable *msgs;
     GHashTable *cmds;
     char *server;
@@ -103,7 +103,7 @@ struct gaym_conn {
     char *nameconv;
     char *traceconv;
 
-    GaimRoomlist *roomlist;
+    PurpleRoomlist *roomlist;
 
     GList **node_menu;
     gboolean quitting;
@@ -123,14 +123,14 @@ typedef struct {
 
     gchar *cookies;
     GHashTable *cookie_table;
-    void (*session_cb) (GaimAccount *);
-    GaimAccount *account;
+    void (*session_cb) (PurpleAccount *);
+    PurpleAccount *account;
     char *username;
     char *password;
     struct gaym_conn *gaym;
     gboolean hasFormData;
 
-} GaimUrlSession;
+} PurpleUrlSession;
 typedef struct gaym_buddy GaymBuddy;
 struct gaym_buddy {
     gchar *name;                /* gaym formatted nick */
@@ -269,16 +269,17 @@ typedef struct GaymNamelist {
     // 
     // (during names pass)
 } GaymNamelist;
-void gaym_get_chat_key_from_weblogin(GaimAccount * account,
-                                     void (*callback) (GaimAccount *));
+void gaym_get_chat_key_from_weblogin(PurpleAccount * account,
+                                     void (*callback) (PurpleAccount *));
 
-void gaym_get_room_namelist(GaimAccount * account, const char *room);
-void gaim_session_fetch(const char *url, gboolean full,
-                        const char *user_agent, gboolean http11,
-                        void (*cb) (gpointer, const char *, size_t),
-                        void *user_data, GaimUrlSession * session);
+void gaym_get_room_namelist(PurpleAccount * account, const char *room);
 
-#endif                          /* _GAIM_GAYM_H */
+PurpleUtilFetchUrlData* gaym_util_fetch_url_request(const char *url, gboolean full,
+		const char *user_agent, gboolean http11,
+		const char *request, gboolean include_headers,
+		PurpleUtilFetchUrlCallback callback, void *user_data);
+
+#endif                          /* _PURPLE_GAYM_H */
 
 /**
  * vim:tabstop=4:shiftwidth=4:expandtab:

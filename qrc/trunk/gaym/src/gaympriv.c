@@ -28,7 +28,7 @@
 /* system headers */
 #include <glib.h>
 
-/* gaim headers for this plugin */
+/* purple headers for this plugin */
 #include "account.h"
 #include "debug.h"
 #include "privacy.h"
@@ -40,7 +40,7 @@
 #include "gaympriv.h"
 #include "helpers.h"
 
-gboolean gaym_privacy_check(GaimConnection * gc, const char *nick)
+gboolean gaym_privacy_check(PurpleConnection * gc, const char *nick)
 {
     /**
      * returns TRUE if allowed through, FALSE otherwise
@@ -50,61 +50,61 @@ gboolean gaym_privacy_check(GaimConnection * gc, const char *nick)
 
     switch (gc->account->perm_deny) {
     case 0:
-        gaim_debug_warning("gaym", "Privacy setting was 0.  If you can "
+        purple_debug_warning("gaym", "Privacy setting was 0.  If you can "
                            "reproduce this, please file a bug report.\n");
         permitted = TRUE;
         break;
 
-    case GAIM_PRIVACY_ALLOW_ALL:
+    case PURPLE_PRIVACY_ALLOW_ALL:
         permitted = TRUE;
         break;
 
-    case GAIM_PRIVACY_DENY_ALL:
-        gaim_debug_info("gaym",
-                        "%s blocked data received from %s (GAIM_PRIVACY_DENY_ALL)\n",
+    case PURPLE_PRIVACY_DENY_ALL:
+        purple_debug_info("gaym",
+                        "%s blocked data received from %s (PURPLE_PRIVACY_DENY_ALL)\n",
                         gc->account->username, nick);
         break;
 
-    case GAIM_PRIVACY_ALLOW_USERS:
+    case PURPLE_PRIVACY_ALLOW_USERS:
         for (list = gc->account->permit; list != NULL; list = list->next) {
-            if (!gaim_utf8_strcasecmp
-                (nick, gaim_normalize(gc->account, (char *) list->data))) {
+            if (!purple_utf8_strcasecmp
+                (nick, purple_normalize(gc->account, (char *) list->data))) {
                 permitted = TRUE;
-                gaim_debug_info("gaym",
-                                "%s allowed data received from %s (GAIM_PRIVACY_ALLOW_USERS)\n",
+                purple_debug_info("gaym",
+                                "%s allowed data received from %s (PURPLE_PRIVACY_ALLOW_USERS)\n",
                                 gc->account->username, nick);
                 break;
             }
         }
         break;
 
-    case GAIM_PRIVACY_DENY_USERS:
+    case PURPLE_PRIVACY_DENY_USERS:
         /* seeing we're letting everyone through, except the deny list */
         permitted = TRUE;
         for (list = gc->account->deny; list != NULL; list = list->next) {
-            if (!gaim_utf8_strcasecmp
-                (nick, gaim_normalize(gc->account, (char *) list->data))) {
+            if (!purple_utf8_strcasecmp
+                (nick, purple_normalize(gc->account, (char *) list->data))) {
                 permitted = FALSE;
-                gaim_debug_info("gaym",
-                                "%s blocked data received from %s (GAIM_PRIVACY_DENY_USERS)\n",
+                purple_debug_info("gaym",
+                                "%s blocked data received from %s (PURPLE_PRIVACY_DENY_USERS)\n",
                                 gc->account->username, nick);
                 break;
             }
         }
         break;
 
-    case GAIM_PRIVACY_ALLOW_BUDDYLIST:
-        if (gaim_find_buddy(gc->account, nick) != NULL) {
+    case PURPLE_PRIVACY_ALLOW_BUDDYLIST:
+        if (purple_find_buddy(gc->account, nick) != NULL) {
             permitted = TRUE;
         } else {
-            gaim_debug_info("gaym",
-                            "%s blocked data received from %s (GAIM_PRIVACY_ALLOW_BUDDYLIST)\n",
+            purple_debug_info("gaym",
+                            "%s blocked data received from %s (PURPLE_PRIVACY_ALLOW_BUDDYLIST)\n",
                             gc->account->username, nick);
         }
         break;
 
     default:
-        gaim_debug_warning("gaym",
+        purple_debug_warning("gaym",
                            "Privacy setting was unknown.  If you can "
                            "reproduce this, please file a bug report.\n");
         permitted = FALSE;
@@ -114,28 +114,28 @@ gboolean gaym_privacy_check(GaimConnection * gc, const char *nick)
     /**
      * don't block/ignore self
      */
-    if (!gaim_utf8_strcasecmp(gc->account->username, nick)) {
+    if (!purple_utf8_strcasecmp(gc->account->username, nick)) {
         permitted = TRUE;
-        gaim_debug_info("gaym", "declining to block/ignore self\n");
+        purple_debug_info("gaym", "declining to block/ignore self\n");
         return permitted;
     }
 
     return permitted;
 }
 
-void gaym_privacy_change(GaimConnection * gc, const char *name)
+void gaym_privacy_change(PurpleConnection * gc, const char *name)
 {
     /**
      * don't allow adding self to permit/deny lists
      */
 
     if (name) {
-        if (!gaim_utf8_strcasecmp(gc->account->username, name)) {
-            gaim_privacy_deny_remove(gc->account, gc->account->username,
+        if (!purple_utf8_strcasecmp(gc->account->username, name)) {
+            purple_privacy_deny_remove(gc->account, gc->account->username,
                                      TRUE);
-            gaim_privacy_permit_remove(gc->account, gc->account->username,
+            purple_privacy_permit_remove(gc->account, gc->account->username,
                                        TRUE);
-            gaim_debug_info("gaym",
+            purple_debug_info("gaym",
                             "declining to add self to permit/deny list\n");
             return;
         }
@@ -143,22 +143,22 @@ void gaym_privacy_change(GaimConnection * gc, const char *name)
 
     GSList *rooms = NULL;
     for (rooms = gc->buddy_chats; rooms; rooms = rooms->next) {
-        GaimConversation *convo = rooms->data;
-        GaimConvChat *chat = gaim_conversation_get_chat_data(convo);
+        PurpleConversation *convo = rooms->data;
+        PurpleConvChat *chat = purple_conversation_get_chat_data(convo);
         GList *people = NULL;
         for (people = chat->in_room; people; people = people->next) {
-            GaimConvChatBuddy *buddy = people->data;
-            GaimConversationUiOps *ops =
-                gaim_conversation_get_ui_ops(convo);
+            PurpleConvChatBuddy *buddy = people->data;
+            PurpleConversationUiOps *ops =
+                purple_conversation_get_ui_ops(convo);
             if (name) {
-                if (!gaim_utf8_strcasecmp(name, buddy->name)) {
+                if (!purple_utf8_strcasecmp(name, buddy->name)) {
                     if (gaym_privacy_check(gc, buddy->name)
                         && gaym_botfilter_check(gc, buddy->name, NULL,
                                                 TRUE)) {
-                        gaim_conv_chat_unignore(GAIM_CONV_CHAT(convo),
+                        purple_conv_chat_unignore(PURPLE_CONV_CHAT(convo),
                                                 buddy->name);
                     } else {
-                        gaim_conv_chat_ignore(GAIM_CONV_CHAT(convo),
+                        purple_conv_chat_ignore(PURPLE_CONV_CHAT(convo),
                                               buddy->name);
                     }
                     ops->chat_update_user((convo), buddy->name);
@@ -166,10 +166,10 @@ void gaym_privacy_change(GaimConnection * gc, const char *name)
             } else {
                 if (gaym_privacy_check(gc, buddy->name)
                     && gaym_botfilter_check(gc, buddy->name, NULL, TRUE)) {
-                    gaim_conv_chat_unignore(GAIM_CONV_CHAT(convo),
+                    purple_conv_chat_unignore(PURPLE_CONV_CHAT(convo),
                                             buddy->name);
                 } else {
-                    gaim_conv_chat_ignore(GAIM_CONV_CHAT(convo),
+                    purple_conv_chat_ignore(PURPLE_CONV_CHAT(convo),
                                           buddy->name);
                 }
                 ops->chat_update_user((convo), buddy->name);
@@ -178,15 +178,15 @@ void gaym_privacy_change(GaimConnection * gc, const char *name)
     }
 }
 
-void gaym_server_change_deny_status_cb(GaimUtilFetchUrlData *url_data, void *data, const gchar *result,
+void gaym_server_change_deny_status_cb(PurpleUtilFetchUrlData *url_data, void *data, const gchar *result,
                                        gsize len, const gchar* error_message)
 {
-    gaim_debug_info("gaym", "gaym_server_change_deny_status_cb:\n%s\n",
+    purple_debug_info("gaym", "gaym_server_change_deny_status_cb:\n%s\n",
                     result);
     return;
 }
 
-void gaym_server_store_deny(GaimConnection * gc, const char *name,
+void gaym_server_store_deny(PurpleConnection * gc, const char *name,
                             gboolean add)
 {
     char *action = NULL;
@@ -208,14 +208,14 @@ void gaym_server_store_deny(GaimConnection * gc, const char *name,
 
     char *user_agent = "Mozilla/4.0";
 
-    gaim_util_fetch_url(url, FALSE, user_agent, FALSE,
+    purple_util_fetch_url(url, FALSE, user_agent, FALSE,
                    gaym_server_change_deny_status_cb, NULL);
 
     g_free(url);
     return;
 }
 
-void synchronize_deny_list(GaimConnection * gc, GHashTable * confighash)
+void synchronize_deny_list(PurpleConnection * gc, GHashTable * confighash)
 {
     char *srvdeny = NULL;
     gchar **srvdenylist = NULL;
@@ -244,20 +244,20 @@ void synchronize_deny_list(GaimConnection * gc, GHashTable * confighash)
     for (i = 0; srvdenylist[i]; i++) {
         needsync = TRUE;
         for (list = gc->account->deny; list != NULL; list = list->next) {
-            if (!gaim_utf8_strcasecmp
+            if (!purple_utf8_strcasecmp
                 (srvdenylist[i],
-                 gaim_normalize(gc->account, (char *) list->data))) {
+                 purple_normalize(gc->account, (char *) list->data))) {
                 needsync = FALSE;
                 break;
             }
         }
         if (needsync) {
-            if (!gaim_privacy_deny_add(gc->account, srvdenylist[i], TRUE)) {
-                gaim_debug_error("gaym",
+            if (!purple_privacy_deny_add(gc->account, srvdenylist[i], TRUE)) {
+                purple_debug_error("gaym",
                                  "Failed to add %s to local deny list from server.\n",
                                  srvdenylist[i]);
             } else {
-                gaim_debug_misc("gaym",
+                purple_debug_misc("gaym",
                                 "Added %s to local deny list from server.\n",
                                 srvdenylist[i]);
             }
@@ -268,9 +268,9 @@ void synchronize_deny_list(GaimConnection * gc, GHashTable * confighash)
     for (list = gc->account->deny; list != NULL; list = list->next) {
         needsync = TRUE;
         for (i = 0; srvdenylist[i]; i++) {
-            if (!gaim_utf8_strcasecmp
+            if (!purple_utf8_strcasecmp
                 (srvdenylist[i],
-                 gaim_normalize(gc->account, (char *) list->data))) {
+                 purple_normalize(gc->account, (char *) list->data))) {
                 needsync = FALSE;
                 break;
             }

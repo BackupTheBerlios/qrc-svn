@@ -21,8 +21,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-#ifndef _GAIM_GAYM_BOTFILTER_H_
-#define _GAIM_GAYM_BOTFILTER_H_
+#ifndef _PURPLE_GAYM_BOTFILTER_H_
+#define _PURPLE_GAYM_BOTFILTER_H_
 
 #include "connection.h"
 
@@ -38,7 +38,7 @@
  *
  * @return TRUE if the user is allowed, or @c FALSE otherwise.
  */
-gboolean gaym_botfilter_check(GaimConnection * gc, const char *nick,
+gboolean gaym_botfilter_check(PurpleConnection * gc, const char *nick,
                               const char *text,
                               gboolean gaym_privacy_change);
 
@@ -49,10 +49,10 @@ gboolean gaym_botfilter_check(GaimConnection * gc, const char *nick,
  */
 void get_spamlist_from_web(void);
 
-void botfilter_url_changed_cb(const char *name, GaimPrefType type,
+void botfilter_url_changed_cb(const char *name, PurplePrefType type,
                               gconstpointer value, gpointer data);
 
-#endif                          /* _GAIM_GAYM_BOTFILTER_H_ */
+#endif                          /* _PURPLE_GAYM_BOTFILTER_H_ */
 
 /**
  * vim:tabstop=4:shiftwidth=4:expandtab:

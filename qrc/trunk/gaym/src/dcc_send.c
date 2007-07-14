@@ -1,10 +1,10 @@
 /**
  * @file dcc_send.c Functions used in sending files with DCC SEND
  *
- * gaim
+ * purple
  *
  * Copyright (C) 2004, Timothy T Ringenbach <omarvo@hotmail.com>
- * Copyright (C) 2003, Robbert Haarman <gaim@inglorion.net>
+ * Copyright (C) 2003, Robbert Haarman <purple@inglorion.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@ struct gaym_xfer_rx_data {
     gchar *ip;
 };
 
-static void gaym_dccsend_recv_destroy(GaimXfer * xfer)
+static void gaym_dccsend_recv_destroy(PurpleXfer * xfer)
 {
     struct gaym_xfer_rx_data *xd = xfer->data;
 
@@ -51,7 +51,7 @@ static void gaym_dccsend_recv_destroy(GaimXfer * xfer)
  * It sends the acknowledgement (in the form of a total byte count as an
  * unsigned 4 byte integer in network byte order)
  */
-static void gaym_dccsend_recv_ack(GaimXfer * xfer, const char *data,
+static void gaym_dccsend_recv_ack(PurpleXfer * xfer, const char *data,
                                   size_t size)
 {
     unsigned long l;
@@ -60,11 +60,11 @@ static void gaym_dccsend_recv_ack(GaimXfer * xfer, const char *data,
     write(xfer->fd, &l, sizeof(l));
 }
 
-static void gaym_dccsend_recv_init(GaimXfer * xfer)
+static void gaym_dccsend_recv_init(PurpleXfer * xfer)
 {
     struct gaym_xfer_rx_data *xd = xfer->data;
 
-    gaim_xfer_start(xfer, -1, xd->ip, xfer->remote_port);
+    purple_xfer_start(xfer, -1, xd->ip, xfer->remote_port);
     g_free(xd->ip);
     xd->ip = NULL;
 }
@@ -73,7 +73,7 @@ static void gaym_dccsend_recv_init(GaimXfer * xfer)
 void gaym_dccsend_recv(struct gaym_conn *gaym, const char *from,
                        const char *msg)
 {
-    GaimXfer *xfer;
+    PurpleXfer *xfer;
     struct gaym_xfer_rx_data *xd;
     gchar **token;
     struct in_addr addr;
@@ -114,11 +114,11 @@ void gaym_dccsend_recv(struct gaym_conn *gaym, const char *from,
     }
     i++;
 
-    xfer = gaim_xfer_new(gaym->account, GAIM_XFER_RECEIVE, from);
+    xfer = purple_xfer_new(gaym->account, PURPLE_XFER_RECEIVE, from);
     xd = g_new0(struct gaym_xfer_rx_data, 1);
     xfer->data = xd;
 
-    gaim_xfer_set_filename(xfer, filename->str);
+    purple_xfer_set_filename(xfer, filename->str);
     xfer->remote_port = atoi(token[i + 1]);
 
     nip = strtoul(token[i], NULL, 10);
@@ -128,18 +128,18 @@ void gaym_dccsend_recv(struct gaym_conn *gaym, const char *from,
     } else {
         xd->ip = g_strdup(token[i]);
     }
-    gaim_debug(GAIM_DEBUG_INFO, "gaym", "Receiving file from %s\n",
+    purple_debug(PURPLE_DEBUG_INFO, "gaym", "Receiving file from %s\n",
                xd->ip);
-    gaim_xfer_set_size(xfer, token[i + 2] ? atoi(token[i + 2]) : 0);
+    purple_xfer_set_size(xfer, token[i + 2] ? atoi(token[i + 2]) : 0);
 
-    gaim_xfer_set_init_fnc(xfer, gaym_dccsend_recv_init);
-    gaim_xfer_set_ack_fnc(xfer, gaym_dccsend_recv_ack);
+    purple_xfer_set_init_fnc(xfer, gaym_dccsend_recv_init);
+    purple_xfer_set_ack_fnc(xfer, gaym_dccsend_recv_ack);
 
-    gaim_xfer_set_end_fnc(xfer, gaym_dccsend_recv_destroy);
-    gaim_xfer_set_request_denied_fnc(xfer, gaym_dccsend_recv_destroy);
-    gaim_xfer_set_cancel_send_fnc(xfer, gaym_dccsend_recv_destroy);
+    purple_xfer_set_end_fnc(xfer, gaym_dccsend_recv_destroy);
+    purple_xfer_set_request_denied_fnc(xfer, gaym_dccsend_recv_destroy);
+    purple_xfer_set_cancel_send_fnc(xfer, gaym_dccsend_recv_destroy);
 
-    gaim_xfer_request(xfer);
+    purple_xfer_request(xfer);
     g_strfreev(token);
     g_string_free(filename, TRUE);
 }
@@ -155,7 +155,7 @@ struct gaym_xfer_send_data {
     guint rxlen;
 };
 
-static void gaym_dccsend_send_destroy(GaimXfer * xfer)
+static void gaym_dccsend_send_destroy(PurpleXfer * xfer)
 {
     struct gaym_xfer_send_data *xd = xfer->data;
 
@@ -163,7 +163,7 @@ static void gaym_dccsend_send_destroy(GaimXfer * xfer)
         return;
 
     if (xd->inpa > 0)
-        gaim_input_remove(xd->inpa);
+        purple_input_remove(xd->inpa);
     if (xd->fd != -1)
         close(xd->fd);
 
@@ -175,15 +175,15 @@ static void gaym_dccsend_send_destroy(GaimXfer * xfer)
 
 /* just in case you were wondering, this is why DCC is gay */
 static void gaym_dccsend_send_read(gpointer data, int source,
-                                   GaimInputCondition cond)
+                                   PurpleInputCondition cond)
 {
-    GaimXfer *xfer = data;
+    PurpleXfer *xfer = data;
     struct gaym_xfer_send_data *xd = xfer->data;
     char *buffer[16];
     int len;
 
     if ((len = read(source, buffer, sizeof(buffer))) <= 0) {
-        gaim_input_remove(xd->inpa);
+        purple_input_remove(xd->inpa);
         xd->inpa = 0;
         return;
     }
@@ -210,11 +210,11 @@ static void gaym_dccsend_send_read(gpointer data, int source,
             xd->rxqueue = NULL;
         }
 
-        if (acked >= gaim_xfer_get_size(xfer)) {
-            gaim_input_remove(xd->inpa);
+        if (acked >= purple_xfer_get_size(xfer)) {
+            purple_input_remove(xd->inpa);
             xd->inpa = 0;
-            gaim_xfer_set_completed(xfer, TRUE);
-            gaim_xfer_end(xfer);
+            purple_xfer_set_completed(xfer, TRUE);
+            purple_xfer_end(xfer);
             return;
         }
 
@@ -223,11 +223,11 @@ static void gaym_dccsend_send_read(gpointer data, int source,
 }
 
 ssize_t gaym_dccsend_send_write(const guchar * buffer, size_t size,
-                                GaimXfer * xfer)
+                                PurpleXfer * xfer)
 {
     ssize_t s;
 
-    s = MIN(gaim_xfer_get_bytes_remaining(xfer), size);
+    s = MIN(purple_xfer_get_bytes_remaining(xfer), size);
     if (!s)
         return 0;
 
@@ -235,9 +235,9 @@ ssize_t gaym_dccsend_send_write(const guchar * buffer, size_t size,
 }
 
 static void gaym_dccsend_send_connected(gpointer data, int source,
-                                        GaimInputCondition cond)
+                                        PurpleInputCondition cond)
 {
-    GaimXfer *xfer = (GaimXfer *) data;
+    PurpleXfer *xfer = (PurpleXfer *) data;
     struct gaym_xfer_send_data *xd = xfer->data;
     int conn;
 
@@ -247,30 +247,30 @@ static void gaym_dccsend_send_connected(gpointer data, int source,
            the nonblocking nature of the listening socket, so we'll just
            try again next time */
         /* Let's print an error message anyway */
-        gaim_debug_warning("gaym", "accept: %s\n", strerror(errno));
+        purple_debug_warning("gaym", "accept: %s\n", strerror(errno));
         return;
     }
 
-    gaim_input_remove(xfer->watcher);
+    purple_input_remove(xfer->watcher);
     xfer->watcher = 0;
     close(xd->fd);
     xd->fd = -1;
 
     xd->inpa =
-        gaim_input_add(conn, GAIM_INPUT_READ, gaym_dccsend_send_read,
+        purple_input_add(conn, PURPLE_INPUT_READ, gaym_dccsend_send_read,
                        xfer);
     /* Start the transfer */
-    gaim_xfer_start(xfer, conn, NULL, 0);
+    purple_xfer_start(xfer, conn, NULL, 0);
 }
 
 /* 
  * This function is called after the user has selected a file to send.
  */
-static void gaym_dccsend_send_init(GaimXfer * xfer)
+static void gaym_dccsend_send_init(PurpleXfer * xfer)
 {
     struct gaym_xfer_send_data *xd = xfer->data;
-    GaimConnection *gc =
-        gaim_account_get_connection(gaim_xfer_get_account(xfer));
+    PurpleConnection *gc =
+        purple_account_get_connection(purple_xfer_get_account(xfer));
     struct gaym_conn *gaym = gc->proto_data;
     int sock;
     const char *arg[2];
@@ -281,26 +281,26 @@ static void gaym_dccsend_send_init(GaimXfer * xfer)
     xfer->filename = g_path_get_basename(xfer->local_filename);
 
     /* Create a listening socket */
-    sock = gaim_network_listen_range(0, 0, SOCK_DGRAM, NULL, NULL);
+    sock = purple_network_listen_range(0, 0, SOCK_DGRAM, NULL, NULL);
 
     if (sock < 0) {
-        gaim_notify_error(gc, NULL, _("File Transfer Aborted"),
-                          _("Gaim could not open a listening port."));
-        gaim_xfer_cancel_local(xfer);
+        purple_notify_error(gc, NULL, _("File Transfer Aborted"),
+                          _("Purple could not open a listening port."));
+        purple_xfer_cancel_local(xfer);
         return;
     }
 
     xd->fd = sock;
 
-    port = gaim_network_get_port_from_fd(sock);
-    gaim_debug_misc("gaym", "port is %hu\n", port);
+    port = purple_network_get_port_from_fd(sock);
+    purple_debug_misc("gaym", "port is %hu\n", port);
     /* Monitor the listening socket */
-    xfer->watcher = gaim_input_add(sock, GAIM_INPUT_READ,
+    xfer->watcher = purple_input_add(sock, PURPLE_INPUT_READ,
                                    gaym_dccsend_send_connected, xfer);
 
     /* Send the intended recipient the DCC request */
     arg[0] = xfer->who;
-    inet_aton(gaim_network_get_my_ip(gaym->fd), &addr);
+    inet_aton(purple_network_get_my_ip(gaym->fd), &addr);
     arg[1] = tmp = g_strdup_printf("\001DCC SEND \"%s\" %u %hu %zu\001",
                                    xfer->filename, ntohl(addr.s_addr),
                                    port, xfer->size);
@@ -310,19 +310,19 @@ static void gaym_dccsend_send_init(GaimXfer * xfer)
 }
 
 /**
- * Gaim calls this function when the user selects Send File from the
+ * Purple calls this function when the user selects Send File from the
  * buddy menu
- * It sets up the GaimXfer struct and tells Gaim to go ahead
+ * It sets up the PurpleXfer struct and tells Purple to go ahead
  */
-void gaym_dccsend_send_file(GaimConnection * gc, const char *who,
+void gaym_dccsend_send_file(PurpleConnection * gc, const char *who,
                             const char *file)
 {
-    GaimXfer *xfer;
+    PurpleXfer *xfer;
     struct gaym_xfer_send_data *xd;
 
     /* Build the file transfer handle */
     xfer =
-        gaim_xfer_new(gaim_connection_get_account(gc), GAIM_XFER_SEND,
+        purple_xfer_new(purple_connection_get_account(gc), PURPLE_XFER_SEND,
                       who);
 
 
@@ -331,16 +331,16 @@ void gaym_dccsend_send_file(GaimConnection * gc, const char *who,
     xfer->data = xd;
 
     /* Setup our I/O op functions */
-    gaim_xfer_set_init_fnc(xfer, gaym_dccsend_send_init);
-    gaim_xfer_set_write_fnc(xfer, gaym_dccsend_send_write);
-    gaim_xfer_set_end_fnc(xfer, gaym_dccsend_send_destroy);
-    gaim_xfer_set_request_denied_fnc(xfer, gaym_dccsend_send_destroy);
-    gaim_xfer_set_cancel_send_fnc(xfer, gaym_dccsend_send_destroy);
+    purple_xfer_set_init_fnc(xfer, gaym_dccsend_send_init);
+    purple_xfer_set_write_fnc(xfer, gaym_dccsend_send_write);
+    purple_xfer_set_end_fnc(xfer, gaym_dccsend_send_destroy);
+    purple_xfer_set_request_denied_fnc(xfer, gaym_dccsend_send_destroy);
+    purple_xfer_set_cancel_send_fnc(xfer, gaym_dccsend_send_destroy);
     /* Now perform the request */
     if (file)
-        gaim_xfer_request_accepted(xfer, file);
+        purple_xfer_request_accepted(xfer, file);
     else
-        gaim_xfer_request(xfer);
+        purple_xfer_request(xfer);
 }
 
 /**

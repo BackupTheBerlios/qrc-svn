@@ -1,5 +1,5 @@
 pkgdir = \
-	$(GAIM_LIBDIR)/gaim
+	$(PURPLE_LIBDIR)/purple-2
 
 GAYMSOURCES = \
 	botfilter.c \
@@ -15,7 +15,8 @@ GAYMSOURCES = \
 	helpers.h \
 	msgs.c \
 	parse.c \
-	weblogin.c 
+	weblogin.c \
+	url_fetch.c
 
 AM_CFLAGS = \
 	$(st)
@@ -23,7 +24,7 @@ AM_CFLAGS = \
 libgaym_la_LDFLAGS = \
 	-module \
 	-avoid-version \
-	$(GAIM_LIBS)
+	$(PURPLE_LIBS)
 
 pkg_LTLIBRARIES = \
 	libgaym.la
@@ -33,6 +34,6 @@ libgaym_la_SOURCES = \
 
 AM_CPPFLAGS = \
 	$(DEBUG_CFLAGS) \
-	$(GAIM_CFLAGS) \
+	$(PURPLE_CFLAGS) \
 	$(GLIB_CFLAGS) \
-	-DGAIM_PLUGINS
+	-DPURPLE_PLUGINS

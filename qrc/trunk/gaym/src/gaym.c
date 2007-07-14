@@ -1,9 +1,9 @@
 /**
  * @file gaym.c
  *
- * gaim
+ * purple
  *
- * Copyright (C) 2003, Robbert Haarman <gaim@inglorion.net>
+ * Copyright (C) 2003, Robbert Haarman <purple@inglorion.net>
  * Copyright (C) 2003, Ethan Blanton <eblanton@cs.purdue.edu>
  * Copyright (C) 2000-2003, Rob Flynn <rob@tgflinux.com>
  * Copyright (C) 1998-1999, Mark Spencer <markster@marko.net>
@@ -42,23 +42,20 @@
 #include "botfilter.h"
 #include "gaym.h"
 
-static const char *gaym_blist_icon(GaimAccount * a, GaimBuddy * b);
-static void gaym_blist_emblems(GaimBuddy * b, const char **se,
-                               const char **sw, const char **nw,
-                               const char **ne);
-static GList *gaym_status_types(GaimAccount * account);
-static GList *gaym_actions(GaimPlugin * plugin, gpointer context);
-/* static GList *gaym_chat_info(GaimConnection *gc); */
-static void gaym_login(GaimAccount * account);
+static const char *gaym_blist_icon(PurpleAccount * a, PurpleBuddy * b);
+static GList *gaym_status_types(PurpleAccount * account);
+static GList *gaym_actions(PurplePlugin * plugin, gpointer context);
+/* static GList *gaym_chat_info(PurpleConnection *gc); */
+static void gaym_login(PurpleAccount * account);
 static void gaym_login_cb(gpointer data, gint source, const gchar* error_message);
-static void gaym_close(GaimConnection * gc);
-static int gaym_im_send(GaimConnection * gc, const char *who,
-                        const char *what, GaimMessageFlags flags);
-static int gaym_chat_send(GaimConnection * gc, int id, const char *what,
-                          GaimMessageFlags flags);
-static void gaym_chat_join(GaimConnection * gc, GHashTable * data);
+static void gaym_close(PurpleConnection * gc);
+static int gaym_im_send(PurpleConnection * gc, const char *who,
+                        const char *what, PurpleMessageFlags flags);
+static int gaym_chat_send(PurpleConnection * gc, int id, const char *what,
+                          PurpleMessageFlags flags);
+static void gaym_chat_join(PurpleConnection * gc, GHashTable * data);
 static void gaym_input_cb(gpointer data, gint source,
-                          GaimInputCondition cond);
+                          PurpleInputCondition cond);
 static guint gaym_nick_hash(const char *nick);
 static gboolean gaym_nick_equal(const char *nick1, const char *nick2);
 static void gaym_buddy_free(struct gaym_buddy *ib);
@@ -69,8 +66,8 @@ static void gaym_buddy_append(char *name, struct gaym_buddy *ib,
 static void gaym_buddy_clear_done(char *name, struct gaym_buddy *ib,
                                   gpointer nothing);
 
-static void connect_signals(GaimConnection * plugin);
-static GaimPlugin *_gaym_plugin = NULL;
+static void connect_signals(PurpleConnection * plugin);
+static PurplePlugin *_gaym_plugin = NULL;
 
 static const char *status_chars = "@+%&";
 
@@ -81,9 +78,9 @@ int gaym_send(struct gaym_conn *gaym, const char *buf)
     if (gaym->fd < 0)
         return -1;
 
-    /* gaim_debug(GAIM_DEBUG_MISC, "gaym", "sent: %s", buf); */
+    /* purple_debug(PURPLE_DEBUG_MISC, "gaym", "sent: %s", buf); */
     if ((ret = write(gaym->fd, buf, strlen(buf))) < 0)
-        gaim_connection_error(gaim_account_get_connection(gaym->account),
+        purple_connection_error(purple_account_get_connection(gaym->account),
                               _("Server has disconnected"));
 
     return ret;
@@ -110,9 +107,9 @@ gboolean gaym_blist_timeout(struct gaym_conn * gaym)
     if (!list || !strlen(list)) {
         g_hash_table_foreach(gaym->buddies, (GHFunc) gaym_buddy_clear_done,
                              NULL);
-        gaim_timeout_remove(gaym->timer);
+        purple_timeout_remove(gaym->timer);
         gaym->timer =
-            gaim_timeout_add(BLIST_UPDATE_PERIOD,
+            purple_timeout_add(BLIST_UPDATE_PERIOD,
                              (GSourceFunc) gaym_blist_timeout,
                              (gpointer) gaym);
         g_free(list);
@@ -123,9 +120,9 @@ gboolean gaym_blist_timeout(struct gaym_conn * gaym)
     gaym->blist_updating = TRUE;
     buf = gaym_format(gaym, "vn", "WHOIS", list);
     gaym_send(gaym, buf);
-    gaim_timeout_remove(gaym->timer);
+    purple_timeout_remove(gaym->timer);
     gaym->timer =
-        gaim_timeout_add(BLIST_CHUNK_INTERVAL,
+        purple_timeout_add(BLIST_CHUNK_INTERVAL,
                          (GSourceFunc) gaym_blist_timeout,
                          (gpointer) gaym);
 
@@ -183,20 +180,12 @@ static void gaym_whois_one(struct gaym_conn *gaym, struct gaym_buddy *ib)
     g_free(buf);
 }
 
-static const char *gaym_blist_icon(GaimAccount * a, GaimBuddy * b)
+static const char *gaym_blist_icon(PurpleAccount * a, PurpleBuddy * b)
 {
     return "gaym";
 }
 
-static void gaym_blist_emblems(GaimBuddy * b, const char **se,
-                               const char **sw, const char **nw,
-                               const char **ne)
-{
-    // if (b->present == GAIM_BUDDY_OFFLINE)
-    // *se = "offline";
-}
-
-static char *gaym_status_text(GaimBuddy * buddy)
+static char *gaym_status_text(PurpleBuddy * buddy)
 {
     char *status;
 
@@ -227,11 +216,13 @@ static char *gaym_status_text(GaimBuddy * buddy)
     return status;
 }
 
-static void gaym_tooltip_text(GaimBuddy * buddy, GString *str, gboolean full)
+static void gaym_tooltip_text(PurpleBuddy * buddy, PurpleNotifyUserInfo *user_info, gboolean full)
 {
     if (!buddy || !buddy->account || !buddy->account->gc)
         return;
 
+    PurpleNotifyUserInfo *info = purple_notify_user_info_new();
+    
     struct gaym_conn *gaym =
         (struct gaym_conn *) buddy->account->gc->proto_data;
 
@@ -240,42 +231,37 @@ static void gaym_tooltip_text(GaimBuddy * buddy, GString *str, gboolean full)
     }
 
     struct gaym_buddy *ib = g_hash_table_lookup(gaym->channel_members,
-                                                gaim_normalize(gaym->
+                                                purple_normalize(gaym->
                                                                account,
                                                                buddy->
                                                                name));
     if (!ib)
         ib = g_hash_table_lookup(gaym->buddies,
-                                 gaim_normalize(gaym->account,
+                                 purple_normalize(gaym->account,
                                                 buddy->name));
 
-    if (!ib) {
-	g_string_assign(str, "No info found.");
-        return;
-    }
-
-    build_tooltip_text(ib, str);
+    build_tooltip_text(ib, info);
     
 }
 
-static GList *gaym_status_types(GaimAccount * account)
+static GList *gaym_status_types(PurpleAccount * account)
 {
-    GaimStatusType *type;
+    PurpleStatusType *type;
     GList *types = NULL;
 
-    type = gaim_status_type_new(GAIM_STATUS_OFFLINE, "offline",
+    type = purple_status_type_new(PURPLE_STATUS_OFFLINE, "offline",
                                 _("Offline"), FALSE);
     types = g_list_append(types, type);
 
-    type = gaim_status_type_new(GAIM_STATUS_AVAILABLE, "available",
+    type = purple_status_type_new(PURPLE_STATUS_AVAILABLE, "available",
                                 _("Available"), TRUE);
     types = g_list_append(types, type);
 
     type =
-        gaim_status_type_new_with_attrs(GAIM_STATUS_AWAY, "away",
+        purple_status_type_new_with_attrs(PURPLE_STATUS_AWAY, "away",
                                         _("Away"), TRUE, TRUE, FALSE,
                                         "message", _("Message"),
-                                        gaim_value_new(GAIM_TYPE_STRING),
+                                        purple_value_new(PURPLE_TYPE_STRING),
                                         NULL);
     types = g_list_append(types, type);
 
@@ -283,10 +269,10 @@ static GList *gaym_status_types(GaimAccount * account)
 
 }
 
-static void gaym_set_info(GaimConnection * gc, const char *info)
+static void gaym_set_info(PurpleConnection * gc, const char *info)
 {
     struct gaym_conn *gaym = gc->proto_data;
-    GaimAccount *account = gaim_connection_get_account(gc);
+    PurpleAccount *account = purple_connection_get_account(gc);
     char *hostname = "none";
     char *buf, *bioline;
     int i = 0;
@@ -311,21 +297,21 @@ static void gaym_set_info(GaimConnection * gc, const char *info)
             g_free(gaym->bio);
         }
         if (tmpinfo && strlen(tmpinfo) > 0) {
-            gaim_debug_misc("gaym", "option1, info=%x\n", tmpinfo);
+            purple_debug_misc("gaym", "option1, info=%x\n", tmpinfo);
             /* java client allows MAX_BIO_LEN characters */
             gaym->bio = g_strndup(tmpinfo, MAX_BIO_LEN);
         } else if (gaym->server_bioline
                    && strlen(gaym->server_bioline) > 0) {
-            gaim_debug_misc("gaym", "option2\n");
+            purple_debug_misc("gaym", "option2\n");
             gaym->bio = gaym_bio_strdup(gaym->server_bioline);
         } else {
-            gaim_debug_misc("gaym", "option3\n");
-            gaym->bio = g_strdup("Gaim User");
+            purple_debug_misc("gaym", "option3\n");
+            gaym->bio = g_strdup("Purple User");
         }
-        gaim_account_set_user_info(account, gaym->bio);
-        gaim_account_set_string(account, "bioline", gaym->bio);
-        gaim_debug_info("gaym", "INFO=%x BIO=%x\n", tmpinfo, gaym->bio);
-        gaim_debug_misc("gaym", "In login_cb, gc->account=%x\n",
+        purple_account_set_user_info(account, gaym->bio);
+        purple_account_set_string(account, "bioline", gaym->bio);
+        purple_debug_info("gaym", "INFO=%x BIO=%x\n", tmpinfo, gaym->bio);
+        purple_debug_misc("gaym", "In login_cb, gc->account=%x\n",
                         gc->account);
     }
 
@@ -338,13 +324,13 @@ static void gaym_set_info(GaimConnection * gc, const char *info)
                         gaym->server_stats ? gaym->server_stats : "");
 
     buf = gaym_format(gaym, "vvvv:", "USER",
-                      gaim_account_get_username(account),
+                      purple_account_get_username(account),
                       hostname, gaym->server, bioline);
 
-    gaim_debug_misc("gaym", "BIO=%x\n", bioline);
+    purple_debug_misc("gaym", "BIO=%x\n", bioline);
 
     if (gaym_send(gaym, buf) < 0) {
-        gaim_connection_error(gc, "Error registering with server");
+        purple_connection_error(gc, "Error registering with server");
     }
 
     if (tmpinfo) {
@@ -356,28 +342,28 @@ static void gaym_set_info(GaimConnection * gc, const char *info)
     return;
 }
 
-static void gaym_show_set_info(GaimPluginAction * action)
+static void gaym_show_set_info(PurplePluginAction * action)
 {
-    GaimConnection *gc = (GaimConnection *) action->context;
-    gaim_account_request_change_user_info(gaim_connection_get_account(gc));
+    PurpleConnection *gc = (PurpleConnection *) action->context;
+    purple_account_request_change_user_info(purple_connection_get_account(gc));
 }
 
-static GList *gaym_actions(GaimPlugin * plugin, gpointer context)
+static GList *gaym_actions(PurplePlugin * plugin, gpointer context)
 {
     GList *list = NULL;
-    GaimPluginAction *act = NULL;
+    PurplePluginAction *act = NULL;
 
-    act = gaim_plugin_action_new(_("Change Bio"), gaym_show_set_info);
+    act = purple_plugin_action_new(_("Change Bio"), gaym_show_set_info);
     list = g_list_prepend(list, act);
 
     return list;
 }
 
-static void gaym_blist_join_chat_cb(GaimBlistNode * node, gpointer data)
+static void gaym_blist_join_chat_cb(PurpleBlistNode * node, gpointer data)
 {
     const char *args[1];
 
-    GaimChat *chat = (GaimChat *) node;
+    PurpleChat *chat = (PurpleChat *) node;
     struct gaym_conn *gaym = chat->account->gc->proto_data;
     args[0] = data;
 
@@ -387,17 +373,17 @@ static void gaym_blist_join_chat_cb(GaimBlistNode * node, gpointer data)
     gaym_cmd_join(gaym, "join", NULL, args);
 }
 
-static GList *gaym_blist_node_menu(GaimBlistNode * node)
+static GList *gaym_blist_node_menu(PurpleBlistNode * node)
 {
     GList *m = NULL;
-    GaimMenuAction *act = NULL;
+    PurpleMenuAction *act = NULL;
     int i = 0;
 
-    if (node->type != GAIM_BLIST_CHAT_NODE) {
+    if (node->type != PURPLE_BLIST_CHAT_NODE) {
         return m;
     }
 
-    GaimChat *chat = (GaimChat *) node;
+    PurpleChat *chat = (PurpleChat *) node;
     char *channel = g_hash_table_lookup(chat->components, "channel");
 
     if (!channel) {
@@ -411,21 +397,21 @@ static GList *gaym_blist_node_menu(GaimBlistNode * node)
     char *label = NULL;
     char *instance = NULL;
 
-    int max = gaim_prefs_get_int("/plugins/prpl/gaym/chat_room_instances");
+    int max = purple_prefs_get_int("/plugins/prpl/gaym/chat_room_instances");
 
     for (i = max; i > 0; i--) {
         label = g_strdup_printf(_("Join Room %d"), i);
         instance =
             g_strdup_printf("%.*s%d", strlen(channel) - 1, channel, i);
         act =
-            gaim_menu_action_new(label, GAIM_CALLBACK(gaym_blist_join_chat_cb),
+            purple_menu_action_new(label, PURPLE_CALLBACK(gaym_blist_join_chat_cb),
                                        instance, NULL);
         m = g_list_prepend(m, act);
     }
     return m;
 }
 
-static GList *gaym_chat_join_info(GaimConnection * gc)
+static GList *gaym_chat_join_info(PurpleConnection * gc)
 {
     GList *m = NULL;
     struct proto_chat_entry *pce;
@@ -438,7 +424,7 @@ static GList *gaym_chat_join_info(GaimConnection * gc)
     return m;
 }
 
-GHashTable *gaym_chat_info_defaults(GaimConnection * gc,
+GHashTable *gaym_chat_info_defaults(PurpleConnection * gc,
                                     const char *chat_name)
 {
     GHashTable *defaults;
@@ -452,28 +438,28 @@ GHashTable *gaym_chat_info_defaults(GaimConnection * gc,
     return defaults;
 }
 
-static void gaym_login_with_chat_key(GaimAccount * account)
+static void gaym_login_with_chat_key(PurpleAccount * account)
 {
-    GaimConnection *gc;
+    PurpleConnection *gc;
     struct gaym_conn *gaym;
     char *buf;
-    const char *username = gaim_account_get_username(account);
+    const char *username = purple_account_get_username(account);
 
-    gc = gaim_account_get_connection(account);
+    gc = purple_account_get_connection(account);
     gaym = gc->proto_data;
 
     buf = g_strdup_printf(_("Signon: %s"), username);
-    gaim_connection_update_progress(gc, buf, 5, 6);
+    purple_connection_update_progress(gc, buf, 5, 6);
     g_free(buf);
-    gaim_debug_misc("gaym", "Trying login to %s\n", gaym->server);
-    GaimProxyConnectData* pdata = gaim_proxy_connect(NULL, account, 
+    purple_debug_misc("gaym", "Trying login to %s\n", gaym->server);
+    PurpleProxyConnectData* pdata = purple_proxy_connect(NULL, account, 
 			     gaym->server,
-                             gaim_account_get_int(account, "port", IRC_DEFAULT_PORT),
+                             purple_account_get_int(account, "port", IRC_DEFAULT_PORT),
                              *gaym_login_cb, 
 			     gc);
     if (!pdata || !account->gc) {
-        gaim_connection_error(gc, _("Couldn't create socket"));
-        gaim_debug_misc("gaym", "account->gc: %x\n", account->gc);
+        purple_connection_error(gc, _("Couldn't create socket"));
+        purple_debug_misc("gaym", "account->gc: %x\n", account->gc);
         return;
     }
 
@@ -490,18 +476,18 @@ guint gaym_room_hash(gconstpointer key)
 
 }
 
-static void gaym_login(GaimAccount * account)
+static void gaym_login(PurpleAccount * account)
 {
-    GaimConnection *gc;
+    PurpleConnection *gc;
     struct gaym_conn *gaym;
     char *buf;
-    const char *username = gaim_account_get_username(account);
+    const char *username = purple_account_get_username(account);
 
-    gc = gaim_account_get_connection(account);
-    gc->flags |= GAIM_CONNECTION_NO_NEWLINES | GAIM_CONNECTION_AUTO_RESP;
+    gc = purple_account_get_connection(account);
+    gc->flags |= PURPLE_CONNECTION_NO_NEWLINES | PURPLE_CONNECTION_AUTO_RESP;
 
     if (strpbrk(username, " \t\v\r\n") != NULL) {
-        gaim_connection_error(gc,
+        purple_connection_error(gc,
                               _("IRC nicks may not contain whitespace"));
         return;
     }
@@ -511,11 +497,11 @@ static void gaym_login(GaimAccount * account)
 
 
     /**
-     * gaim_connection_set_display_name(gc, userparts[0]);
+     * purple_connection_set_display_name(gc, userparts[0]);
      */
-    gaim_connection_set_display_name(gc, username);
+    purple_connection_set_display_name(gc, username);
     gaym->server =
-        g_strdup(gaim_account_get_string
+        g_strdup(purple_account_get_string
                  (account, "server", "www.gay.com"));
     /**
      * gaym->server = "www.gay.com";
@@ -564,7 +550,7 @@ static void gaym_login(GaimAccount * account)
      */
 
     buf = g_strdup_printf(_("Signon: %s"), username);
-    gaim_connection_update_progress(gc, buf, 1, 6);
+    purple_connection_update_progress(gc, buf, 1, 6);
     g_free(buf);
 
 
@@ -576,11 +562,11 @@ static void gaym_login(GaimAccount * account)
 }
 
 
-static void gaym_get_configtxt_cb(GaimUtilFetchUrlData* data, gpointer proto_data,
+static void gaym_get_configtxt_cb(PurpleUtilFetchUrlData* data, gpointer proto_data,
                                   const gchar * config_text, size_t len, const gchar* error_message)
 {
     struct gaym_conn *gaym = (struct gaym_conn*)proto_data;
-    // GaimConnection *gc = gaim_account_get_connection(gaym->account);
+    // PurpleConnection *gc = purple_account_get_connection(gaym->account);
 
     g_return_if_fail(config_text != NULL);
 
@@ -595,7 +581,7 @@ static void gaym_get_configtxt_cb(GaimUtilFetchUrlData* data, gpointer proto_dat
 }
 static void gaym_login_cb(gpointer data, gint source, const gchar *error_message)
 {
-    GaimConnection *gc = data;
+    PurpleConnection *gc = data;
     struct gaym_conn *gaym = gc->proto_data;
     char hostname[256];
     char *buf;
@@ -604,13 +590,13 @@ static void gaym_login_cb(gpointer data, gint source, const gchar *error_message
     char *bioline;
     char *login_name;
 
-    if (GAIM_CONNECTION_IS_VALID(gc)) {
+    if (PURPLE_CONNECTION_IS_VALID(gc)) {
 
 
-        GList *connections = gaim_connections_get_all();
+        GList *connections = purple_connections_get_all();
 
         if (source < 0) {
-            gaim_connection_error(gc, _("Couldn't connect to host"));
+            purple_connection_error(gc, _("Couldn't connect to host"));
             return;
         }
 
@@ -620,36 +606,36 @@ static void gaym_login_cb(gpointer data, gint source, const gchar *error_message
         }
 
         gaym->fd = source;
-        gaim_debug_misc("gaym", "In login_cb with chat_key=%s\n",
+        purple_debug_misc("gaym", "In login_cb with chat_key=%s\n",
                         gaym->chat_key);
         if (gaym->chat_key) {
 
             buf = gaym_format(gaym, "vv", "PASS", gaym->chat_key);
             if (gaym_send(gaym, buf) < 0) {
-                gaim_connection_error(gc, "Error sending password");
+                purple_connection_error(gc, "Error sending password");
                 return;
             }
             g_free(buf);
         } else {
-            gaim_connection_error(gc,
+            purple_connection_error(gc,
                                   _
                                   ("Password wasn't recorded. Report bug."));
             return;
         }
         gethostname(hostname, sizeof(hostname));
         hostname[sizeof(hostname) - 1] = '\0';
-        username = gaim_account_get_string(gaym->account, "username", "");
+        username = purple_account_get_string(gaym->account, "username", "");
         user_bioline =
-            g_strdup(gaim_account_get_string
+            g_strdup(purple_account_get_string
                      (gaym->account, "bioline", ""));
-        gaim_debug_info("gaym", "USER BIOLINE=%x\n", user_bioline);
-        gaim_account_set_user_info(gc->account, user_bioline);
-        gaim_debug_misc("gaym",
+        purple_debug_info("gaym", "USER BIOLINE=%x\n", user_bioline);
+        purple_account_set_user_info(gc->account, user_bioline);
+        purple_debug_misc("gaym",
                         "In login_cb, user_bioline: %x, gc->account=%x\n",
                         user_bioline, gc->account);
 
         login_name =
-            gaym_nick_to_gcom_strdup(gaim_connection_get_display_name(gc));
+            gaym_nick_to_gcom_strdup(purple_connection_get_display_name(gc));
         bioline = g_strdup_printf("%s#%s\001%s",
                                   gaym->thumbnail,
                                   user_bioline ? user_bioline : "",
@@ -657,10 +643,10 @@ static void gaym_login_cb(gpointer data, gint source, const gchar *error_message
                                   server_stats : "");
 
         buf = gaym_format(gaym, "vn", "NICK", login_name);
-        gaim_debug_misc("gaym", "Command: %s\n", buf);
+        purple_debug_misc("gaym", "Command: %s\n", buf);
 
         if (gaym_send(gaym, buf) < 0) {
-            gaim_connection_error(gc, "Error sending nickname");
+            purple_connection_error(gc, "Error sending nickname");
             return;
         }
         g_free(buf);
@@ -668,15 +654,15 @@ static void gaym_login_cb(gpointer data, gint source, const gchar *error_message
             gaym_format(gaym, "vvvv:", "USER", login_name, hostname,
                         gaym->server, bioline);
 
-        gaim_debug_misc("gaym", "Command: %s\n", buf);
+        purple_debug_misc("gaym", "Command: %s\n", buf);
         if (gaym_send(gaym, buf) < 0) {
-            gaim_connection_error(gc, "Error registering with server");
+            purple_connection_error(gc, "Error registering with server");
             return;
         }
         g_free(login_name);
         g_free(buf);
 
-        const char *server = gaim_account_get_string(gc->account, "server",
+        const char *server = purple_account_get_string(gc->account, "server",
                                                      IRC_DEFAULT_SERVER);
         char *url =
             g_strdup_printf
@@ -685,12 +671,12 @@ static void gaym_login_cb(gpointer data, gint source, const gchar *error_message
         char *user_agent = "Mozilla/4.0";
 
         get_spamlist_from_web();
-        gaim_util_fetch_url(url, FALSE, user_agent, FALSE,
+        purple_util_fetch_url(url, FALSE, user_agent, FALSE,
                        gaym_get_configtxt_cb, gaym);
 
         g_free(url);
         gc->inpa =
-            gaim_input_add(gaym->fd, GAIM_INPUT_READ, gaym_input_cb, gc);
+            purple_input_add(gaym->fd, PURPLE_INPUT_READ, gaym_input_cb, gc);
 
         connect_signals(gc);
 
@@ -703,25 +689,25 @@ void kill_hammer(gpointer * room, struct hammer_cb_data *data,
     hammer_cb_data_destroy(data);
 }
 
-static void gaym_close(GaimConnection * gc)
+static void gaym_close(PurpleConnection * gc)
 {
     struct gaym_conn *gaym = gc->proto_data;
 
-    gaim_debug_misc("gaym", "gaym close function has been called\n");
+    purple_debug_misc("gaym", "gaym close function has been called\n");
     if (gaym == NULL)
         return;
 
     gaym_cmd_quit(gaym, "quit", NULL, NULL);
 
     if (gc->inpa)
-        gaim_input_remove(gc->inpa);
+        purple_input_remove(gc->inpa);
 
     g_free(gaym->inbuf);
-    gaim_debug_misc("gaym", "closing fd %i\n", gaym->fd);
+    purple_debug_misc("gaym", "closing fd %i\n", gaym->fd);
     close(gaym->fd);
 
     if (gaym->timer)
-        gaim_timeout_remove(gaym->timer);
+        purple_timeout_remove(gaym->timer);
 
     if (gaym->thumbnail)
         g_free(gaym->thumbnail);
@@ -768,8 +754,8 @@ static void gaym_close(GaimConnection * gc)
     g_free(gaym);
 }
 
-static int gaym_im_send(GaimConnection * gc, const char *who,
-                        const char *what, GaimMessageFlags flags)
+static int gaym_im_send(PurpleConnection * gc, const char *who,
+                        const char *what, PurpleMessageFlags flags)
 {
     struct gaym_conn *gaym = gc->proto_data;
     const char *args[2];
@@ -780,8 +766,8 @@ static int gaym_im_send(GaimConnection * gc, const char *who,
     } else {
         args[0] = who;
     }
-    stripped_msg = gaim_markup_strip_html(what);
-    if (flags & GAIM_MESSAGE_AUTO_RESP) {
+    stripped_msg = purple_markup_strip_html(what);
+    if (flags & PURPLE_MESSAGE_AUTO_RESP) {
         automsg = g_strdup_printf("<AUTO-REPLY> %s", stripped_msg);
         g_free(stripped_msg);
         args[1] = automsg;
@@ -799,9 +785,9 @@ static int gaym_im_send(GaimConnection * gc, const char *who,
     return 1;
 }
 
-static void gaym_get_info_quietly(GaimConnection * gc, const char *who)
+static void gaym_get_info_quietly(PurpleConnection * gc, const char *who)
 {
-    gaim_debug_misc("gaym", "request info quietly\n");
+    purple_debug_misc("gaym", "request info quietly\n");
     struct gaym_conn *gaym = gc->proto_data;
     const char *args[1];
     args[0] = who;
@@ -823,27 +809,25 @@ static void cancel_get_info_cb(gpointer cb_data)
     g_hash_table_remove(data->gaym->info_window_needed, data->who);
 
 }
-static void gaym_get_info(GaimConnection * gc, const char *who)
+static void gaym_get_info(PurpleConnection * gc, const char *who)
 {
     struct gaym_conn *gaym = gc->proto_data;
+
     const char *args[1];
-    char buf[100];
     args[0] = who;
 
-    char *normalized = g_strdup(gaim_normalize(gc->account, who));
+    char *normalized = g_strdup(purple_normalize(gc->account, who));
 
     struct get_info_data *data = g_new0(struct get_info_data, 1);
-    data->who = normalized;
-    data->gaym = gaym;
-    snprintf(buf, 100, "Fetching info for %s...\n", who);
-    void *dialog = gaim_request_action(gc, who,
-                                       buf, NULL, 0, data, 1, ("Cancel"),
-                                       cancel_get_info_cb);
-    g_hash_table_insert(gaym->info_window_needed, normalized, dialog);
+    PurpleNotifyUserInfo *info = purple_notify_user_info_new();
+    purple_debug_misc("get_info","Made new info item %x\n",info);
+    purple_notify_user_info_add_pair(info, "Fetching info for",who);
+    purple_notify_userinfo(gc, who, info, NULL, data);
+    g_hash_table_insert(gaym->info_window_needed, normalized, info);
     gaym_cmd_whois(gaym, "whois", NULL, args);
 }
 
-static void gaym_set_status(GaimAccount * account, GaimStatus * status)
+static void gaym_set_status(PurpleAccount * account, PurpleStatus * status)
 {
     // char *bio = NULL;
     // char *tmpmsg = NULL;
@@ -880,14 +864,14 @@ GaymBuddy *gaym_get_channel_member_reference(struct gaym_conn
         GaymBuddy *channel_member = g_new0(GaymBuddy, 1);
         channel_member->ref_count = 1;
         g_hash_table_insert(gaym->channel_members,
-                            g_strdup(gaim_normalize(gaym->account, name)),
+                            g_strdup(purple_normalize(gaym->account, name)),
                             channel_member);
-        gaim_debug_misc("gaym", "Creating channel_members entry for %s\n",
+        purple_debug_misc("gaym", "Creating channel_members entry for %s\n",
                         name);
         return g_hash_table_lookup(gaym->channel_members,
-                                   gaim_normalize(gaym->account, name));
+                                   purple_normalize(gaym->account, name));
     } else {
-        gaim_debug_misc("gaym",
+        purple_debug_misc("gaym",
                         "Adding reference to channel_members entry for %s\n",
                         name);
         (channel_member->ref_count)++;
@@ -903,31 +887,31 @@ gboolean gaym_unreference_channel_member(struct gaym_conn * gaym,
     GaymBuddy *channel_member;
     channel_member =
         (GaymBuddy *) g_hash_table_lookup(gaym->channel_members,
-                                          gaim_normalize(gaym->account,
+                                          purple_normalize(gaym->account,
                                                          name));
     if (!channel_member)
         return FALSE;
     else {
 
         if (channel_member->ref_count <= 0)
-            gaim_debug_error("gaym",
+            purple_debug_error("gaym",
                              "****Reference counting error with channel members struct.\n");
 
         channel_member->ref_count--;
 
         if (channel_member->ref_count == 0) {
-            gaim_debug_misc("gaym", "Removing %s from channel_members\n",
+            purple_debug_misc("gaym", "Removing %s from channel_members\n",
                             name);
             return g_hash_table_remove(gaym->channel_members,
-                                       gaim_normalize(gaym->account,
+                                       purple_normalize(gaym->account,
                                                       name));
         }
         return FALSE;
     }
 }
 
-static void gaym_add_buddy(GaimConnection * gc, GaimBuddy * buddy,
-                           GaimGroup * group)
+static void gaym_add_buddy(PurpleConnection * gc, PurpleBuddy * buddy,
+                           PurpleGroup * group)
 {
     if (buddy->name) {
         buddy->name = g_strstrip(buddy->name);
@@ -949,7 +933,7 @@ static void gaym_add_buddy(GaimConnection * gc, GaimBuddy * buddy,
     ib->age = NULL;
     ib->location = NULL;
     g_hash_table_replace(gaym->buddies, ib->name, ib);
-    gaim_debug_misc("gaym", "Add buddy: %s\n", buddy->name);
+    purple_debug_misc("gaym", "Add buddy: %s\n", buddy->name);
     /**
      * if the timer isn't set, this is during signon, so we don't want to
      * flood ourself off with WHOIS's, so we don't, but after that we want
@@ -959,8 +943,8 @@ static void gaym_add_buddy(GaimConnection * gc, GaimBuddy * buddy,
         gaym_whois_one(gaym, ib);
 }
 
-static void gaym_remove_buddy(GaimConnection * gc, GaimBuddy * buddy,
-                              GaimGroup * group)
+static void gaym_remove_buddy(PurpleConnection * gc, PurpleBuddy * buddy,
+                              PurpleGroup * group)
 {
     struct gaym_conn *gaym = (struct gaym_conn *) gc->proto_data;
 
@@ -975,7 +959,7 @@ static void gaym_remove_buddy(GaimConnection * gc, GaimBuddy * buddy,
      * remove the buddy from gaym->buddies.
      */
 
-    GSList *buddies = gaim_find_buddies(gaym->account, buddy->name);
+    GSList *buddies = purple_find_buddies(gaym->account, buddy->name);
     guint length = g_slist_length(buddies);
 
     if (length < 2) {
@@ -986,9 +970,9 @@ static void gaym_remove_buddy(GaimConnection * gc, GaimBuddy * buddy,
 }
 
 static void gaym_input_cb(gpointer data, gint source,
-                          GaimInputCondition cond)
+                          PurpleInputCondition cond)
 {
-    GaimConnection *gc = data;
+    PurpleConnection *gc = data;
     struct gaym_conn *gaym = gc->proto_data;
     char *cur, *end;
     int len;
@@ -1001,10 +985,10 @@ static void gaym_input_cb(gpointer data, gint source,
     if ((len =
          read(gaym->fd, gaym->inbuf + gaym->inbufused,
               IRC_INITIAL_BUFSIZE - 1)) < 0) {
-        gaim_connection_error(gc, _("Read error"));
+        purple_connection_error(gc, _("Read error"));
         return;
     } else if (len == 0) {
-        gaim_connection_error(gc, _("Server has disconnected"));
+        purple_connection_error(gc, _("Server has disconnected"));
         return;
     }
 
@@ -1027,22 +1011,22 @@ static void gaym_input_cb(gpointer data, gint source,
     }
 }
 
-static void gaym_add_permit(GaimConnection * gc, const char *name)
+static void gaym_add_permit(PurpleConnection * gc, const char *name)
 {
     if (!gaym_nick_check(name)) {
-        gaim_privacy_permit_remove(gc->account, name, TRUE);
-        gaim_notify_error(gc, _("Invalid User Name"), name,
+        purple_privacy_permit_remove(gc->account, name, TRUE);
+        purple_notify_error(gc, _("Invalid User Name"), name,
                           _("Invalid user name not added."));
     } else {
         gaym_privacy_change(gc, name);
     }
 }
 
-static void gaym_add_deny(GaimConnection * gc, const char *name)
+static void gaym_add_deny(PurpleConnection * gc, const char *name)
 {
     if (!gaym_nick_check(name)) {
-        gaim_privacy_deny_remove(gc->account, name, TRUE);
-        gaim_notify_error(gc, _("Invalid User Name"), name,
+        purple_privacy_deny_remove(gc->account, name, TRUE);
+        purple_notify_error(gc, _("Invalid User Name"), name,
                           _("Invalid user name not added."));
         return;
     }
@@ -1050,34 +1034,34 @@ static void gaym_add_deny(GaimConnection * gc, const char *name)
     gaym_privacy_change(gc, name);
 }
 
-static void gaym_rem_permit(GaimConnection * gc, const char *name)
+static void gaym_rem_permit(PurpleConnection * gc, const char *name)
 {
     gaym_privacy_change(gc, name);
 }
 
-static void gaym_rem_deny(GaimConnection * gc, const char *name)
+static void gaym_rem_deny(PurpleConnection * gc, const char *name)
 {
     gaym_server_store_deny(gc, name, FALSE);
     gaym_privacy_change(gc, name);
 }
 
-static void gaym_set_permit_deny(GaimConnection * gc)
+static void gaym_set_permit_deny(PurpleConnection * gc)
 {
     gaym_privacy_change(gc, NULL);
 }
 
-/* static void gaym_warn(GaimConnection * gc, const char *who, gboolean
+/* static void gaym_warn(PurpleConnection * gc, const char *who, gboolean
    anonymous) { void *handle = NULL; struct gaym_conn *gaym =
    gc->proto_data; char *buf = g_strdup_printf
    ("http://%s/members/report/form.html?area=chat&room=&report=%s",
-   gaym->server, who); gaim_notify_uri(handle, buf); g_free(buf); } */
-static void gaym_chat_join(GaimConnection * gc, GHashTable * data)
+   gaym->server, who); purple_notify_uri(handle, buf); g_free(buf); } */
+static void gaym_chat_join(PurpleConnection * gc, GHashTable * data)
 {
     struct gaym_conn *gaym = gc->proto_data;
     const char *args[1];
     char *alias = NULL;
 
-    GaimChat *c = NULL;
+    PurpleChat *c = NULL;
 
     /**
      * need a copy, because data gets
@@ -1089,16 +1073,16 @@ static void gaym_chat_join(GaimConnection * gc, GHashTable * data)
 
     if (args[0]) {
         alias = g_hash_table_lookup(data, "description");
-        c = gaim_blist_find_chat(gaim_connection_get_account(gc), args[0]);
+        c = purple_blist_find_chat(purple_connection_get_account(gc), args[0]);
         if (!c) {
             chatinfo = g_hash_table_new(g_str_hash, g_str_equal);
 
             g_hash_table_replace(chatinfo, "channel", g_strdup(args[0]));
 
-            c = gaim_chat_new(gaim_connection_get_account(gc),
+            c = purple_chat_new(purple_connection_get_account(gc),
                               alias, chatinfo);
 
-            gaim_blist_add_chat(c, NULL, NULL);
+            purple_blist_add_chat(c, NULL, NULL);
         }
     }
 
@@ -1117,49 +1101,49 @@ static char *gaym_get_chat_name(GHashTable * data)
     return g_strdup(g_hash_table_lookup(data, "channel"));
 }
 
-static void gaym_chat_invite(GaimConnection * gc, int id,
+static void gaym_chat_invite(PurpleConnection * gc, int id,
                              const char *message, const char *name)
 {
     struct gaym_conn *gaym = gc->proto_data;
-    GaimConversation *convo = gaim_find_chat(gc, id);
+    PurpleConversation *convo = purple_find_chat(gc, id);
     const char *args[2];
 
     if (!convo) {
-        gaim_debug(GAIM_DEBUG_ERROR, "gaym",
+        purple_debug(PURPLE_DEBUG_ERROR, "gaym",
                    "Got chat invite request for bogus chat\n");
         return;
     }
     args[0] = name;
-    args[1] = gaim_conversation_get_name(convo);
-    gaym_cmd_invite(gaym, "invite", gaim_conversation_get_name(convo),
+    args[1] = purple_conversation_get_name(convo);
+    gaym_cmd_invite(gaym, "invite", purple_conversation_get_name(convo),
                     args);
 }
 
-static void gaym_chat_leave(GaimConnection * gc, int id)
+static void gaym_chat_leave(PurpleConnection * gc, int id)
 {
     struct gaym_conn *gaym = gc->proto_data;
-    GaimConversation *convo = gaim_find_chat(gc, id);
+    PurpleConversation *convo = purple_find_chat(gc, id);
     const char *args[2];
 
     if (!convo)
         return;
 
-    args[0] = gaim_conversation_get_name(convo);
+    args[0] = purple_conversation_get_name(convo);
     args[1] = NULL;
-    gaym_cmd_part(gaym, "part", gaim_conversation_get_name(convo), args);
+    gaym_cmd_part(gaym, "part", purple_conversation_get_name(convo), args);
     serv_got_chat_left(gc, id);
 }
 
-static int gaym_chat_send(GaimConnection * gc, int id, const char *what,
-                          GaimMessageFlags flags)
+static int gaym_chat_send(PurpleConnection * gc, int id, const char *what,
+                          PurpleMessageFlags flags)
 {
     struct gaym_conn *gaym = gc->proto_data;
-    GaimConversation *convo = gaim_find_chat(gc, id);
+    PurpleConversation *convo = purple_find_chat(gc, id);
     const char *args[2];
     char *tmp;
 
     if (!convo) {
-        gaim_debug(GAIM_DEBUG_ERROR, "gaym",
+        purple_debug(PURPLE_DEBUG_ERROR, "gaym",
                    "chat send on nonexistent chat\n");
         return -EINVAL;
     }
@@ -1174,7 +1158,7 @@ static int gaym_chat_send(GaimConnection * gc, int id, const char *what,
     gaym_cmd_privmsg(gaym, "msg", NULL, args);
 
     tmp = g_markup_escape_text(what, -1);
-    serv_got_chat_in(gc, id, gaim_connection_get_display_name(gc), 0, tmp,
+    serv_got_chat_in(gc, id, purple_connection_get_display_name(gc), 0, tmp,
                      time(NULL));
     g_free(tmp);
     return 0;
@@ -1196,7 +1180,7 @@ static guint gaym_nick_hash(const char *nick)
 
 static gboolean gaym_nick_equal(const char *nick1, const char *nick2)
 {
-    return (gaim_utf8_strcasecmp(nick1, nick2) == 0);
+    return (purple_utf8_strcasecmp(nick1, nick2) == 0);
 }
 
 static void gaym_channel_member_free(GaymBuddy * cm)
@@ -1221,40 +1205,40 @@ static void gaym_buddy_free(struct gaym_buddy *ib)
     g_free(ib);
 }
 
-static GaimChat *gaym_find_blist_chat(GaimAccount * account,
+static PurpleChat *gaym_find_blist_chat(PurpleAccount * account,
                                       const char *name)
 {
     char *chat_name;
-    GaimChat *chat;
-    GaimPlugin *prpl;
-    GaimPluginProtocolInfo *prpl_info = NULL;
+    PurpleChat *chat;
+    PurplePlugin *prpl;
+    PurplePluginProtocolInfo *prpl_info = NULL;
     struct proto_chat_entry *pce;
-    GaimBlistNode *node, *group;
+    PurpleBlistNode *node, *group;
     GList *parts;
 
-    GaimBuddyList *gaimbuddylist = gaim_get_blist();
+    PurpleBuddyList *purplebuddylist = purple_get_blist();
 
-    g_return_val_if_fail(gaimbuddylist != NULL, NULL);
+    g_return_val_if_fail(purplebuddylist != NULL, NULL);
     g_return_val_if_fail((name != NULL) && (*name != '\0'), NULL);
 
-    if (!gaim_account_is_connected(account))
+    if (!purple_account_is_connected(account))
         return NULL;
 
-    prpl = gaim_find_prpl(gaim_account_get_protocol_id(account));
-    prpl_info = GAIM_PLUGIN_PROTOCOL_INFO(prpl);
+    prpl = purple_find_prpl(purple_account_get_protocol_id(account));
+    prpl_info = PURPLE_PLUGIN_PROTOCOL_INFO(prpl);
 
-    for (group = gaimbuddylist->root; group != NULL; group = group->next) {
+    for (group = purplebuddylist->root; group != NULL; group = group->next) {
         for (node = group->child; node != NULL; node = node->next) {
-            if (GAIM_BLIST_NODE_IS_CHAT(node)) {
+            if (PURPLE_BLIST_NODE_IS_CHAT(node)) {
 
-                chat = (GaimChat *) node;
+                chat = (PurpleChat *) node;
 
                 if (account != chat->account)
                     continue;
 
                 parts =
                     prpl_info->
-                    chat_info(gaim_account_get_connection(chat->account));
+                    chat_info(purple_account_get_connection(chat->account));
 
                 pce = parts->data;
                 chat_name = g_hash_table_lookup(chat->components,
@@ -1272,30 +1256,30 @@ static GaimChat *gaym_find_blist_chat(GaimAccount * account,
     return NULL;
 }
 
-static GaimRoomlist *gaym_roomlist_get_list(GaimConnection * gc)
+static PurpleRoomlist *gaym_roomlist_get_list(PurpleConnection * gc)
 {
     struct gaym_conn *gaym;
     GList *fields = NULL;
-    GaimRoomlistField *f;
+    PurpleRoomlistField *f;
     char *buf;
 
     gaym = gc->proto_data;
 
     if (gaym->roomlist) {
-        gaim_roomlist_unref(gaym->roomlist);
+        purple_roomlist_unref(gaym->roomlist);
     }
 
-    gaym->roomlist = gaim_roomlist_new(gaim_connection_get_account(gc));
+    gaym->roomlist = purple_roomlist_new(purple_connection_get_account(gc));
 
-    f = gaim_roomlist_field_new(GAIM_ROOMLIST_FIELD_STRING, _("Channel"),
+    f = purple_roomlist_field_new(PURPLE_ROOMLIST_FIELD_STRING, _("Channel"),
                                 "channel", FALSE);
     fields = g_list_prepend(fields, f);
 
-    f = gaim_roomlist_field_new(GAIM_ROOMLIST_FIELD_STRING, "",
+    f = purple_roomlist_field_new(PURPLE_ROOMLIST_FIELD_STRING, "",
                                 "description", TRUE);
     fields = g_list_prepend(fields, f);
 
-    gaim_roomlist_set_fields(gaym->roomlist, fields);
+    purple_roomlist_set_fields(gaym->roomlist, fields);
 
     /**
      * Member created rooms are retrieved through the IRC protocol
@@ -1310,9 +1294,9 @@ static GaimRoomlist *gaym_roomlist_get_list(GaimConnection * gc)
     return gaym->roomlist;
 }
 
-static void gaym_roomlist_cancel(struct _GaimRoomlist *list)
+static void gaym_roomlist_cancel(struct _PurpleRoomlist *list)
 {
-    GaimConnection *gc = gaim_account_get_connection(list->account);
+    PurpleConnection *gc = purple_account_get_connection(list->account);
     struct gaym_conn *gaym;
 
     if (gc == NULL)
@@ -1320,12 +1304,12 @@ static void gaym_roomlist_cancel(struct _GaimRoomlist *list)
 
     gaym = gc->proto_data;
 
-    gaim_roomlist_set_in_progress(list, FALSE);
+    purple_roomlist_set_in_progress(list, FALSE);
 
     if (gaym->roomlist == list) {
         g_list_free(g_list_nth_data(list->rooms, 0));
         gaym->roomlist = NULL;
-        gaim_roomlist_unref(list);
+        purple_roomlist_unref(list);
     }
 
     if (gaym->roomlist_filter) {
@@ -1334,21 +1318,21 @@ static void gaym_roomlist_cancel(struct _GaimRoomlist *list)
     }
 }
 
-void gaym_roomlist_expand_category(struct _GaimRoomlist *list,
-                                   struct _GaimRoomlistRoom *category)
+void gaym_roomlist_expand_category(struct _PurpleRoomlist *list,
+                                   struct _PurpleRoomlistRoom *category)
 {
-    GaimRoomlistRoom *room = NULL;
+    PurpleRoomlistRoom *room = NULL;
     gchar *altname = NULL;
     gchar *altchan = NULL;
     int i = 0;
 
-    if (category->type & GAIM_ROOMLIST_ROOMTYPE_ROOM
+    if (category->type & PURPLE_ROOMLIST_ROOMTYPE_ROOM
         && !category->expanded_once) {
 
         category->expanded_once = TRUE;
 
         int max =
-            gaim_prefs_get_int("/plugins/prpl/gaym/chat_room_instances");
+            purple_prefs_get_int("/plugins/prpl/gaym/chat_room_instances");
 
         gchar *name = category->fields->data;
         gchar *chan = category->fields->next->data;
@@ -1358,27 +1342,27 @@ void gaym_roomlist_expand_category(struct _GaimRoomlist *list,
             altchan = g_strdup_printf("%.*s%d", strlen(chan) - 1, chan, i);
 
             room =
-                gaim_roomlist_room_new(GAIM_ROOMLIST_ROOMTYPE_ROOM,
+                purple_roomlist_room_new(PURPLE_ROOMLIST_ROOMTYPE_ROOM,
                                        altname, category);
 
-            gaim_roomlist_room_add_field(list, room, altname);
-            gaim_roomlist_room_add_field(list, room, altchan);
-            gaim_roomlist_room_add(list, room);
+            purple_roomlist_room_add_field(list, room, altname);
+            purple_roomlist_room_add_field(list, room, altchan);
+            purple_roomlist_room_add(list, room);
             g_free(altname);
             g_free(altchan);
         }
     }
-    gaim_roomlist_set_in_progress(list, FALSE);
+    purple_roomlist_set_in_progress(list, FALSE);
 }
 
-static GaimPluginProtocolInfo prpl_info = {
+static PurplePluginProtocolInfo prpl_info = {
     0,                          /* options */
     NULL,                       /* user_splits */
     NULL,                       /* protocol_options */
-    {"jpg,jpeg,gif,bmp,ico", 57, 77, 57, 77, GAIM_ICON_SCALE_DISPLAY},  /* icon_spec 
+    {"jpg,jpeg,gif,bmp,ico", 57, 77, 57, 77, PURPLE_ICON_SCALE_DISPLAY},  /* icon_spec 
                                                                          */
     gaym_blist_icon,            /* list_icon */
-    gaym_blist_emblems,         /* list_emblems */
+    NULL,                        /* list_emblems */
     gaym_status_text,           /* status_text */
     gaym_tooltip_text,          /* tooltip_text */
     gaym_status_types,          /* status_types */
@@ -1440,46 +1424,46 @@ void deref_one_user(gpointer * user, gpointer * data)
 {
 
     struct gaym_conn *gaym = (struct gaym_conn *) data;
-    GaimConvChatBuddy *cb = (GaimConvChatBuddy *) user;
-    gaim_debug_misc("gaym", "Removing %s in %x from list\n",
+    PurpleConvChatBuddy *cb = (PurpleConvChatBuddy *) user;
+    purple_debug_misc("gaym", "Removing %s in %x from list\n",
                     (char *) cb->name, cb);
 
-    gaim_debug_misc("    ", "Succes was: %i\n",
+    purple_debug_misc("    ", "Succes was: %i\n",
                     gaym_unreference_channel_member(gaym, cb->name));
 
 }
-static void gaym_clean_channel_members(GaimConversation * conv)
+static void gaym_clean_channel_members(PurpleConversation * conv)
 {
     if (strncmp(conv->account->protocol_id, "prpl-gaym", 9))
         return;
 
     g_return_if_fail(conv != NULL);
 
-    if (conv->type == GAIM_CONV_TYPE_CHAT) {
-        GaimConvChat *chat = gaim_conversation_get_chat_data(conv);
-        GaimConnection *gc = gaim_conversation_get_gc(conv);
+    if (conv->type == PURPLE_CONV_TYPE_CHAT) {
+        PurpleConvChat *chat = purple_conversation_get_chat_data(conv);
+        PurpleConnection *gc = purple_conversation_get_gc(conv);
         g_return_if_fail(gc != NULL);
         struct gaym_conn *gaym = gc->proto_data;
-        GList *users = gaim_conv_chat_get_users(chat);
-        gaim_debug_misc("gaym", "got userlist %x length %i\n", users,
+        GList *users = purple_conv_chat_get_users(chat);
+        purple_debug_misc("gaym", "got userlist %x length %i\n", users,
                         g_list_length(users));
         g_list_foreach(users, (GFunc) deref_one_user, gaym);
-    } else if (conv->type == GAIM_CONV_TYPE_IM) {
-        gaim_debug_misc("gaym", "removing reference to %s\n", conv->name);
-        GaimConnection *gc = gaim_conversation_get_gc(conv);
+    } else if (conv->type == PURPLE_CONV_TYPE_IM) {
+        purple_debug_misc("gaym", "removing reference to %s\n", conv->name);
+        PurpleConnection *gc = purple_conversation_get_gc(conv);
         g_return_if_fail(gc != NULL);
         struct gaym_conn *gaym = gc->proto_data;
         gaym_unreference_channel_member(gaym, conv->name);
     }
 }
-static void gaym_get_photo_info(GaimConversation * conv)
+static void gaym_get_photo_info(PurpleConversation * conv)
 {
     char *buf;
     char *name;
-    gaim_debug_misc("******gaym",
+    purple_debug_misc("******gaym",
                     "****************Got conversation-created signal\n");
     if (strncmp(conv->account->protocol_id, "prpl-gaym", 9) == 0
-        && gaim_conversation_get_type(conv) == GAIM_CONV_TYPE_IM) {
+        && purple_conversation_get_type(conv) == PURPLE_CONV_TYPE_IM) {
 
         /**
          * First check to see if we already have the photo via
@@ -1488,7 +1472,7 @@ static void gaym_get_photo_info(GaimConversation * conv)
 
         struct gaym_conn *gaym;
 
-        GaimConnection *gc = gaim_conversation_get_gc(conv);
+        PurpleConnection *gc = purple_conversation_get_gc(conv);
         gaym = (struct gaym_conn *) gc->proto_data;
 
         if (!gaym) {
@@ -1510,7 +1494,7 @@ static void gaym_get_photo_info(GaimConversation * conv)
 
         name = gaym_nick_to_gcom_strdup(conv->name);
         buf = gaym_format(gaym, "vn", "WHOIS", name);
-        gaim_debug_misc("gaym", "Conversation triggered command: %s\n",
+        purple_debug_misc("gaym", "Conversation triggered command: %s\n",
                         buf);
         gaym_send(gaym, buf);
         gaym_get_channel_member_reference(gaym, name);
@@ -1521,93 +1505,93 @@ static void gaym_get_photo_info(GaimConversation * conv)
     }
 }
 
-static GaimPluginPrefFrame *get_plugin_pref_frame(GaimPlugin * plugin)
+static PurplePluginPrefFrame *get_plugin_pref_frame(PurplePlugin * plugin)
 {
-    GaimPluginPrefFrame *frame;
-    GaimPluginPref *ppref;
+    PurplePluginPrefFrame *frame;
+    PurplePluginPref *ppref;
 
-    frame = gaim_plugin_pref_frame_new();
+    frame = purple_plugin_pref_frame_new();
 
-    ppref = gaim_plugin_pref_new_with_label(_("Chat Rooms"));
-    gaim_plugin_pref_frame_add(frame, ppref);
+    ppref = purple_plugin_pref_new_with_label(_("Chat Rooms"));
+    purple_plugin_pref_frame_add(frame, ppref);
 
     ppref =
-        gaim_plugin_pref_new_with_name_and_label
+        purple_plugin_pref_new_with_name_and_label
         ("/plugins/prpl/gaym/show_join", _("Show entrance announcement"));
-    gaim_plugin_pref_frame_add(frame, ppref);
+    purple_plugin_pref_frame_add(frame, ppref);
 
     ppref =
-        gaim_plugin_pref_new_with_name_and_label
+        purple_plugin_pref_new_with_name_and_label
         ("/plugins/prpl/gaym/show_bio_with_join",
          _("Show member bio with entrance announcement"));
-    gaim_plugin_pref_frame_add(frame, ppref);
+    purple_plugin_pref_frame_add(frame, ppref);
 
     ppref =
-        gaim_plugin_pref_new_with_name_and_label
+        purple_plugin_pref_new_with_name_and_label
         ("/plugins/prpl/gaym/show_part", _("Show exit announcement"));
-    gaim_plugin_pref_frame_add(frame, ppref);
+    purple_plugin_pref_frame_add(frame, ppref);
 
     ppref =
-        gaim_plugin_pref_new_with_name_and_label
+        purple_plugin_pref_new_with_name_and_label
         ("/plugins/prpl/gaym/chat_room_instances",
          _("Number of chat room instances to display"));
-    gaim_plugin_pref_set_bounds(ppref, 0, 9);
-    gaim_plugin_pref_frame_add(frame, ppref);
+    purple_plugin_pref_set_bounds(ppref, 0, 9);
+    purple_plugin_pref_frame_add(frame, ppref);
 
     ppref =
-        gaim_plugin_pref_new_with_label(_
+        purple_plugin_pref_new_with_label(_
                                         ("Bio-Based Chat Room Activity Filtering"));
-    gaim_plugin_pref_frame_add(frame, ppref);
+    purple_plugin_pref_frame_add(frame, ppref);
 
     ppref =
-        gaim_plugin_pref_new_with_name_and_label
+        purple_plugin_pref_new_with_name_and_label
         ("/plugins/prpl/gaym/botfilter_enable", _("Enable"));
-    gaim_plugin_pref_frame_add(frame, ppref);
+    purple_plugin_pref_frame_add(frame, ppref);
 
     ppref =
-        gaim_plugin_pref_new_with_name_and_label
+        purple_plugin_pref_new_with_name_and_label
         ("/plugins/prpl/gaym/botfilter_ignore_null",
          _("Ignore if bio is blank"));
-    gaim_plugin_pref_frame_add(frame, ppref);
+    purple_plugin_pref_frame_add(frame, ppref);
 
     ppref =
-        gaim_plugin_pref_new_with_name_and_label
+        purple_plugin_pref_new_with_name_and_label
         ("/plugins/prpl/gaym/botfilter_patterns",
          _
          ("Ignore if bio contains these patterns\n\t? = match any single character\n\t* = match zero, one, or more"));
-    gaim_plugin_pref_frame_add(frame, ppref);
+    purple_plugin_pref_frame_add(frame, ppref);
 
     ppref =
-        gaim_plugin_pref_new_with_name_and_label
+        purple_plugin_pref_new_with_name_and_label
         ("/plugins/prpl/gaym/botfilter_sep",
          _("Above patterns are separated by"));
-    gaim_plugin_pref_set_max_length(ppref, 1);
-    gaim_plugin_pref_frame_add(frame, ppref);
+    purple_plugin_pref_set_max_length(ppref, 1);
+    purple_plugin_pref_frame_add(frame, ppref);
 
     ppref =
-        gaim_plugin_pref_new_with_name_and_label
+        purple_plugin_pref_new_with_name_and_label
         ("/plugins/prpl/gaym/botfilter_url",
          _
          ("URL for GayBoi's spam database\n\tblank to disable\n\tchanges affect next login\n\tdefault is "
           GAYBOI_SPAM_URL));
-    gaim_plugin_pref_frame_add(frame, ppref);
+    purple_plugin_pref_frame_add(frame, ppref);
 
     return frame;
 }
 
-static GaimPluginUiInfo prefs_info = {
+static PurplePluginUiInfo prefs_info = {
     get_plugin_pref_frame
 };
 
-static GaimPluginInfo info = {
-    GAIM_PLUGIN_MAGIC,
-    GAIM_MAJOR_VERSION,
-    GAIM_MINOR_VERSION,
-    GAIM_PLUGIN_PROTOCOL,                                 /**< type           */
+static PurplePluginInfo info = {
+    PURPLE_PLUGIN_MAGIC,
+    PURPLE_MAJOR_VERSION,
+    PURPLE_MINOR_VERSION,
+    PURPLE_PLUGIN_PROTOCOL,                                 /**< type           */
     NULL,                                                 /**< ui_requirement */
     0,                                                    /**< flags          */
     NULL,                                                 /**< dependencies   */
-    GAIM_PRIORITY_DEFAULT,                                /**< priority       */
+    PURPLE_PRIORITY_DEFAULT,                                /**< priority       */
 
     "prpl-gaym",                                          /**< id             */
     "GayM",                                               /**< name           */
@@ -1627,7 +1611,7 @@ static GaimPluginInfo info = {
 };
 
 
-void gaym_get_room_namelist(GaimAccount * account, const char *room)
+void gaym_get_room_namelist(PurpleAccount * account, const char *room)
 {
 
 
@@ -1655,113 +1639,113 @@ void gaym_get_room_namelist(GaimAccount * account, const char *room)
 
 
 
-static void connect_signals(GaimConnection * plugin)
+static void connect_signals(PurpleConnection * plugin)
 {
 
     static gboolean connection_done = FALSE;
     if (connection_done)
         return;
     connection_done = TRUE;
-    gaim_debug_misc("gaym",
-                    "CONNECTING SIGNALS: gaim_conversations_get_handle(): %x\n",
-                    gaim_conversations_get_handle());
-    gaim_signal_connect(gaim_conversations_get_handle(),
+    purple_debug_misc("gaym",
+                    "CONNECTING SIGNALS: purple_conversations_get_handle(): %x\n",
+                    purple_conversations_get_handle());
+    purple_signal_connect(purple_conversations_get_handle(),
                         "conversation-created", plugin,
-                        GAIM_CALLBACK(gaym_get_photo_info), NULL);
+                        PURPLE_CALLBACK(gaym_get_photo_info), NULL);
 
-    gaim_signal_connect(gaim_conversations_get_handle(),
+    purple_signal_connect(purple_conversations_get_handle(),
                         "deleting-conversation", plugin,
-                        GAIM_CALLBACK(gaym_clean_channel_members), NULL);
+                        PURPLE_CALLBACK(gaym_clean_channel_members), NULL);
 
 
-    gaim_signal_connect(gaim_accounts_get_handle(), "request-namelist",
-                        plugin, GAIM_CALLBACK(gaym_get_room_namelist),
+    purple_signal_connect(purple_accounts_get_handle(), "request-namelist",
+                        plugin, PURPLE_CALLBACK(gaym_get_room_namelist),
                         NULL);
-    gaim_signal_connect(gaim_accounts_get_handle(), "request-info-quietly",
-                        plugin, GAIM_CALLBACK(gaym_get_info_quietly),
+    purple_signal_connect(purple_accounts_get_handle(), "request-info-quietly",
+                        plugin, PURPLE_CALLBACK(gaym_get_info_quietly),
                         NULL);
 
 
 
 }
-static void _init_plugin(GaimPlugin * plugin)
+static void _init_plugin(PurplePlugin * plugin)
 {
 
-    GaimAccountOption *option;
+    PurpleAccountOption *option;
 
-    option = gaim_account_option_string_new(_("Bio Line"), "bioline", "");
+    option = purple_account_option_string_new(_("Bio Line"), "bioline", "");
     prpl_info.protocol_options =
         g_list_prepend(prpl_info.protocol_options, option);
 
     option =
-        gaim_account_option_int_new(_("Port"), "port", IRC_DEFAULT_PORT);
+        purple_account_option_int_new(_("Port"), "port", IRC_DEFAULT_PORT);
     prpl_info.protocol_options =
         g_list_prepend(prpl_info.protocol_options, option);
 
     option =
-        gaim_account_option_string_new(_("Server"), "server",
+        purple_account_option_string_new(_("Server"), "server",
                                        IRC_DEFAULT_SERVER);
     prpl_info.protocol_options =
         g_list_prepend(prpl_info.protocol_options, option);
 
-    gaim_signal_register(gaim_accounts_get_handle(),
+    purple_signal_register(purple_accounts_get_handle(),
                          "info-updated",
-                         gaim_marshal_VOID__POINTER_POINTER, NULL, 2,
-                         gaim_value_new(GAIM_TYPE_SUBTYPE,
-                                        GAIM_SUBTYPE_ACCOUNT),
-                         gaim_value_new(GAIM_TYPE_POINTER,
-                                        GAIM_TYPE_CHAR));
+                         purple_marshal_VOID__POINTER_POINTER, NULL, 2,
+                         purple_value_new(PURPLE_TYPE_SUBTYPE,
+                                        PURPLE_SUBTYPE_ACCOUNT),
+                         purple_value_new(PURPLE_TYPE_POINTER,
+                                        PURPLE_TYPE_CHAR));
 
-    gaim_signal_register(gaim_accounts_get_handle(),
+    purple_signal_register(purple_accounts_get_handle(),
                          "namelist-complete",
-                         gaim_marshal_VOID__POINTER_POINTER, NULL, 2,
-                         gaim_value_new(GAIM_TYPE_SUBTYPE,
-                                        GAIM_SUBTYPE_ACCOUNT),
-                         gaim_value_new(GAIM_TYPE_POINTER));
-    gaim_signal_register(gaim_accounts_get_handle(),
+                         purple_marshal_VOID__POINTER_POINTER, NULL, 2,
+                         purple_value_new(PURPLE_TYPE_SUBTYPE,
+                                        PURPLE_SUBTYPE_ACCOUNT),
+                         purple_value_new(PURPLE_TYPE_POINTER));
+    purple_signal_register(purple_accounts_get_handle(),
                          "request-namelist",
-                         gaim_marshal_VOID__POINTER_POINTER, NULL, 2,
-                         gaim_value_new(GAIM_TYPE_SUBTYPE,
-                                        GAIM_SUBTYPE_ACCOUNT),
-                         gaim_value_new(GAIM_TYPE_POINTER,
-                                        GAIM_TYPE_CHAR));
-    gaim_signal_register(gaim_accounts_get_handle(),
+                         purple_marshal_VOID__POINTER_POINTER, NULL, 2,
+                         purple_value_new(PURPLE_TYPE_SUBTYPE,
+                                        PURPLE_SUBTYPE_ACCOUNT),
+                         purple_value_new(PURPLE_TYPE_POINTER,
+                                        PURPLE_TYPE_CHAR));
+    purple_signal_register(purple_accounts_get_handle(),
                          "request-info-quietly",
-                         gaim_marshal_VOID__POINTER_POINTER, NULL, 2,
-                         gaim_value_new(GAIM_TYPE_SUBTYPE,
-                                        GAIM_SUBTYPE_ACCOUNT),
-                         gaim_value_new(GAIM_TYPE_POINTER,
-                                        GAIM_TYPE_CHAR));
+                         purple_marshal_VOID__POINTER_POINTER, NULL, 2,
+                         purple_value_new(PURPLE_TYPE_SUBTYPE,
+                                        PURPLE_SUBTYPE_ACCOUNT),
+                         purple_value_new(PURPLE_TYPE_POINTER,
+                                        PURPLE_TYPE_CHAR));
 
 
 
-    gaim_prefs_add_none("/plugins/prpl/gaym");
-    gaim_prefs_add_int("/plugins/prpl/gaym/chat_room_instances", 4);
-    gaim_prefs_add_bool("/plugins/prpl/gaym/show_join", TRUE);
-    gaim_prefs_add_bool("/plugins/prpl/gaym/show_part", TRUE);
-    gaim_prefs_add_bool("/plugins/prpl/gaym/show_bio_with_join", TRUE);
+    purple_prefs_add_none("/plugins/prpl/gaym");
+    purple_prefs_add_int("/plugins/prpl/gaym/chat_room_instances", 4);
+    purple_prefs_add_bool("/plugins/prpl/gaym/show_join", TRUE);
+    purple_prefs_add_bool("/plugins/prpl/gaym/show_part", TRUE);
+    purple_prefs_add_bool("/plugins/prpl/gaym/show_bio_with_join", TRUE);
 
-    gaim_prefs_add_bool("/plugins/prpl/gaym/botfilter_enable", FALSE);
-    gaim_prefs_add_bool("/plugins/prpl/gaym/botfilter_ignore_null", FALSE);
-    gaim_prefs_add_string("/plugins/prpl/gaym/botfilter_sep", "|");
-    gaim_prefs_add_string("/plugins/prpl/gaym/botfilter_patterns",
+    purple_prefs_add_bool("/plugins/prpl/gaym/botfilter_enable", FALSE);
+    purple_prefs_add_bool("/plugins/prpl/gaym/botfilter_ignore_null", FALSE);
+    purple_prefs_add_string("/plugins/prpl/gaym/botfilter_sep", "|");
+    purple_prefs_add_string("/plugins/prpl/gaym/botfilter_patterns",
                           "NULL|MODE * -i|*dantcamboy*|*Free preview*|*epowerchat*|*Live gay sex cam show*|*camboiz*");
-    gaim_prefs_add_string("/plugins/prpl/gaym/botfilter_url",
+    purple_prefs_add_string("/plugins/prpl/gaym/botfilter_url",
                           GAYBOI_SPAM_URL);
 
-    gaim_prefs_connect_callback("/plugins/prpl/gaym/botfilter_url",
+    purple_prefs_connect_callback("/plugins/prpl/gaym/botfilter_url",
                                 "botfilter_url", botfilter_url_changed_cb,
                                 NULL);
 
-    gaim_prefs_add_string("/plugins/prpl/gaym/botfilter_url_result", "");
-    gaim_prefs_add_int("/plugins/prpl/gaym/botfilter_url_last_check", 0);
+    purple_prefs_add_string("/plugins/prpl/gaym/botfilter_url_result", "");
+    purple_prefs_add_int("/plugins/prpl/gaym/botfilter_url_last_check", 0);
 
     _gaym_plugin = plugin;
 
     gaym_register_commands();
 }
 
-GAIM_INIT_PLUGIN(gaym, _init_plugin, info);
+PURPLE_INIT_PLUGIN(gaym, _init_plugin, info);
 
 
 

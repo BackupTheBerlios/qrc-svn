@@ -2,7 +2,7 @@
  * @file util.h Utility Functions
  * @ingroup core
  *
- * Gaim is the legal property of its developers, whose names are too numerous
+ * Purple is the legal property of its developers, whose names are too numerous
  * to list here.  Please refer to the COPYRIGHT file distributed with this
  * source distribution.
  *
@@ -32,7 +32,7 @@
 #include "helpers.h"
 
 
-static void gaym_session_destroy(GaimUrlSession * session)
+static void gaym_session_destroy(PurpleUrlSession * session)
 {
     if (session->cookies)
         g_free(session->cookies);
@@ -43,12 +43,12 @@ static void gaym_session_destroy(GaimUrlSession * session)
     g_free(session);
 }
 
-/* gaim_url_decode doesn't change pluses to spaces - edit in place */
+/* purple_url_decode doesn't change pluses to spaces - edit in place */
 static const char *gaym_url_decode(const char *string)
 {
     char *retval;
 
-    retval = (char *) (string = gaim_url_decode(string));
+    retval = (char *) (string = purple_url_decode(string));
     while (*retval != 0) {
         if (*retval == '+')
             *retval = ' ';
@@ -66,7 +66,7 @@ static void add_cookie(gpointer key, gpointer value, gpointer data)
     g_return_if_fail(key != NULL);
     g_return_if_fail(value != NULL);
     g_return_if_fail(data != NULL);
-    GaimUrlSession *session = (GaimUrlSession *) data;
+    PurpleUrlSession *session = (PurpleUrlSession *) data;
     gchar *cookies = session->cookies;
     session->cookies =
         g_strconcat(cookies ? cookies : "", key, "=", value, "; ", NULL);
@@ -74,7 +74,7 @@ static void add_cookie(gpointer key, gpointer value, gpointer data)
 
 }
 
-static void parse_cookies(const char *webdata, GaimUrlSession * session,
+static void parse_cookies(const char *webdata, PurpleUrlSession * session,
                           size_t len)
 {
     gchar **cookies = g_strsplit(webdata, "\n", -1);
@@ -85,6 +85,7 @@ static void parse_cookies(const char *webdata, GaimUrlSession * session,
         cookie =
             return_string_between("Set-cookie: ", "; ", cookies[index]);
         if (cookie) {
+            purple_debug_misc("NEW COOKIE***","%s",cookie);
             cookie_parts = g_strsplit(cookie, "=", 2);
             if (cookie_parts[0] && cookie_parts[1])
                 g_hash_table_replace(session->cookie_table,
@@ -99,7 +100,7 @@ static void parse_cookies(const char *webdata, GaimUrlSession * session,
 
 }
 
-gchar* gaym_build_session_request(gchar* url, GaimUrlSession* session)
+gchar* gaym_build_session_request(gchar* url, PurpleUrlSession* session)
 {
 	    if(!url || !session)
 		return 0;
@@ -121,21 +122,19 @@ gchar* gaym_build_session_request(gchar* url, GaimUrlSession* session)
 	return res;
 }
 static void
-gaym_weblogin_step5(GaimUtilFetchUrlData *url_data, gpointer data, const gchar *text, gsize len, const gchar* err)
+gaym_weblogin_step5(PurpleUtilFetchUrlData *url_data, gpointer data, const gchar *text, gsize len, const gchar* err)
 {
-    gaim_debug_misc("weblogin","STEP FIVE BEGINS\n"); 
-    GaimUrlSession *session = (GaimUrlSession *) data;
+    purple_debug_misc("weblogin","STEP FIVE BEGINS: \n"); 
+    PurpleUrlSession *session = (PurpleUrlSession *) data;
     struct gaym_conn *gaym = session->gaym;
     // Get hash from text
-    if (session && GAIM_CONNECTION_IS_VALID(session->account->gc)) {
+    if (session && PURPLE_CONNECTION_IS_VALID(session->account->gc)) {
         char *bio;
         char *thumbnail;
         char *temp = NULL;
         char *temp2 = NULL;
         const char *match;
         const char *result;
-
-
 
         gaym->server_stats = NULL;
         gaym->chat_key = NULL;
@@ -149,17 +148,28 @@ gaym_weblogin_step5(GaimUtilFetchUrlData *url_data, gpointer data, const gchar *
             temp += strlen(match);
             temp2 = strstr(temp, "\" ");
         }
-        if (!
-            (temp && temp2 && temp != temp2
-             && (gaym->chat_key =
-                 g_strndup(temp, (temp2 - temp) * sizeof(char))))) {
-            gaim_connection_error((session->account->gc),
-                                  _
-                                  ("Problem parsing password from web. Report a bug."));
+        if (!temp) {
+            purple_connection_error((session->account->gc), _ ("Didn't find password token."));
+            return;
+        }
+        if (!temp2)
+        {
+            purple_connection_error((session->account->gc), _ ("Didn't find password end"));
+            return;
+        }
+        if (temp==temp2)
+        {
+            purple_connection_error((session->account->gc), _ ("Empty Password"));
+            return;
+        }
+        if (!(gaym->chat_key = g_strndup(temp, (temp2 - temp) * sizeof(char))))
+        {
+            purple_connection_error((session->account->gc), _ ("Memory Allocation Error."));
             return;
         }
 
-        gaim_debug_misc("weblogin",
+        
+        purple_debug_misc("weblogin",
                         "Got hash, temp=%x, temp2=%x, gaym->chat_key=%x\n",
                         temp, temp2, gaym->chat_key);
         // Next, loook for bio
@@ -172,8 +182,7 @@ gaym_weblogin_step5(GaimUtilFetchUrlData *url_data, gpointer data, const gchar *
         if (temp && temp2) {
             thumbnail = g_strndup(temp, (temp2 - temp) * sizeof(char));
             result = gaym_url_decode(thumbnail);
-            (gaym->thumbnail = g_strdup(result))
-                || (gaym->thumbnail = g_strdup(" "));
+            gaym->thumbnail = result?g_strdup(result):g_strdup(" ");
 
             g_free(thumbnail);
             // Parse out non thumbnail part of bio.
@@ -181,30 +190,29 @@ gaym_weblogin_step5(GaimUtilFetchUrlData *url_data, gpointer data, const gchar *
             if (temp) {
                 bio = g_strndup(temp2, (temp - temp2) * sizeof(char));
                 result = gaym_url_decode(bio);
-                gaim_debug_info("gaym", "Server BIO: %s Thumb: %s\n",
+                purple_debug_info("gaym", "Server BIO: %s Thumb: %s\n",
                                 result, gaym->thumbnail);
-                (gaym->server_bioline = g_strdup(result))
-                    || (gaym->server_bioline = NULL);
+                gaym->server_bioline = result?g_strdup(result):NULL;
                 g_free(bio);
 
                 // Parse out stats part of bio.
                 temp2 = strchr(result, (char) 0x01);
                 if (temp2++) {
-                    gaim_debug_misc("gaym", "Stats: %s\n", temp2);
+                    purple_debug_misc("gaym", "Stats: %s\n", temp2);
                     gaym->server_stats = g_strdup(temp2);
                 }
             }
         } else {
-            // gaim_connection_error(
-            // gaim_account_get_connection(((struct
-            // gaym_conn*)((GaimUrlSession*)session)->account),
+            // purple_connection_error(
+            // purple_account_get_connection(((struct
+            // gaym_conn*)((PurpleUrlSession*)session)->account),
             // _("Problem parsing password from web. Report a bug.")));
         }
         session->session_cb(gaym->account);
 
     } else {
-        gaim_debug_misc("gaym", "Connection was cancelled before step5\n");
-        gaim_debug_misc("gaym", "gaym->session: %x\n", session);
+        purple_debug_misc("gaym", "Connection was cancelled before step5\n");
+        purple_debug_misc("gaym", "gaym->session: %x\n", session);
     }
 
     // We don't need the session info anymore.
@@ -213,38 +221,26 @@ gaym_weblogin_step5(GaimUtilFetchUrlData *url_data, gpointer data, const gchar *
 }
 
 static void
-gaym_weblogin_step4(GaimUtilFetchUrlData *url_data, gpointer data, const gchar *text, gsize len, const gchar* err)
+gaym_weblogin_step4(PurpleUtilFetchUrlData *url_data, gpointer data, const gchar *text, gsize len, const gchar* err)
 {
 
-    GaimUrlSession *session = (GaimUrlSession *) data;
+    PurpleUrlSession *session = (PurpleUrlSession *) data;
     parse_cookies(text, session, len);
-    gaim_debug_misc("gaym", "Step 4: session: %x\n", session);
-    if (session && GAIM_CONNECTION_IS_VALID(session->account->gc)) {
-        // The fourth step is to parse a rand=# value out of the message
-        // text from
-        // The previous step.
-        // We then connect to messenger/applet.html
-        char url[512];
-        int nonce;
-        //char *buf = g_strdup_printf(_("Signon: %s"),
-        //                            (session->account->username));
-        //gaim_connection_update_progress(session->account->gc, buf, 3, 6);
-        sscanf(text, "?rand=%d", &nonce);
-        snprintf(url, 512,
-                 "http://www.gay.com/messenger/applet.html?rand=%d",
-                 nonce);
-	
+    purple_debug_misc("gaym", "Step 4: session: %x\n", session);
+    if (session && PURPLE_CONNECTION_IS_VALID(session->account->gc)) {
+	    
+        char *url="http://www.gay.com/messenger/applet.html?rand=36";
         session->hasFormData = TRUE;
-	gaim_debug_misc("weblogin","About to build url\n");
-	gchar* request=gaym_build_session_request(url, session);
-	gaim_debug_misc("weblogin","Requesting: %s\n",request);
-        gaim_util_fetch_url_request(url, FALSE, NULL, TRUE, 
+	    purple_debug_misc("weblogin","About to build url\n");
+	    gchar* request=gaym_build_session_request(url, session);
+	    purple_debug_misc("weblogin","Requesting: %s\n",request);
+        purple_util_fetch_url_request(url, FALSE, NULL, TRUE, 
 				    request, TRUE, gaym_weblogin_step5,
 				    session);
-	gaim_debug_misc("weblogin","applet fetched");
+	purple_debug_misc("weblogin","applet fetched");
     } else {
-        gaim_debug_misc("gaym", "Connection was cancelled before step4\n");
-        gaim_debug_misc("gaym", "session: %x\n", session);
+        purple_debug_misc("gaym", "Connection was cancelled before step4\n");
+        purple_debug_misc("gaym", "session: %x\n", session);
         gaym_session_destroy(session);
 
         // g_free(gaym->session);
@@ -252,14 +248,14 @@ gaym_weblogin_step4(GaimUtilFetchUrlData *url_data, gpointer data, const gchar *
 }
 
 void
-gaym_get_chat_key_from_weblogin(GaimAccount * account,
-                                void (*callback) (GaimAccount * account))
+gaym_get_chat_key_from_weblogin(PurpleAccount * account,
+                                void (*callback) (PurpleAccount * account))
 {
 
     struct gaym_conn *gaym = account->gc->proto_data;
-    if (GAIM_CONNECTION_IS_VALID(account->gc)) {
+    if (PURPLE_CONNECTION_IS_VALID(account->gc)) {
 
-        GaimUrlSession *session = g_new0(GaimUrlSession, 1);
+        PurpleUrlSession *session = g_new0(PurpleUrlSession, 1);
         session->session_cb = callback;
         session->cookies = NULL;
         session->account = account;
@@ -269,9 +265,9 @@ gaym_get_chat_key_from_weblogin(GaimAccount * account,
         session->cookie_table =
             g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
 
-        gaim_debug_misc("gaym", "Made session: %x\n", session);
-        if (GAIM_CONNECTION_IS_VALID
-            (((GaimUrlSession *) session)->account->gc)) {
+        purple_debug_misc("gaym", "Made session: %x\n", session);
+        if (PURPLE_CONNECTION_IS_VALID
+            (((PurpleUrlSession *) session)->account->gc)) {
             // The first step is to establish the initial sesion
             // We connect to index.html, and get a few cookie values.
             char *url =
@@ -280,11 +276,11 @@ gaym_get_chat_key_from_weblogin(GaimAccount * account,
                  session->username, session->password);
 
             session->hasFormData = TRUE;
-            gaim_util_fetch_url_request(url, FALSE, NULL, FALSE, NULL, TRUE,
+            gaym_util_fetch_url_request(url, FALSE, NULL, FALSE, NULL, TRUE,
                                gaym_weblogin_step4, session);
         } else {
-            gaim_debug_misc("gaym", "cancelled before step1\n");
-            gaim_debug_misc("gaym", "gaym->sessoin: %x\n", session);
+            purple_debug_misc("gaym", "cancelled before step1\n");
+            purple_debug_misc("gaym", "gaym->sessoin: %x\n", session);
             gaym_session_destroy(session);
         }
 
@@ -293,12 +289,12 @@ gaym_get_chat_key_from_weblogin(GaimAccount * account,
 
 
 /*Doesn't do anything yet*/
-void gaym_try_cached_password(GaimAccount * account,
-                              void (*callback) (GaimAccount * account))
+void gaym_try_cached_password(PurpleAccount * account,
+                              void (*callback) (PurpleAccount * account))
 {
 
     const char *pw;
-    pw = gaim_account_get_string(account, "chat_key", NULL);
+    pw = purple_account_get_string(account, "chat_key", NULL);
     if (pw == NULL) {
         gaym_get_chat_key_from_weblogin(account, callback);
         return;

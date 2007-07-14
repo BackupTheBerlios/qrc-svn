@@ -21,8 +21,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-#ifndef _GAIM_GAYM_HELPERS_H_
-#define _GAIM_GAYM_HELPERS_H_
+#ifndef _PURPLE_GAYM_HELPERS_H_
+#define _PURPLE_GAYM_HELPERS_H_
 
 #include <glib.h>
 
@@ -36,7 +36,7 @@ char *return_string_between(const char *startbit, const char *endbit,
 /**
  * Convert a nick from gay.com to what GayM needs to see.
  * The conversion is done in place.  The converted value
- * is for use within GayM/Gaim as well as with http requests
+ * is for use within GayM/Purple as well as with http requests
  * to gay.com. When interacting with gay.com's IRC server,
  * the nick must be converted using gaym_nick_to_gcom_strdup().
  *
@@ -134,44 +134,43 @@ int roomlist_level_strip(char *description);
  *
  * @return The parent of the room to be added.
  */
-GaimRoomlistRoom *find_parent(int level, int old_level,
-                              GaimRoomlistRoom * last_room);
+PurpleRoomlistRoom *find_parent(int level, int old_level,
+                              PurpleRoomlistRoom * last_room);
 
 /**
  * Build the portion of the roomlist that is provided in the
  * config.txt java properties file within the property "roomlist".
  *
- * @param roomlist The GaimRoomlist that these rooms should be loaded
+ * @param roomlist The PurpleRoomlist that these rooms should be loaded
  *                 into.
  * @param confighash The GHashTable that config.txt was converted into
  * @param pattern The pattern to match against or NULL for everythying
  */
-void build_roomlist_from_config(GaimRoomlist * roomlist,
+void build_roomlist_from_config(PurpleRoomlist * roomlist,
                                 GHashTable * confighash, gchar * pattern);
 
 /**
- * Determine the correct GaimConvChatBuddyFlags based on the "extra"
+ * Determine the correct PurpleConvChatBuddyFlags based on the "extra"
  * information that is provided during join, whois, etc.
  *
  * @param extra The string containing the information about the flags.
  *
- * @return The correct GaimConvChatBuddyFlags.
+ * @return The correct PurpleConvChatBuddyFlags.
  */
-GaimConvChatBuddyFlags chat_pecking_order(const char *extra);
+PurpleConvChatBuddyFlags chat_pecking_order(const char *extra);
 
 /**
  * Format and return the tooltip text for a buddy/user
  *
  * @param ib The stuct containing the information about the buddy
- * @param str The GString in which to place the tooltop
+ * @param info The info struct in which to place the tooltip info
  *
- * @return   A pointer to the GString object
  */
-GString* build_tooltip_text(struct gaym_buddy *ib, GString* str);
+void build_tooltip_text(struct gaym_buddy *ib, PurpleNotifyUserInfo *info);
 
-GaimConvChatBuddyFlags include_chat_entry_order(GaimConvChatBuddyFlags
+PurpleConvChatBuddyFlags include_chat_entry_order(PurpleConvChatBuddyFlags
                                                 flags, gint entry);
-#endif                          /* _GAIM_GAYM_HELPERS_H_ */
+#endif                          /* _PURPLE_GAYM_HELPERS_H_ */
 
 /**
  * vim:tabstop=4:shiftwidth=4:expandtab:

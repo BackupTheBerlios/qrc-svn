@@ -1,7 +1,7 @@
 /**
  * @file cmds.c
  * 
- * gaim
+ * purple
  *
  * Copyright (C) 2003, Ethan Blanton <eblanton@cs.purdue.edu>
  * 
@@ -36,8 +36,8 @@ static void gaym_do_mode(struct gaym_conn *gaym, const char *target,
 int gaym_cmd_default(struct gaym_conn *gaym, const char *cmd,
                      const char *target, const char **args)
 {
-    GaimConversation *convo =
-        gaim_find_conversation_with_account(GAIM_CONV_TYPE_ANY, target,
+    PurpleConversation *convo =
+        purple_find_conversation_with_account(PURPLE_CONV_TYPE_ANY, target,
                                             gaym->account);
     char *buf;
 
@@ -45,13 +45,13 @@ int gaym_cmd_default(struct gaym_conn *gaym, const char *cmd,
         return 1;
 
     buf = g_strdup_printf(_("Unknown command: %s"), cmd);
-    if (gaim_conversation_get_type(convo) == GAIM_CONV_TYPE_IM)
-        gaim_conv_im_write(GAIM_CONV_IM(convo), "", buf,
-                           GAIM_MESSAGE_SYSTEM | GAIM_MESSAGE_NO_LOG,
+    if (purple_conversation_get_type(convo) == PURPLE_CONV_TYPE_IM)
+        purple_conv_im_write(PURPLE_CONV_IM(convo), "", buf,
+                           PURPLE_MESSAGE_SYSTEM | PURPLE_MESSAGE_NO_LOG,
                            time(NULL));
     else
-        gaim_conv_chat_write(GAIM_CONV_CHAT(convo), "", buf,
-                             GAIM_MESSAGE_SYSTEM | GAIM_MESSAGE_NO_LOG,
+        purple_conv_chat_write(PURPLE_CONV_CHAT(convo), "", buf,
+                             PURPLE_MESSAGE_SYSTEM | PURPLE_MESSAGE_NO_LOG,
                              time(NULL));
     g_free(buf);
 
@@ -83,10 +83,10 @@ int gaym_cmd_away(struct gaym_conn *gaym, const char *cmd,
 int gaym_cmd_ctcp_action(struct gaym_conn *gaym, const char *cmd,
                          const char *target, const char **args)
 {
-    GaimConnection *gc = gaim_account_get_connection(gaym->account);
+    PurpleConnection *gc = purple_account_get_connection(gaym->account);
     char *action, *dst, **newargs;
     const char *src;
-    GaimConversation *convo;
+    PurpleConversation *convo;
 
     if (!args || !args[0] || !gc)
         return 0;
@@ -121,20 +121,20 @@ int gaym_cmd_ctcp_action(struct gaym_conn *gaym, const char *cmd,
     g_free(newargs);
 
     convo =
-        gaim_find_conversation_with_account(GAIM_CONV_TYPE_ANY, target,
+        purple_find_conversation_with_account(PURPLE_CONV_TYPE_ANY, target,
                                             gaym->account);
     if (convo) {
         action = g_strdup_printf("/me %s", args[0]);
         if (action[strlen(action) - 1] == '\n')
             action[strlen(action) - 1] = '\0';
-        if (gaim_conversation_get_type(convo) == GAIM_CONV_TYPE_CHAT)
+        if (purple_conversation_get_type(convo) == PURPLE_CONV_TYPE_CHAT)
             serv_got_chat_in(gc,
-                             gaim_conv_chat_get_id(GAIM_CONV_CHAT(convo)),
-                             gaim_connection_get_display_name(gc), 0,
+                             purple_conv_chat_get_id(PURPLE_CONV_CHAT(convo)),
+                             purple_connection_get_display_name(gc), 0,
                              action, time(NULL));
         else
-            gaim_conv_im_write(GAIM_CONV_IM(convo),
-                               gaim_connection_get_display_name(gc),
+            purple_conv_im_write(PURPLE_CONV_IM(convo),
+                               purple_connection_get_display_name(gc),
                                action, 0, time(NULL));
         g_free(action);
     }
@@ -193,13 +193,13 @@ int gaym_cmd_kick(struct gaym_conn *gaym, const char *cmd,
                   const char *target, const char **args)
 {
     char *buf;
-    GaimConversation *convo;
+    PurpleConversation *convo;
 
     if (!args || !args[0])
         return 0;
 
     convo =
-        gaim_find_conversation_with_account(GAIM_CONV_TYPE_CHAT, target,
+        purple_find_conversation_with_account(PURPLE_CONV_TYPE_CHAT, target,
                                             gaym->account);
     if (!convo)
         return 0;
@@ -224,7 +224,7 @@ int gaym_cmd_list(struct gaym_conn *gaym, const char *cmd,
     } else {
         gaym->roomlist_filter = NULL;
     }
-    gaim_roomlist_show_with_account(gaym->account);
+    purple_roomlist_show_with_account(gaym->account);
 
     return 0;
 }
@@ -232,7 +232,7 @@ int gaym_cmd_list(struct gaym_conn *gaym, const char *cmd,
 int gaym_cmd_mode(struct gaym_conn *gaym, const char *cmd,
                   const char *target, const char **args)
 {
-    GaimConnection *gc;
+    PurpleConnection *gc;
     char *buf;
 
     if (!args)
@@ -250,10 +250,10 @@ int gaym_cmd_mode(struct gaym_conn *gaym, const char *cmd,
     } else if (!strcmp(cmd, "umode")) {
         if (!args[0])
             return 0;
-        gc = gaim_account_get_connection(gaym->account);
+        gc = purple_account_get_connection(gaym->account);
         buf =
             gaym_format(gaym, "vnv", "MODE",
-                        gaim_connection_get_display_name(gc), args[0]);
+                        purple_connection_get_display_name(gc), args[0]);
     } else {
         return 0;
     }
@@ -320,7 +320,7 @@ int gaym_cmd_op(struct gaym_conn *gaym, const char *cmd,
         sign = "-";
         mode = "v";
     } else {
-        gaim_debug(GAIM_DEBUG_ERROR, "gaym", "invalid 'op' command '%s'\n",
+        purple_debug(PURPLE_DEBUG_ERROR, "gaym", "invalid 'op' command '%s'\n",
                    cmd);
         return 0;
     }
@@ -405,7 +405,7 @@ int gaym_cmd_privmsg(struct gaym_conn *gaym, const char *cmd,
     } else {
         nick = g_strdup(args[0]);
     }
-    gchar* unescaped=gaim_unescape_html(args[1]);
+    gchar* unescaped=purple_unescape_html(args[1]);
     cur = unescaped;
     end = unescaped;
     while (*end && *cur) {
@@ -415,7 +415,7 @@ int gaym_cmd_privmsg(struct gaym_conn *gaym, const char *cmd,
         msg = g_strndup(cur, end - cur);
 
         buf = gaym_format(gaym, "vt:", "PRIVMSG", nick, msg);
-	gaim_debug_misc("gaym_cmd_privmsg",buf);
+	purple_debug_misc("gaym_cmd_privmsg",buf);
         gaym_send(gaym, buf);
         g_free(msg);
         g_free(buf);
@@ -463,21 +463,21 @@ int gaym_cmd_quote(struct gaym_conn *gaym, const char *cmd,
 int gaym_cmd_query(struct gaym_conn *gaym, const char *cmd,
                    const char *target, const char **args)
 {
-    GaimConversation *convo;
-    GaimConnection *gc;
+    PurpleConversation *convo;
+    PurpleConnection *gc;
 
     if (!args || !args[0])
         return 0;
 
     convo =
-        gaim_conversation_new(GAIM_CONV_TYPE_IM, gaym->account, args[0]);
+        purple_conversation_new(PURPLE_CONV_TYPE_IM, gaym->account, args[0]);
 
     if (args[1]) {
-        gc = gaim_account_get_connection(gaym->account);
+        gc = purple_account_get_connection(gaym->account);
         gaym_cmd_privmsg(gaym, cmd, target, args);
-        gaim_conv_im_write(GAIM_CONV_IM(convo),
-                           gaim_connection_get_display_name(gc), args[1],
-                           GAIM_MESSAGE_SEND, time(NULL));
+        purple_conv_im_write(PURPLE_CONV_IM(convo),
+                           purple_connection_get_display_name(gc), args[1],
+                           PURPLE_MESSAGE_SEND, time(NULL));
     }
 
     return 0;
@@ -510,31 +510,31 @@ int gaym_cmd_topic(struct gaym_conn *gaym, const char *cmd,
 {
     char *buf;
     const char *topic;
-    GaimConversation *convo;
+    PurpleConversation *convo;
 
     if (!args)
         return 0;
 
     convo =
-        gaim_find_conversation_with_account(GAIM_CONV_TYPE_CHAT, target,
+        purple_find_conversation_with_account(PURPLE_CONV_TYPE_CHAT, target,
                                             gaym->account);
     if (!convo)
         return 0;
 
     if (!args[0]) {
-        topic = gaim_conv_chat_get_topic(GAIM_CONV_CHAT(convo));
+        topic = purple_conv_chat_get_topic(PURPLE_CONV_CHAT(convo));
 
         if (topic) {
             char *tmp, *tmp2;
             tmp = g_markup_escape_text(topic, -1);
-            tmp2 = gaim_markup_linkify(tmp);
+            tmp2 = purple_markup_linkify(tmp);
             buf = g_strdup_printf(_("current topic is: %s"), tmp2);
             g_free(tmp);
             g_free(tmp2);
         } else
             buf = g_strdup(_("No topic is set"));
-        gaim_conv_chat_write(GAIM_CONV_CHAT(convo), target, buf,
-                             GAIM_MESSAGE_SYSTEM | GAIM_MESSAGE_NO_LOG,
+        purple_conv_chat_write(PURPLE_CONV_CHAT(convo), target, buf,
+                             PURPLE_MESSAGE_SYSTEM | PURPLE_MESSAGE_NO_LOG,
                              time(NULL));
         g_free(buf);
 
@@ -592,7 +592,7 @@ int gaym_cmd_who(struct gaym_conn *gaym, const char *cmd,
         return 0;
 
     buf = gaym_format(gaym, "vn", "WHO", args[0]);
-    gaim_debug_misc("cmds", "Exceuting %s\n", buf);
+    purple_debug_misc("cmds", "Exceuting %s\n", buf);
     gaym_send(gaym, buf);
     g_free(buf);
     return 0;

@@ -92,7 +92,7 @@ char *return_string_between(const char *startbit, const char *endbit,
         end = strstr(start, endbit);
     }
     /**
-     * gaim_debug_misc("gaym", "source: %d; start: %d; end: %d\n", source,
+     * purple_debug_misc("gaym", "source: %d; start: %d; end: %d\n", source,
      * start, end);
      */
     if (start && end) {
@@ -288,7 +288,7 @@ GHashTable *gaym_properties_new(const gchar * str)
         proparr = g_strsplit(tmparr[i], "=", 2);
         if (proparr[0] && strlen(g_strstrip(proparr[0])) > 0
             && proparr[1] && strlen(g_strstrip(proparr[1])) > 0) {
-            // gaim_debug_misc("properties","Inserted
+            // purple_debug_misc("properties","Inserted
             // %s=%s\n",proparr[0],proparr[1]);
             g_hash_table_insert(props, g_strdup(proparr[0]),
                                 g_strdup(proparr[1]));
@@ -327,10 +327,10 @@ int roomlist_level_strip(char *description)
     return val;
 }
 
-GaimRoomlistRoom *find_parent(int level, int old_level,
-                              GaimRoomlistRoom * last_room)
+PurpleRoomlistRoom *find_parent(int level, int old_level,
+                              PurpleRoomlistRoom * last_room)
 {
-    GaimRoomlistRoom *parent = NULL;
+    PurpleRoomlistRoom *parent = NULL;
     int i = 0;
 
     if (level == 0) {
@@ -348,7 +348,7 @@ GaimRoomlistRoom *find_parent(int level, int old_level,
     return parent;
 }
 
-void build_roomlist_from_config(GaimRoomlist * roomlist,
+void build_roomlist_from_config(PurpleRoomlist * roomlist,
                                 GHashTable * confighash, gchar * pattern)
 {
     gchar **roominst = NULL;
@@ -359,13 +359,13 @@ void build_roomlist_from_config(GaimRoomlist * roomlist,
     int level = 0;
     int old_level = 0;
     int i = 0;
-    GaimRoomlistRoom *room = NULL;
-    GaimRoomlistRoom *parent = NULL;
+    PurpleRoomlistRoom *room = NULL;
+    PurpleRoomlistRoom *parent = NULL;
 
     g_return_if_fail(roomlist != NULL);
     g_return_if_fail(confighash != NULL);
 
-    int max = gaim_prefs_get_int("/plugins/prpl/gaym/chat_room_instances");
+    int max = purple_prefs_get_int("/plugins/prpl/gaym/chat_room_instances");
 
     gchar *roomstr = g_hash_table_lookup(confighash, "roomlist");
     g_return_if_fail(roomstr != NULL);
@@ -400,17 +400,17 @@ void build_roomlist_from_config(GaimRoomlist * roomlist,
                 altname = g_strdup_printf("%s:*", roominst[1]);
                 if (max == 0) {
                     room =
-                        gaim_roomlist_room_new(GAIM_ROOMLIST_ROOMTYPE_ROOM,
+                        purple_roomlist_room_new(PURPLE_ROOMLIST_ROOMTYPE_ROOM,
                                                altname, parent);
                 } else {
                     room =
-                        gaim_roomlist_room_new
-                        (GAIM_ROOMLIST_ROOMTYPE_CATEGORY |
-                         GAIM_ROOMLIST_ROOMTYPE_ROOM, altname, parent);
+                        purple_roomlist_room_new
+                        (PURPLE_ROOMLIST_ROOMTYPE_CATEGORY |
+                         PURPLE_ROOMLIST_ROOMTYPE_ROOM, altname, parent);
                 }
-                gaim_roomlist_room_add_field(roomlist, room, altname);
-                gaim_roomlist_room_add_field(roomlist, room, roominst[0]);
-                gaim_roomlist_room_add(roomlist, room);
+                purple_roomlist_room_add_field(roomlist, room, altname);
+                purple_roomlist_room_add_field(roomlist, room, roominst[0]);
+                purple_roomlist_room_add(roomlist, room);
                 g_free(altname);
                 g_strfreev(roominst);
                 old_level = level;
@@ -423,87 +423,78 @@ void build_roomlist_from_config(GaimRoomlist * roomlist,
             level = roomlist_level_strip(roomarr[i]);
             parent = find_parent(level, old_level, room);
             room =
-                gaim_roomlist_room_new(GAIM_ROOMLIST_ROOMTYPE_CATEGORY,
+                purple_roomlist_room_new(PURPLE_ROOMLIST_ROOMTYPE_CATEGORY,
                                        roomarr[i], parent);
-            gaim_roomlist_room_add(roomlist, room);
+            purple_roomlist_room_add(roomlist, room);
         }
         old_level = level;
     }
     g_strfreev(roomarr);
-    gaim_roomlist_set_in_progress(roomlist, FALSE);
+    purple_roomlist_set_in_progress(roomlist, FALSE);
 }
 
-GaimConvChatBuddyFlags chat_pecking_order(const char *extra)
+PurpleConvChatBuddyFlags chat_pecking_order(const char *extra)
 {
-    GaimConvChatBuddyFlags flags = GAIM_CBFLAGS_NONE;
+    PurpleConvChatBuddyFlags flags = PURPLE_CBFLAGS_NONE;
     if (extra[0] == '1' && extra[1] == '8') {
         /* profile and g-rated photo */
-        flags = GAIM_CBFLAGS_FOUNDER;
+        flags = PURPLE_CBFLAGS_FOUNDER;
     } else if (extra[0] == '1' && extra[1] == '9') {
         /* profile and x-rated photo */
-        flags = GAIM_CBFLAGS_OP;
+        flags = PURPLE_CBFLAGS_OP;
     } else if (extra[0] == '8') {
         /* profile but no photo */
-        flags = GAIM_CBFLAGS_HALFOP;
+        flags = PURPLE_CBFLAGS_HALFOP;
     } else if (extra[0] == '0') {
         /* no profile and no photo */
-        flags = GAIM_CBFLAGS_NONE;
+        flags = PURPLE_CBFLAGS_NONE;
     } else {
         /* unknown */
-        flags = GAIM_CBFLAGS_VOICE;
+        flags = PURPLE_CBFLAGS_VOICE;
     }
     return flags;
 }
 
-GString* build_tooltip_text(struct gaym_buddy *ib, GString* tooltip)
+void build_tooltip_text(struct gaym_buddy *ib, PurpleNotifyUserInfo* info)
 {
-    if (!ib->name)
-        return g_string_assign(tooltip, "No info found.");
+    if (!ib || !ib->name)
+    {
+        purple_notify_user_info_add_pair(info, NULL, "No info");
+        return;
+    }
     char *escaped;
 
     // g_string_printf(tooltip, "<b><i>%s</i></b>", ib->name);
 
-    g_return_val_if_fail(ib != NULL, NULL);
-
     if (ib->sex) {
         escaped = g_markup_escape_text(ib->sex, strlen(ib->sex));
-        g_string_append_printf(tooltip, _("\n<b>%s:</b> %s"), _("Sex"),
-                               escaped);
+        purple_notify_user_info_add_pair(info, _("Sex"), escaped);
         g_free(escaped);
     }
 
     if (ib->age) {
         escaped = g_markup_escape_text(ib->age, strlen(ib->age));
-        g_string_append_printf(tooltip, _("\n<b>%s:</b> %s"), _("Age"),
-                               escaped);
+        purple_notify_user_info_add_pair(info, _("Age"), escaped);
         g_free(escaped);
     }
     if (ib->location) {
         escaped = g_markup_escape_text(ib->location, strlen(ib->location));
-        g_string_append_printf(tooltip, _("\n<b>%s:</b> %s"),
-                               _("Location"), escaped);
+        purple_notify_user_info_add_pair(info, _("Location"), escaped);
         g_free(escaped);
     }
 
     if (ib->bio) {
         escaped = g_markup_escape_text(ib->bio, strlen(ib->bio));
-        g_string_append_printf(tooltip, _("\n<b>%s:</b> %s"), _("Bio"),
-                               escaped);
+        purple_notify_user_info_add_pair(info, _("Bio"), escaped);
         g_free(escaped);
     }
 
     if (ib->gaymuser) {
-        g_string_append(tooltip, _("\n<i>Gaym user.</i>"));
+        //g_string_append(tooltip, _("\n<i>Gaym user.</i>"));
     }
-    if (tooltip->len == 0) {
-        g_string_append_printf(tooltip, _(" No info."));
-    }
-    // g_string_erase(tooltip, 0, 1);
-
-    return tooltip;
 }
 
-GaimConvChatBuddyFlags include_chat_entry_order(GaimConvChatBuddyFlags
+PurpleConvChatBuddyFlags include_chat_entry_order(PurpleConvChatBuddyFlags
                                                 flags, gint entry)
 {
 
