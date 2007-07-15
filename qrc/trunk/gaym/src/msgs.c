@@ -90,77 +90,53 @@ static void gaym_fetch_photo_cb(PurpleUtilFetchUrlData *url_data, gpointer user_
         return;
     }
 
-    struct gaym_fetch_thumbnail_data *d = user_data;
-
-
-    struct gaym_conn *gaym = d->gc->proto_data;
-
-
-    PurpleNotifyUserInfo *info = g_hash_table_lookup(gaym->info_window_needed, purple_normalize(d->gc->account, d->who));
-
-    if (!info)
-        return;
+    struct get_info_data *d = user_data;
+    struct gaym_conn *gaym = d->gaym;
 
     int id = purple_imgstore_add_with_id(g_memdup(url_text, len), len, NULL);
     char* imghtml=g_strdup_printf("<img id=\"%d\">",id);
     purple_debug_misc("userinfo","img html: %s\n",imghtml);
      
-    purple_notify_user_info_add_pair(info, NULL, imghtml);
-    purple_notify_userinfo(d->gc, d->who, info, NULL, NULL); 
-    g_hash_table_remove(gaym->info_window_needed,
-                        purple_normalize(d->gc->account, d->who));
-
-    g_free(imghtml);
-    if (d) {
-        if (d->who)
-            g_free(d->who);
-        if (d->bio)
-            g_free(d->bio);
-        if (d->stats)
-            g_free(d->stats);
-        g_free(d);
+    if(g_hash_table_lookup(gaym->info_window_needed, d->who))
+    {
+        purple_notify_user_info_add_pair(d->info, NULL, imghtml);
+        purple_notify_userinfo(d->gc, d->who, d->info, NULL, NULL); 
+        g_hash_table_remove(gaym->info_window_needed, d->who);   
     }
+    //purple_notify_user_info_destroy(d->info);
+    g_free(imghtml);
 }
 
 static void gaym_fetch_info_cb(PurpleUtilFetchUrlData *url_data, void *user_data, const gchar *info_data, gsize len, const gchar* error_message)
 {
-    struct gaym_fetch_thumbnail_data *d = user_data;
-    char *picpath;
-    char *picurl;
+    struct get_info_data *d = user_data;
+    char *picpath=NULL;
+    char *picurl=NULL;
     char *match = "pictures.0.url=";
 
-    struct gaym_conn *gaym = d->gc->proto_data;
-
-    char *hashurl =
-        g_hash_table_lookup(gaym->confighash, "view-profile-url");
-    g_return_if_fail(hashurl != NULL);
-    char *proflink = g_strdup_printf("<a href='%s%s'>Full Profile</a>",hashurl,d->who);
-    g_free(hashurl);
-    
-    PurpleNotifyUserInfo *info = 
-        g_hash_table_lookup(gaym->info_window_needed, purple_normalize(d->gc->account, d->who));
-
-    if (!info)
-        return;
-
-    purple_debug_misc("info_cb","Get info %x\n",info);
-    purple_notify_user_info_add_pair(info, NULL, proflink);
-    purple_notify_user_info_add_pair(info, "Stats", d->stats?d->stats:"Not Found");
-    purple_notify_user_info_add_pair(info, "Bio", d->bio?d->bio:"Not Found");
-    purple_debug_misc("info_cb","info updated %x\n",info);
-    purple_notify_userinfo(d->gc, d->who, info, NULL, NULL); 
+    purple_debug_misc("fetch info cb","Starting\n");
     picpath = return_string_between(match, "\n", info_data);
-    picurl = g_strdup_printf("http://www.gay.com%s", picpath);
-    purple_debug_misc("msgs", "Picture url: %s\n", picurl);
-    if (picurl) {
+    if(picpath)
+        picurl = g_strdup_printf("http://www.gay.com%s", picpath);
+
+    void *needed = g_hash_table_lookup(d->gaym->info_window_needed, d->who);
+    if (picurl && g_hash_table_lookup(d->gaym->info_window_needed, d->who)) {
+        purple_debug_misc("msgs", "Picture url: %s\nNeeded? %x", picurl, needed);
         purple_util_fetch_url(picurl, FALSE, "Mozilla/4.0 (compatible; MSIE 5.0)",
-                       FALSE, gaym_fetch_photo_cb, user_data);
+                       FALSE, gaym_fetch_photo_cb, d);
         return;
+        g_free(picurl);
+        g_free(picpath);
     }
+   
     else {
-    g_hash_table_remove(gaym->info_window_needed,
-                        purple_normalize(d->gc->account, d->who));
+        g_hash_table_remove(d->gaym->info_window_needed, d->who);
+        //purple_notify_user_info_destroy(d->info);
+        
     }
+
+
+
 }
 
 void gaym_msg_no_such_nick(struct gaym_conn *gaym, const char *name,
@@ -216,43 +192,61 @@ void gaym_msg_whois(struct gaym_conn *gaym, const char *name,
         return;
     }
 
-    gcom_nick_to_gaym(args[1]);
+    char* nick = args[1];
+    char* info = args[5];
 
-    gaym_buddy_status(gaym, args[1], TRUE, args[5], TRUE);
+    gcom_nick_to_gaym(nick);
 
-    char *normalized = g_strdup(purple_normalize(gaym->account, args[1]));
+    char* stats = gaym_stats_strdup(info);
+    char* bio = gaym_bio_strdup(info);
+    
+    gaym_buddy_status(gaym, nick, TRUE, info, TRUE);
 
-    struct gaym_fetch_thumbnail_data *data;
+    char *normalized = g_strdup(purple_normalize(gaym->account, nick));
+
 
     // Update, but then release the reference. It was already opened
     // during conversation-created.
-    gaym_update_channel_member(gaym, normalized, args[5]);
-    gaym_unreference_channel_member(gaym, normalized);
-    purple_debug_misc("gaym", "signalling info update for %s\n", normalized);
-    purple_signal_emit(purple_accounts_get_handle(), "info-updated",
-                     gaym->account, normalized);
+    //gaym_update_channel_member(gaym, normalized, info);
+    //gaym_unreference_channel_member(gaym, normalized);
 
-    if (g_hash_table_lookup(gaym->info_window_needed, normalized)) {
+    //purple_debug_misc("gaym", "signalling info update for %s\n", normalized);
+    //purple_signal_emit(purple_accounts_get_handle(), "info-updated",
+    //                 gaym->account, normalized);
+    
+    struct get_info_data* d;
+    if ((d = g_hash_table_lookup(gaym->info_window_needed, normalized))) {
 
-        data = g_new0(struct gaym_fetch_thumbnail_data, 1);
-        data->gc = purple_account_get_connection(gaym->account);
-        data->who = g_strdup(args[1]);
-        data->bio = gaym_bio_strdup(args[5]);
-        data->stats = gaym_stats_strdup(args[5]);
-        char *hashurl = g_hash_table_lookup(gaym->confighash,
+        
+        char *hashurl;
+        hashurl = g_strdup(g_hash_table_lookup(gaym->confighash, "view-profile-url"));
+        g_return_if_fail(hashurl != NULL);
+        char *proflink = g_strdup_printf("<a href='%s%s'>Full Profile</a>",hashurl,nick);
+        
+        d->info = purple_notify_user_info_new();
+        purple_notify_user_info_add_pair(d->info, NULL, proflink);
+        purple_notify_user_info_add_pair(d->info, "Stats", stats?stats:"Not Found");
+        purple_notify_user_info_add_pair(d->info, "Bio", bio?bio:"Not Found");
+        purple_notify_userinfo(d->gc, nick, d->info, NULL, d); 
+        purple_debug_misc("msg_whois","Updated userinfo info\n");
+        g_free(hashurl);
+        g_free(proflink);
+
+        hashurl = g_hash_table_lookup(gaym->confighash,
                                             "ohm.profile-url");
         g_return_if_fail(hashurl != NULL);
-
         char *infourl = g_strdup_printf("%s?pw=%s&name=%s", hashurl,
-                                        gaym->chat_key, args[1]);
+                                        gaym->chat_key, nick);
         if (infourl) {
             purple_debug_misc("msgs","Fetching %s\n",infourl);
             purple_util_fetch_url(infourl, FALSE,
                            "Mozilla/4.0 (compatible; MSIE 5.0)", FALSE,
-                           gaym_fetch_info_cb, data);
+                           gaym_fetch_info_cb, d);
             g_free(infourl);
-        } else {
+        } 
+        else {
             g_hash_table_remove(gaym->info_window_needed, normalized);
+            purple_notify_user_info_destroy(d->info);
         }
     }
     g_free(normalized);

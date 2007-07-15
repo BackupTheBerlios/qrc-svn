@@ -163,8 +163,17 @@ struct hammer_cb_data {
     void *cancel_dialog;
 } hammer_cb_data;
 
-void hammer_cb_data_destroy(struct hammer_cb_data *hdata);
+struct get_info_data {
+    const char *who;
+    char* stats;
+    char* bio;
+    PurpleNotifyUserInfo *info;
+    struct gaym_conn *gaym;
+    PurpleConnection *gc;
+} get_info_data;
 
+void hammer_cb_data_destroy(struct hammer_cb_data *hdata);
+void close_info_cb(gpointer cb_data);
 typedef int (*IRCCmdCallback) (struct gaym_conn * gaym, const char *cmd,
                                const char *target, const char **args);
 

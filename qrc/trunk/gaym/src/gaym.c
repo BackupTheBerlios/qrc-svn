@@ -793,20 +793,7 @@ static void gaym_get_info_quietly(PurpleConnection * gc, const char *who)
     gaym_cmd_whois(gaym, "whois", NULL, args);
 }
 
-struct get_info_data {
-    char *who;
-    struct gaym_conn *gaym;
-} get_info_data;
 
-static void cancel_get_info_cb(gpointer cb_data)
-{
-
-    struct get_info_data *data = (struct get_info_data *) cb_data;
-    if (!data->who || !data->gaym)
-        return;
-    g_hash_table_remove(data->gaym->info_window_needed, data->who);
-
-}
 static void gaym_get_info(PurpleConnection * gc, const char *who)
 {
     struct gaym_conn *gaym = gc->proto_data;
@@ -815,13 +802,23 @@ static void gaym_get_info(PurpleConnection * gc, const char *who)
     args[0] = who;
 
     char *normalized = g_strdup(purple_normalize(gc->account, who));
-
-    struct get_info_data *data = g_new0(struct get_info_data, 1);
+    purple_debug_misc("get_info","who: %s; normalized: %s\n",who, normalized);
+    struct get_info_data *info_data = g_new0(struct get_info_data, 1);
+    info_data->gaym=gaym;
+    info_data->who=normalized;
+    info_data->gc=gc;
+    info_data->info = NULL;
     PurpleNotifyUserInfo *info = purple_notify_user_info_new();
-    purple_debug_misc("get_info","Made new info item %x\n",info);
+
     purple_notify_user_info_add_pair(info, "Fetching info for",who);
-    purple_notify_userinfo(gc, who, info, NULL, data);
-    g_hash_table_insert(gaym->info_window_needed, normalized, info);
+    purple_notify_userinfo(gc, who, info, NULL, NULL);
+    purple_debug_misc("get_info","who: %s; normalized: %s\n",who, normalized);
+    g_hash_table_insert(gaym->info_window_needed, normalized, info_data);
+    purple_debug_misc("get_info","who: %s; normalized: %s\n",who, normalized);
+    void *needed = g_hash_table_lookup(gaym->info_window_needed, normalized);
+    purple_debug_misc("gaym", "get info: Needed for %s? %x\n", normalized, needed);
+
+    purple_notify_user_info_destroy(info);
     gaym_cmd_whois(gaym, "whois", NULL, args);
 }
 
