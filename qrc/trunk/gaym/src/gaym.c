@@ -768,6 +768,7 @@ static int gaym_im_send(PurpleConnection * gc, const char *who,
     if (flags & PURPLE_MESSAGE_AUTO_RESP) {
         automsg = g_strdup_printf("<AUTO-REPLY> %s", stripped_msg);
         g_free(stripped_msg);
+        stripped_msg=NULL;
         args[1] = automsg;
 
     } else {
