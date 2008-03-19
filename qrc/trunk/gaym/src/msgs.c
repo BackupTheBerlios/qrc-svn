@@ -32,7 +32,6 @@
 #include "privacy.h"
 #include "prefs.h"
 
-#include "botfilter.h"
 #include "gaym.h"
 #include "gayminfo.h"
 #include "gaympriv.h"
@@ -787,8 +786,6 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name,
     gaym_buddy_status(gaym, nick, TRUE, args[1], TRUE);
 
 
-    gboolean gaym_botfilter_permit =
-        gaym_botfilter_check(gc, nick, bio, FALSE);
 
     bio = gaym_bio_strdup(args[1]);
     if (bio) {
@@ -810,12 +807,10 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name,
     if (purple_prefs_get_bool("/plugins/prpl/gaym/show_bio_with_join")) {
         purple_conv_chat_add_user(PURPLE_CONV_CHAT(convo), nick, bio_markedup,
                                 flags, (gaym_privacy_permit
-                                        && gaym_botfilter_permit
                                         && show_join));
     } else {
         purple_conv_chat_add_user(PURPLE_CONV_CHAT(convo), nick, NULL,
                                 flags, (gaym_privacy_permit
-                                        && gaym_botfilter_permit
                                         && show_join));
     }
 
@@ -823,7 +818,7 @@ void gaym_msg_join(struct gaym_conn *gaym, const char *name,
      * Make the ignore.png icon appear next to the nick.
      */
     PurpleConversationUiOps *ops = purple_conversation_get_ui_ops(convo);
-    if (gaym_privacy_permit && gaym_botfilter_permit) {
+    if (gaym_privacy_permit) {
         purple_conv_chat_unignore(PURPLE_CONV_CHAT(convo), nick);
     } else {
         purple_conv_chat_ignore(PURPLE_CONV_CHAT(convo), nick);
@@ -1473,8 +1468,6 @@ void gaym_msg_richnames_list(struct gaym_conn *gaym, const char *name,
                                             gaym->account);
 
     char *bio = gaym_bio_strdup(extra);
-    gboolean gaym_botfilter_permit =
-        gaym_botfilter_check(gc, nick, bio, FALSE);
     g_free(bio);
 
     gaym_buddy_status(gaym, nick, TRUE, extra, FALSE);
@@ -1498,7 +1491,7 @@ void gaym_msg_richnames_list(struct gaym_conn *gaym, const char *name,
      * Make the ignore.png icon appear next to the nick.
      */
     PurpleConversationUiOps *ops = purple_conversation_get_ui_ops(convo);
-    if (gaym_privacy_check(gc, nick) && gaym_botfilter_permit) {
+    if (gaym_privacy_check(gc, nick)) {
         purple_conv_chat_unignore(PURPLE_CONV_CHAT(convo), nick);
     } else {
         purple_conv_chat_ignore(PURPLE_CONV_CHAT(convo), nick);

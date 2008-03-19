@@ -2,8 +2,6 @@ pkgdir = \
 	$(PURPLE_LIBDIR)/purple-2
 
 GAYMSOURCES = \
-	botfilter.c \
-	botfilter.h \
 	cmds.c \
 	gaym.c \
 	gaym.h \

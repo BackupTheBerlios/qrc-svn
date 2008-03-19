@@ -39,7 +39,6 @@
 #include "helpers.h"
 #include "gayminfo.h"
 #include "gaympriv.h"
-#include "botfilter.h"
 #include "gaym.h"
 
 static const char *gaym_blist_icon(PurpleAccount * a, PurpleBuddy * b);
@@ -668,7 +667,6 @@ static void gaym_login_cb(gpointer data, gint source, const gchar *error_message
 
         char *user_agent = "Mozilla/4.0";
 
-        get_spamlist_from_web();
         purple_util_fetch_url(url, FALSE, user_agent, FALSE,
                        gaym_get_configtxt_cb, gaym);
 
@@ -1539,38 +1537,6 @@ static PurplePluginPrefFrame *get_plugin_pref_frame(PurplePlugin * plugin)
                                         ("Bio-Based Chat Room Activity Filtering"));
     purple_plugin_pref_frame_add(frame, ppref);
 
-    ppref =
-        purple_plugin_pref_new_with_name_and_label
-        ("/plugins/prpl/gaym/botfilter_enable", _("Enable"));
-    purple_plugin_pref_frame_add(frame, ppref);
-
-    ppref =
-        purple_plugin_pref_new_with_name_and_label
-        ("/plugins/prpl/gaym/botfilter_ignore_null",
-         _("Ignore if bio is blank"));
-    purple_plugin_pref_frame_add(frame, ppref);
-
-    ppref =
-        purple_plugin_pref_new_with_name_and_label
-        ("/plugins/prpl/gaym/botfilter_patterns",
-         _
-         ("Ignore if bio contains these patterns\n\t? = match any single character\n\t* = match zero, one, or more"));
-    purple_plugin_pref_frame_add(frame, ppref);
-
-    ppref =
-        purple_plugin_pref_new_with_name_and_label
-        ("/plugins/prpl/gaym/botfilter_sep",
-         _("Above patterns are separated by"));
-    purple_plugin_pref_set_max_length(ppref, 1);
-    purple_plugin_pref_frame_add(frame, ppref);
-
-    ppref =
-        purple_plugin_pref_new_with_name_and_label
-        ("/plugins/prpl/gaym/botfilter_url",
-         _
-         ("URL for GayBoi's spam database\n\tblank to disable\n\tchanges affect next login\n\tdefault is "
-          GAYBOI_SPAM_URL));
-    purple_plugin_pref_frame_add(frame, ppref);
 
     return frame;
 }
@@ -1720,21 +1686,6 @@ static void _init_plugin(PurplePlugin * plugin)
     purple_prefs_add_bool("/plugins/prpl/gaym/show_join", TRUE);
     purple_prefs_add_bool("/plugins/prpl/gaym/show_part", TRUE);
     purple_prefs_add_bool("/plugins/prpl/gaym/show_bio_with_join", TRUE);
-
-    purple_prefs_add_bool("/plugins/prpl/gaym/botfilter_enable", FALSE);
-    purple_prefs_add_bool("/plugins/prpl/gaym/botfilter_ignore_null", FALSE);
-    purple_prefs_add_string("/plugins/prpl/gaym/botfilter_sep", "|");
-    purple_prefs_add_string("/plugins/prpl/gaym/botfilter_patterns",
-                          "NULL|MODE * -i|*dantcamboy*|*Free preview*|*epowerchat*|*Live gay sex cam show*|*camboiz*");
-    purple_prefs_add_string("/plugins/prpl/gaym/botfilter_url",
-                          GAYBOI_SPAM_URL);
-
-    purple_prefs_connect_callback("/plugins/prpl/gaym/botfilter_url",
-                                "botfilter_url", botfilter_url_changed_cb,
-                                NULL);
-
-    purple_prefs_add_string("/plugins/prpl/gaym/botfilter_url_result", "");
-    purple_prefs_add_int("/plugins/prpl/gaym/botfilter_url_last_check", 0);
 
     _gaym_plugin = plugin;
 

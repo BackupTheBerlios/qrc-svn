@@ -35,7 +35,6 @@
 #include "util.h"
 
 /* local headers for this plugin */
-#include "botfilter.h"
 #include "gaym.h"
 #include "gaympriv.h"
 #include "helpers.h"
@@ -152,9 +151,7 @@ void gaym_privacy_change(PurpleConnection * gc, const char *name)
                 purple_conversation_get_ui_ops(convo);
             if (name) {
                 if (!purple_utf8_strcasecmp(name, buddy->name)) {
-                    if (gaym_privacy_check(gc, buddy->name)
-                        && gaym_botfilter_check(gc, buddy->name, NULL,
-                                                TRUE)) {
+                    if (gaym_privacy_check(gc, buddy->name)) {
                         purple_conv_chat_unignore(PURPLE_CONV_CHAT(convo),
                                                 buddy->name);
                     } else {
@@ -164,8 +161,7 @@ void gaym_privacy_change(PurpleConnection * gc, const char *name)
                     ops->chat_update_user((convo), buddy->name);
                 }
             } else {
-                if (gaym_privacy_check(gc, buddy->name)
-                    && gaym_botfilter_check(gc, buddy->name, NULL, TRUE)) {
+                if (gaym_privacy_check(gc, buddy->name)) {
                     purple_conv_chat_unignore(PURPLE_CONV_CHAT(convo),
                                             buddy->name);
                 } else {

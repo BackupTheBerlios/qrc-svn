@@ -276,6 +276,7 @@ int gaym_cmd_names(struct gaym_conn *gaym, const char *cmd,
     gaym_send(gaym, buf);
     g_free(buf);
 
+    purple_debug_misc("names","target is %s\n",target);
     gaym->nameconv = g_strdup(target);
 
     return 0;
