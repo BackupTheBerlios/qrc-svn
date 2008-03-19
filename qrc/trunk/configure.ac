@@ -39,10 +39,6 @@ fi
 
 
 	
-AC_ARG_ENABLE([bot-challenger],
-	[AS_HELP_STRING(--enable-bot-challenger,build the bot-challenger plugin @<:@default=no@:>@)],,
-	[enable_bot_challenger="no"])
-
 AC_ARG_ENABLE([gaym],
 	[AS_HELP_STRING(--enable-gaym,build the gaym plugin @<:@default=yes@:>@)],,
 	[enable_gaym="yes"])
@@ -51,14 +47,10 @@ AC_ARG_ENABLE([gaym-extras],
 	[AS_HELP_STRING(--enable-gaym-extras,build the gaym-extras plugin @<:@default=no@:>@)],,
 	[enable_gaym_extras="no"])
 
-AM_CONDITIONAL([COND_BOT_CHALLENGER], [test "$enable_bot_challenger" = "no"])
 AM_CONDITIONAL([COND_DISPLAY_OPTIONS], [test "$enable_display_options" = "yes"])
 AM_CONDITIONAL([COND_GAYM], [test "$enable_gaym" = "yes"])
 AM_CONDITIONAL([COND_GAYM_EXTRAS], [test "$enable_gaym_extras" = "yes"])
 
-if test "$enable_bot_challenger" != "yes" ; then
-	enable_bot_challenger="no"
-fi
 
 if test "$enable_display_options" != "yes" ; then
 	enable_display_options="no"
@@ -138,7 +130,6 @@ AC_SUBST(CFLAGS)
 
 
 AC_CONFIG_FILES([Makefile
-                 bot-challenger/Makefile
                  gaym/Makefile
                  gaym/pixmaps/Makefile
                  gaym/pixmaps/16/Makefile
@@ -155,7 +146,6 @@ AC_OUTPUT
 echo
 echo $PACKAGE $VERSION
 echo
-echo Build bot-challenger plugin...... : $enable_bot_challenger
 echo Build gaym plugin................ : $enable_gaym
 echo Build gaym-extras plugin......... : $enable_gaym_extras
 echo
